@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Carton ERP",
+    "slug": "carton-erp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "plugins": [
+      "expo-camera",
+      "expo-image-picker",
+      "expo-location",
+      "expo-secure-store"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "uz.shovotcartonpaper.erp",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Davomatni tasdiqlash uchun Face ID ishlatiladi"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#f59e0b"
+      },
+      "package": "uz.shovotcartonpaper.erp",
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "USE_BIOMETRIC"
+      ]
+    }
+  }
+}

@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Ishlab Chiqarish Tizimi"
+version = "1.0.0"
+id = "artifacts/ishlab-chiqarish"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 20036
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/ishlab-chiqarish run dev"
+
+[services.env]
+PORT = "20036"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/ishlab-chiqarish", "run", "build"]
+publicDir = "artifacts/ishlab-chiqarish/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"

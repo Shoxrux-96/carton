@@ -1,0 +1,648 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Ishlab chiqarish sexi inventar tizimi API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Autentifikatsiya
+  - name: products
+    description: Mahsulotlar
+  - name: warehouses
+    description: Omborlar
+  - name: inventory
+    description: Inventar
+  - name: production
+    description: Ishlab chiqarish
+  - name: sales
+    description: Sotish
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Tizimga kirish
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Muvaffaqiyatli kirish
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          description: Noto'g'ri so'rov
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Noto'g'ri ma'lumotlar
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/profile:
+    get:
+      operationId: getProfile
+      tags: [auth]
+      summary: Foydalanuvchi profilini olish
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profil ma'lumotlari
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "401":
+          description: Autentifikatsiya talab qilinadi
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateProfile
+      tags: [auth]
+      summary: Profilni yangilash (telefon yoki parol)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Profil yangilandi
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateProfileResponse"
+        "400":
+          description: Noto'g'ri so'rov
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Autentifikatsiya talab qilinadi
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products:
+    get:
+      operationId: getProducts
+      tags: [products]
+      summary: Barcha mahsulotlarni olish
+      responses:
+        "200":
+          description: Mahsulotlar ro'yxati
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Yangi mahsulot qo'shish
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+      responses:
+        "201":
+          description: Mahsulot yaratildi
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /products/{id}:
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Mahsulotni o'chirish
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Mahsulot o'chirildi
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /warehouses:
+    get:
+      operationId: getWarehouses
+      tags: [warehouses]
+      summary: Barcha omborlarni olish
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Omborlar ro'yxati
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Warehouse"
+    post:
+      operationId: createWarehouse
+      tags: [warehouses]
+      summary: Yangi ombor qo'shish
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWarehouseRequest"
+      responses:
+        "201":
+          description: Ombor yaratildi
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Warehouse"
+
+  /warehouses/{id}:
+    delete:
+      operationId: deleteWarehouse
+      tags: [warehouses]
+      summary: Omborni o'chirish
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Ombor o'chirildi
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /inventory:
+    get:
+      operationId: getInventory
+      tags: [inventory]
+      summary: Inventar holatini olish
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Inventar ro'yxati
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryItem"
+
+  /production:
+    get:
+      operationId: getProduction
+      tags: [production]
+      summary: Ishlab chiqarish yozuvlarini olish
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Ishlab chiqarish ro'yxati
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductionRecord"
+    post:
+      operationId: createProduction
+      tags: [production]
+      summary: Kunlik ishlab chiqarishni kiritish
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductionRequest"
+      responses:
+        "201":
+          description: Ishlab chiqarish yozuvi qo'shildi
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionRecord"
+
+  /sales:
+    get:
+      operationId: getSales
+      tags: [sales]
+      summary: Sotish yozuvlarini olish
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Sotish ro'yxati
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SaleRecord"
+    post:
+      operationId: createSale
+      tags: [sales]
+      summary: Yangi sotuvni ro'yxatdan o'tkazish
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSaleRequest"
+      responses:
+        "201":
+          description: Sotuv ro'yxatga olindi
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleRecord"
+        "400":
+          description: Inventarda mahsulot yetarli emas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [inventory]
+      summary: Dashboard umumiy ma'lumotlari
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Dashboard statistikasi
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+        - message
+
+    LoginRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          description: Telefon raqam (masalan, +998901234567)
+        password:
+          type: string
+          minLength: 8
+      required:
+        - phone
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+            phone:
+              type: string
+          required:
+            - id
+            - phone
+      required:
+        - token
+        - user
+
+    Profile:
+      type: object
+      properties:
+        id:
+          type: integer
+        phone:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - phone
+        - createdAt
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          description: Yangi telefon raqam
+        currentPassword:
+          type: string
+          description: Joriy parol (parolni o'zgartirish uchun kerak)
+        newPassword:
+          type: string
+          minLength: 8
+          description: Yangi parol (kamida 8 belgi)
+
+    UpdateProfileResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Yangi token (agar telefon o'zgartirilsa)
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+            phone:
+              type: string
+          required:
+            - id
+            - phone
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        price:
+          type: number
+          format: float
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - price
+        - createdAt
+
+    CreateProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        price:
+          type: number
+          format: float
+      required:
+        - name
+        - price
+
+    Warehouse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - createdAt
+
+    CreateWarehouseRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    InventoryItem:
+      type: object
+      properties:
+        warehouseId:
+          type: integer
+        warehouseName:
+          type: string
+        productId:
+          type: integer
+        productName:
+          type: string
+        quantity:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - warehouseId
+        - warehouseName
+        - productId
+        - productName
+        - quantity
+        - updatedAt
+
+    ProductionRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        productId:
+          type: integer
+        productName:
+          type: string
+        warehouseId:
+          type: integer
+        warehouseName:
+          type: string
+        quantity:
+          type: integer
+        productionDate:
+          type: string
+          format: date-time
+      required:
+        - id
+        - productId
+        - productName
+        - warehouseId
+        - warehouseName
+        - quantity
+        - productionDate
+
+    CreateProductionRequest:
+      type: object
+      properties:
+        productId:
+          type: integer
+        warehouseId:
+          type: integer
+        quantity:
+          type: integer
+        productionDate:
+          type: string
+          format: date-time
+      required:
+        - productId
+        - warehouseId
+        - quantity
+        - productionDate
+
+    SaleRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        productId:
+          type: integer
+        productName:
+          type: string
+        warehouseId:
+          type: integer
+        warehouseName:
+          type: string
+        quantity:
+          type: integer
+        soldAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - productId
+        - productName
+        - warehouseId
+        - warehouseName
+        - quantity
+        - soldAt
+
+    CreateSaleRequest:
+      type: object
+      properties:
+        productId:
+          type: integer
+        warehouseId:
+          type: integer
+        quantity:
+          type: integer
+      required:
+        - productId
+        - warehouseId
+        - quantity
+
+    DashboardStats:
+      type: object
+      properties:
+        totalProducts:
+          type: integer
+        totalWarehouses:
+          type: integer
+        totalInventoryItems:
+          type: integer
+        totalProductionToday:
+          type: integer
+        totalSalesToday:
+          type: integer
+        lowStockItems:
+          type: integer
+      required:
+        - totalProducts
+        - totalWarehouses
+        - totalInventoryItems
+        - totalProductionToday
+        - totalSalesToday
+        - lowStockItems
