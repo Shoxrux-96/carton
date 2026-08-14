@@ -5,7 +5,11 @@ import {
   ActivityIndicator, Alert, Animated, Dimensions,
 } from "react-native";
 import { apiFetch, setToken, setUser } from "../api";
+import { useI18n } from "../i18n";
 import { colors, radius, shadows, spacing } from "../theme";
+import AppLogo from "../components/AppLogo";
+import { syncUserProfile } from "../lib/employee-profile";
+import { normalizeLoginPhone } from "../lib/phone";
 
 const { width } = Dimensions.get("window");
 
@@ -14,7 +18,8 @@ interface Props {
 }
 
 export default function LoginScreen({ onLogin }: Props) {
-  const [phone, setPhone] = useState("+998");
+  const { t } = useI18n();
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
@@ -38,9 +43,9 @@ export default function LoginScreen({ onLogin }: Props) {
   };
 
   const handleLogin = async () => {
-    const cleanPhone = phone.replace(/[\s\+\-\(\)]/g, "");
-    if (!cleanPhone || cleanPhone.length < 9 || password.length < 4) {
-      Alert.alert("Xatolik", "Telefon va parolni to'g'ri kiriting");
+    const cleanPhone = normalizeLoginPhone(phone);
+    if (!cleanPhone || cleanPhone.length < 12 || password.length < 8) {
+      Alert.alert("Xatolik", "Telefon (998...) va parolni (kamida 8 belgi) to'g'ri kiriting");
       return;
     }
     setLoading(true);
@@ -51,6 +56,7 @@ export default function LoginScreen({ onLogin }: Props) {
       });
       await setToken(data.token);
       await setUser(data.user);
+      await syncUserProfile();
       onLogin();
     } catch (e: any) {
       Alert.alert("Xatolik", e.message || "Server bilan bog'lanishda muammo");
@@ -70,24 +76,22 @@ export default function LoginScreen({ onLogin }: Props) {
       <Animated.View style={[styles.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         {/* Company branding - top */}
         <View style={styles.brandingTop}>
-          <View style={styles.logoWrap}>
-            <Text style={styles.logo}>📦</Text>
-          </View>
-          <Text style={styles.companyName}>SHOVOT CARTON PAPER</Text>
-          <Text style={styles.companySlogan}>Karton ishlab chiqarish korxonasi</Text>
+          <AppLogo size={80} style={styles.logoIcon} />
+          <Text style={styles.companyName}>{t("companyName")}</Text>
+          <Text style={styles.companySlogan}>{t("companySlogan")}</Text>
         </View>
 
         {/* Divider */}
         <View style={styles.divider} />
 
-        <Text style={styles.loginTitle}>Tizimga kirish</Text>
+        <Text style={styles.loginTitle}>{t("loginTitle")}</Text>
 
         {/* Phone input */}
         <View style={[styles.inputWrapper, focusedInput === "phone" && styles.inputFocused]}>
           <Text style={styles.inputIcon}>📱</Text>
           <TextInput
             style={styles.input}
-            placeholder="Telefon raqam"
+            placeholder="998995054004"
             placeholderTextColor={colors.textMuted}
             value={phone}
             onChangeText={setPhone}
@@ -126,13 +130,13 @@ export default function LoginScreen({ onLogin }: Props) {
             {loading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.buttonText}>Tizimga kirish</Text>
+              <Text style={styles.buttonText}>{t("login")}</Text>
             )}
           </TouchableOpacity>
         </Animated.View>
 
         <Text style={styles.footer}>
-          Shovot Carton Paper © 2024
+          Shovot Carton © 2024
         </Text>
       </Animated.View>
     </KeyboardAvoidingView>
@@ -167,12 +171,7 @@ const styles = StyleSheet.create({
     padding: spacing.xxl, paddingTop: spacing.xl, ...shadows.lg,
   },
   brandingTop: { alignItems: "center", marginBottom: spacing.lg },
-  logoWrap: {
-    width: 72, height: 72, borderRadius: radius.xl,
-    backgroundColor: colors.primary, justifyContent: "center",
-    alignItems: "center", ...shadows.md, marginBottom: spacing.md,
-  },
-  logo: { fontSize: 36 },
+  logoIcon: { marginBottom: spacing.md },
   companyName: {
     fontSize: 18, fontWeight: "900", textAlign: "center",
     color: colors.text, letterSpacing: 1, textTransform: "uppercase",

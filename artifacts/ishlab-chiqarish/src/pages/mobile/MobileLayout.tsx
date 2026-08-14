@@ -36,7 +36,12 @@ export function MobileLayout({ children, title, driverMode }: { children: React.
     <div className="flex flex-col h-screen bg-gradient-to-b from-zinc-50 to-amber-50/20 max-w-md mx-auto relative overflow-hidden">
       {/* Header */}
       <header className="bg-white border-b border-amber-100 px-4 py-3 shrink-0 flex items-center gap-3 z-10">
-        <button onClick={() => setLocation("/mobile")} className="text-amber-600 font-bold text-lg tracking-tight">
+        <button onClick={() => setLocation("/mobile")} className="flex items-center gap-2 text-amber-600 font-bold text-lg tracking-tight">
+          <img
+            src={`${import.meta.env.BASE_URL}images/logo.png`}
+            alt="Shovot Carton"
+            className="w-8 h-8 rounded-lg object-cover"
+          />
           Shovot Carton
         </button>
         {title && (

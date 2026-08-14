@@ -146,9 +146,11 @@ export function Sidebar() {
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="p-6 flex items-center gap-3 border-b border-white/10">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-amber-500/30">
-          S
-        </div>
+        <img
+          src={`${import.meta.env.BASE_URL}images/logo.png`}
+          alt="Shovot Carton"
+          className="w-10 h-10 rounded-xl object-cover shadow-lg shadow-amber-500/30"
+        />
         <div>
           <h1 className="text-lg font-bold text-white tracking-tight leading-tight">Shovot Carton</h1>
           <p className="text-xs text-white/50 font-medium">{t("control_panel")}</p>

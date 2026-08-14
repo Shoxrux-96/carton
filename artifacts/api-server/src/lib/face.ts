@@ -21,6 +21,56 @@ export async function initFaceApi() {
   console.log("[FaceAPI] Models loaded");
 }
 
+export interface EyeAnalysis {
+  faceDetected: boolean;
+  leftEyeOpen: number;
+  rightEyeOpen: number;
+  boundsX: number;
+  boundsY: number;
+  boundsW: number;
+  boundsH: number;
+}
+
+function dist(a: { x: number; y: number }, b: { x: number; y: number }) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function eyeAspectRatio(points: { x: number; y: number }[]) {
+  const vertical1 = dist(points[1], points[5]);
+  const vertical2 = dist(points[2], points[4]);
+  const horizontal = dist(points[0], points[3]);
+  if (horizontal === 0) return 0;
+  return (vertical1 + vertical2) / (2 * horizontal);
+}
+
+function earToOpenProbability(ear: number) {
+  const closed = 0.16;
+  const open = 0.28;
+  return Math.max(0, Math.min(1, (ear - closed) / (open - closed)));
+}
+
+export async function analyzeEyeState(imageBuffer: Buffer): Promise<EyeAnalysis | null> {
+  await initFaceApi();
+
+  const img = await loadImage(imageBuffer);
+  const detection = await faceapi.detectSingleFace(img).withFaceLandmarks();
+  if (!detection) return null;
+
+  const leftEye = detection.landmarks.getLeftEye();
+  const rightEye = detection.landmarks.getRightEye();
+  const box = detection.detection.box;
+
+  return {
+    faceDetected: true,
+    leftEyeOpen: earToOpenProbability(eyeAspectRatio(leftEye)),
+    rightEyeOpen: earToOpenProbability(eyeAspectRatio(rightEye)),
+    boundsX: box.x,
+    boundsY: box.y,
+    boundsW: box.width,
+    boundsH: box.height,
+  };
+}
+
 export async function extractDescriptor(imageBuffer: Buffer): Promise<number[] | null> {
   await initFaceApi();
 

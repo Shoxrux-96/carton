@@ -1,4 +1,4 @@
-package uz.shovotcartonpaper.erp
+package uz.shovotcarton.erp
 
 import android.os.Build
 import android.os.Bundle

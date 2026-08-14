@@ -1,8 +1,8 @@
 {
-  "lat": 41.69906499077328,
-  "lng": 60.28709348052069,
-  "radius": 100,
-  "startTime": "07:00",
-  "endTime": "09:00",
-  "lateMinutes": 0
+  "lat": 41.311081,
+  "lng": 69.240562,
+  "radius": 15,
+  "startTime": "09:00",
+  "endTime": "18:00",
+  "lateMinutes": 30
 }

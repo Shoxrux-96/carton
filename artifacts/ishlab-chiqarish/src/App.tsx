@@ -17,6 +17,8 @@ import Attendance from "./pages/dashboard/Attendance";
 import Finance from "./pages/dashboard/Finance";
 import NotFound from "./pages/not-found";
 import ProductView3D from "./pages/ProductView3D";
+import Catalog from "./pages/Catalog";
+import CatalogView3D from "./pages/CatalogView3D";
 import MobileHome from "./pages/mobile/MobileHome";
 import MobileAttendance from "./pages/mobile/MobileAttendance";
 import MobileAttendanceReport from "./pages/mobile/MobileAttendanceReport";
@@ -40,6 +42,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/login" component={Login} />
+      <Route path="/catalog" component={Catalog} />
+      <Route path="/catalog/:id" component={CatalogView3D} />
       
       <Route path="/dashboard" component={Overview} />
       <Route path="/dashboard/products" component={Products} />

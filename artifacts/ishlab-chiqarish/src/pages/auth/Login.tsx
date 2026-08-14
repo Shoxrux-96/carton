@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Package, Lock, Phone } from "lucide-react";
+import { Lock, Phone } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
 import { customFetch } from "@workspace/api-client-react";
@@ -54,12 +54,14 @@ export default function Login() {
         className="w-full max-w-md z-10"
       >
         <Link href="/" className="flex items-center justify-center gap-3 mb-8 cursor-pointer group">
-          <div className="w-12 h-12 rounded-xl bg-amber-600 flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform">
-            <Package className="w-6 h-6" />
-          </div>
+          <img
+            src={`${import.meta.env.BASE_URL}images/logo.png`}
+            alt="Shovot Carton"
+            className="w-12 h-12 rounded-xl object-cover shadow-lg group-hover:scale-105 transition-transform"
+          />
           <div className="text-left">
-            <div className="text-xl font-bold text-foreground tracking-tight leading-tight">Shovot Carton Paper</div>
-            <div className="text-xs text-muted-foreground">shovotcartonpaper.uz</div>
+            <div className="text-xl font-bold text-foreground tracking-tight leading-tight">Shovot Carton</div>
+            <div className="text-xs text-muted-foreground">shovotcarton.uz</div>
           </div>
         </Link>
 

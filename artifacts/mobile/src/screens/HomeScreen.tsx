@@ -7,6 +7,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { LineChart, BarChart } from "react-native-chart-kit";
 import { apiFetch, getUser, clearToken, getUserRole } from "../api";
 import { colors, radius, shadows, spacing } from "../theme";
+import { faceImageKey, syncUserProfile } from "../lib/employee-profile";
 
 const { width } = Dimensions.get("window");
 const chartWidth = width - 40;
@@ -23,10 +24,19 @@ const roleLabels: Record<string, { label: string; color: string; bg: string; emo
   employee: { label: "Xodim", color: "#fff", bg: colors.success, emoji: "👷" },
 };
 
-const ownerMenu = [
-  { title: "Face ID Davomat", tab: "HR", screen: "FaceAttendance", icon: "🤳", desc: "Yuz orqali belgilash", color: "#f97316", bg: "#fff7ed" },
-  { title: "Savdo", tab: "Buyurtma", screen: "Sales", icon: "📊", desc: "Sotish va kuzatish", color: "#22c55e", bg: "#f0fdf4" },
-  { title: "Xarita", tab: "Buyurtma", screen: "DeliveryMap", icon: "🗺️", desc: "Real-time kuzatish", color: "#0ea5e9", bg: "#e0f2fe" },
+const adminMenu = [
+  { title: "Buyurtmalar", screen: "OrdersList", icon: "📋", desc: "Barcha buyurtmalar", color: "#2563eb", bg: "#dbeafe" },
+  { title: "Savdo", screen: "Sales", icon: "📊", desc: "Sotish va kuzatish", color: "#22c55e", bg: "#f0fdf4" },
+  { title: "Yetkazish", screen: "Delivery", icon: "🚚", desc: "Yetkazish jarayoni", color: "#d97706", bg: "#fef3c7" },
+  { title: "Xarita", screen: "DeliveryMap", icon: "🗺️", desc: "Real-time kuzatish", color: "#0ea5e9", bg: "#e0f2fe" },
+  { title: "Mijozlar", screen: "Clients", icon: "🏢", desc: "Mijozlar bazasi", color: "#7c3aed", bg: "#f3e8ff" },
+  { title: "Mahsulotlar", tab: "Ishlab chiq.", screen: "Products", icon: "📦", desc: "Mahsulotlar ro'yxati", color: "#0891b2", bg: "#ecfeff" },
+  { title: "Ishlab chiqarish", tab: "Ishlab chiq.", screen: "ProdMain", icon: "🏭", desc: "Ishlab chiqarish", color: "#ea580c", bg: "#fff7ed" },
+  { title: "Ombor", tab: "Ishlab chiq.", screen: "Stock", icon: "📦", desc: "Ombor qoldiqlari", color: "#64748b", bg: "#f1f5f9" },
+  { title: "Hodimlar", tab: "HR", screen: "Employees", icon: "👥", desc: "Hodimlar boshqaruvi", color: "#059669", bg: "#ecfdf5" },
+  { title: "Davomat", tab: "HR", screen: "Attendance", icon: "✅", desc: "Kunlik davomat", color: "#16a34a", bg: "#dcfce7" },
+  { title: "Yuz ro'yxati", tab: "HR", screen: "FaceRegister", icon: "📸", desc: "Yuzni ro'yxatga olish", color: "#db2777", bg: "#fdf2f8" },
+  { title: "Moliya", tab: "Moliya", screen: "Fin", icon: "💰", desc: "Kirim va chiqimlar", color: "#ca8a04", bg: "#fef9c3" },
 ];
 
 const driverMenu = [
@@ -59,14 +69,15 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
       setUserState(u);
       setRole(r);
 
-      // Get face image from employees
-      try {
-        const emps = await apiFetch("/employees").catch(() => []);
-        if (Array.isArray(emps) && u?.phone) {
-          const me = emps.find((e: any) => e.phone?.replace(/\+/g, "") === u.phone?.replace(/\+/g, ""));
-          if (me?.faceImage) setFaceImg(me.faceImage);
-        }
-      } catch {}
+      const profile = await syncUserProfile();
+      const admin = r === "admin" || r === "owner";
+      if (!admin && profile?.faceImage) {
+        setFaceImg(profile.faceImage);
+        if (profile.name) setUserState(profile);
+      } else {
+        setFaceImg(null);
+        if (profile?.name) setUserState((prev: any) => ({ ...prev, name: profile.name }));
+      }
 
       // Load chart data
       const [salesData, financeData] = await Promise.all([
@@ -131,9 +142,9 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
   };
 
   const roleInfo = roleLabels[role || ""] || { label: "Foydalanuvchi", color: "#fff", bg: "#888", emoji: "👤" };
-  const isOwnerRole = true; // Barcha rollar uchun dashboard ko'rsatiladi
+  const isAdminRole = role === "admin" || role === "owner";
   const isDriverRole = role === "driver";
-  const menuItems = isOwnerRole ? ownerMenu : isDriverRole ? driverMenu : employeeMenu;
+  const menuItems = isAdminRole ? adminMenu : isDriverRole ? driverMenu : employeeMenu;
 
   return (
     <ScrollView
@@ -146,8 +157,8 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
       <View style={styles.headerBg}>
         <View style={styles.headerContent}>
           <View style={styles.profileSection}>
-            {faceImg ? (
-              <Image source={{ uri: faceImg }} style={styles.avatarImage} />
+            {(faceImg && !isAdminRole) ? (
+              <Image key={faceImageKey(faceImg)} source={{ uri: faceImg }} style={styles.avatarImage} />
             ) : (
               <View style={styles.avatarLarge}>
                 <Text style={styles.avatarLargeText}>
@@ -167,8 +178,8 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
         </View>
       </View>
 
-      {/* Quick actions — only admin */}
-      {(role === "admin" || role === "owner") && menuItems.length > 0 && (
+      {/* Quick actions — admin */}
+      {isAdminRole && menuItems.length > 0 && (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Tezkor amallar</Text>
         <View style={styles.menuGrid}>
@@ -196,8 +207,8 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
       </View>
       )}
 
-      {/* Stats */}
-      {isOwnerRole && stats && (
+      {/* Stats — admin */}
+      {isAdminRole && stats && (
         <Animated.View style={[styles.statsContainer, { opacity: fadeAnim, marginTop: 20 }]}>
           <View style={styles.statsRow}>
             <View style={[styles.statCard, { borderLeftColor: colors.primary }]}>
@@ -222,8 +233,8 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
         </Animated.View>
       )}
 
-      {/* Charts */}
-      {isOwnerRole && salesChart && (
+      {/* Charts — admin */}
+      {isAdminRole && salesChart && (
         <View style={styles.chartSection}>
           <View style={styles.chartCard}>
             <Text style={styles.chartTitle}>📈 Ishlab chiqarish trendi (ming so'm)</Text>
@@ -236,7 +247,7 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
                 backgroundColor: "#fff",
                 backgroundGradientFrom: "#fff",
                 backgroundGradientTo: "#fff",
-                decimalCount: 0,
+                decimalPlaces: 0,
                 color: (opacity = 1) => `rgba(249, 115, 22, ${opacity})`,
                 labelColor: () => colors.textMuted,
                 propsForDots: { r: "4", strokeWidth: "2", stroke: "#f97316" },
@@ -266,7 +277,7 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
                   backgroundColor: "#fff",
                   backgroundGradientFrom: "#fff",
                   backgroundGradientTo: "#fff",
-                  decimalCount: 0,
+                  decimalPlaces: 0,
                   color: (opacity = 1) => `rgba(34, 197, 94, ${opacity})`,
                   labelColor: () => colors.textMuted,
                   propsForBackgroundLines: { stroke: "#f5f5f4" },

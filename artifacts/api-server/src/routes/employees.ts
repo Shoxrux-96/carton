@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, employeesTable, usersTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
+import { processEmployeePhoto } from "../lib/employee-face.js";
 
 const router = Router();
 
@@ -24,10 +25,17 @@ router.post("/", authMiddleware, async (req, res) => {
   const actualLoginPhone = loginPhone || phone;
   const actualLoginPassword = loginPassword || "12345678";
 
+  const faceData = await processEmployeePhoto(photo);
+  if (faceData.faceError && photo) {
+    res.status(400).json({ error: faceData.faceError });
+    return;
+  }
+
   const [employee] = await db.insert(employeesTable).values({
     name, phone: phone || null, position: position || null,
     salary: salary?.toString() || "0", hireDate: hireDate || null, notes: notes || null,
-    faceImage: photo || null,
+    faceImage: faceData.faceImage ?? null,
+    faceDescriptor: faceData.faceDescriptor ?? null,
     loginPhone: actualLoginPhone ? actualLoginPhone.replace(/[\s\+\-\(\)]/g, "") : null,
     loginPassword: actualLoginPassword,
   }).returning();
@@ -58,7 +66,15 @@ router.put("/:id", authMiddleware, async (req, res) => {
   const updates: Record<string, any> = {};
   if (name !== undefined) updates.name = name;
   if (phone !== undefined) updates.phone = phone;
-  if (photo !== undefined) updates.faceImage = photo;
+  if (photo !== undefined) {
+    const faceData = await processEmployeePhoto(photo);
+    if (faceData.faceError && photo) {
+      res.status(400).json({ error: faceData.faceError });
+      return;
+    }
+    updates.faceImage = faceData.faceImage ?? null;
+    if (faceData.faceDescriptor) updates.faceDescriptor = faceData.faceDescriptor;
+  }
   if (position !== undefined) updates.position = position;
   if (salary !== undefined) updates.salary = salary.toString();
   if (hireDate !== undefined) updates.hireDate = hireDate;

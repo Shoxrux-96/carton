@@ -1,17 +1,28 @@
 import React, { useState, useCallback } from "react";
-import { View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity, TextInput, Modal, Alert } from "react-native";
+import { View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity, TextInput, Modal, Alert, Image } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { apiFetch } from "../api";
 import { colors, radius, shadows, spacing } from "../theme";
 
+const PRODUCT_STATUSES = [
+  { key: "published", label: "Chop etilgan", emoji: "✅", bg: "#dcfce7", text: "#16a34a" },
+  { key: "hidden", label: "Yashirin", emoji: "🙈", bg: "#f3f4f6", text: "#6b7280" },
+] as const;
+
+type ProductStatus = (typeof PRODUCT_STATUSES)[number]["key"];
+
+function getStatus(p: any): ProductStatus {
+  return p?.status === "published" || p?.isPublished ? "published" : "hidden";
+}
+
 export default function ProductsScreen() {
   const [products, setProducts] = useState<any[]>([]);
+  const [stockMap, setStockMap] = useState<Record<number, number>>({});
   const [refreshing, setRefreshing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
 
-  // Form
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -19,24 +30,47 @@ export default function ProductsScreen() {
   const [length, setLength] = useState("");
   const [width, setWidth] = useState("");
   const [height, setHeight] = useState("");
+  const [status, setStatus] = useState<ProductStatus>("hidden");
 
   const load = async () => {
     try {
-      const data = await apiFetch("/products");
+      const [data, inventory] = await Promise.all([
+        apiFetch("/products"),
+        apiFetch("/inventory").catch(() => []),
+      ]);
       setProducts(Array.isArray(data) ? data : []);
-    } catch {}
+
+      const map: Record<number, number> = {};
+      if (Array.isArray(inventory)) {
+        inventory.forEach((row: any) => {
+          map[row.productId] = (map[row.productId] || 0) + (row.quantity || 0);
+        });
+      }
+      setStockMap(map);
+    } catch (e: any) {
+      Alert.alert("Xatolik", e.message || "Mahsulotlarni yuklab bo'lmadi");
+    }
   };
 
-  useFocusEffect(useCallback(() => { load(); }, []));
+  useFocusEffect(useCallback(() => { void load(); }, []));
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
-  const resetForm = () => { setName(""); setDescription(""); setPrice(""); setMaterial(""); setLength(""); setWidth(""); setHeight(""); setEditing(null); };
+  const resetForm = () => {
+    setName(""); setDescription(""); setPrice(""); setMaterial("");
+    setLength(""); setWidth(""); setHeight(""); setStatus("hidden"); setEditing(null);
+  };
 
   const openAdd = () => { resetForm(); setShowModal(true); };
   const openEdit = (p: any) => {
-    setEditing(p); setName(p.name || ""); setDescription(p.description || "");
-    setPrice(String(p.price || "")); setMaterial(p.material || "");
-    setLength(String(p.length || "")); setWidth(String(p.width || "")); setHeight(String(p.height || ""));
+    setEditing(p);
+    setName(p.name || "");
+    setDescription(p.description || "");
+    setPrice(String(p.price || ""));
+    setMaterial(p.material || "");
+    setLength(String(p.length || ""));
+    setWidth(String(p.width || ""));
+    setHeight(String(p.height || ""));
+    setStatus(getStatus(p));
     setShowModal(true);
   };
 
@@ -45,10 +79,17 @@ export default function ProductsScreen() {
     if (!price) { Alert.alert("Xatolik", "Narxi kiritilishi shart"); return; }
     setSaving(true);
     try {
-      const body: any = { name: name.trim(), description, price: Number(price), material };
+      const body: any = {
+        name: name.trim(),
+        description,
+        price: Number(price),
+        material,
+        status,
+      };
       if (length) body.length = Number(length);
       if (width) body.width = Number(width);
       if (height) body.height = Number(height);
+
       if (editing) {
         await apiFetch(`/products/${editing.id}`, { method: "PUT", body: JSON.stringify(body) });
       } else {
@@ -64,91 +105,144 @@ export default function ProductsScreen() {
     Alert.alert("O'chirish", "Mahsulotni o'chirmoqchimisiz?", [
       { text: "Yo'q" },
       { text: "Ha", style: "destructive", onPress: async () => {
-        try { await apiFetch(`/products/${id}`, { method: "DELETE" }); await load(); } catch {}
+        try { await apiFetch(`/products/${id}`, { method: "DELETE" }); await load(); } catch (e: any) {
+          Alert.alert("Xatolik", e.message);
+        }
       }},
     ]);
   };
 
-  const togglePublish = async (p: any) => {
+  const updateStatus = async (p: any, next: ProductStatus) => {
     try {
-      await apiFetch(`/products/${p.id}`, { method: "PUT", body: JSON.stringify({ isPublished: !p.isPublished }) });
+      await apiFetch(`/products/${p.id}`, { method: "PUT", body: JSON.stringify({ status: next }) });
       await load();
-    } catch {}
+    } catch (e: any) {
+      Alert.alert("Xatolik", e.message);
+    }
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-    <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
-      <View style={styles.header}>
-        <Text style={styles.count}>{products.length} ta mahsulot</Text>
-      </View>
+      <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
+        <View style={styles.header}>
+          <Text style={styles.count}>{products.length} ta mahsulot</Text>
+          <Text style={styles.hint}>Web paneldagi mahsulotlar shu yerda ko'rinadi</Text>
+        </View>
 
-      {products.map((p) => (
-        <TouchableOpacity key={p.id} style={styles.card} onPress={() => openEdit(p)} activeOpacity={0.7}>
-          <View style={styles.cardRow}>
-            <View style={styles.iconWrap}>
-              <Text style={styles.icon}>📦</Text>
+        {products.map((p) => {
+          const st = PRODUCT_STATUSES.find((s) => s.key === getStatus(p)) || PRODUCT_STATUSES[1];
+          const stock = stockMap[p.id] || 0;
+          return (
+            <TouchableOpacity key={p.id} style={styles.card} onPress={() => openEdit(p)} activeOpacity={0.7}>
+              <View style={styles.cardRow}>
+                <View style={styles.iconWrap}>
+                  {p.image ? (
+                    <Image source={{ uri: p.image }} style={styles.productImage} />
+                  ) : (
+                    <Text style={styles.icon}>📦</Text>
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.name}>{p.name}</Text>
+                  {p.description ? <Text style={styles.desc} numberOfLines={2}>{p.description}</Text> : null}
+                  <Text style={styles.stockText}>Omborda: {stock} ta</Text>
+                </View>
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text style={styles.price}>{(p.price || 0).toLocaleString()}</Text>
+                  <View style={[styles.publishBadge, { backgroundColor: st.bg }]}>
+                    <Text style={{ fontSize: 10, fontWeight: "600", color: st.text }}>{st.emoji} {st.label}</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.statusRow}>
+                {PRODUCT_STATUSES.map((s) => {
+                  const active = getStatus(p) === s.key;
+                  return (
+                    <TouchableOpacity
+                      key={s.key}
+                      style={[styles.statusBtn, active && { backgroundColor: s.bg, borderColor: s.text }]}
+                      onPress={() => updateStatus(p, s.key)}
+                    >
+                      <Text style={[styles.statusBtnText, active && { color: s.text, fontWeight: "700" }]}>
+                        {s.emoji} {s.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={styles.metaRow}>
+                {p.material && <View style={styles.metaPill}><Text style={styles.metaText}>🧱 {p.material}</Text></View>}
+                {p.length && <View style={styles.metaPill}><Text style={styles.metaText}>📐 {p.length}x{p.width}x{p.height}</Text></View>}
+              </View>
+              <View style={styles.cardActions}>
+                <TouchableOpacity onPress={() => openEdit(p)} style={styles.editBtn}><Text style={styles.editText}>✏️ Tahrirlash</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDelete(p.id)} style={styles.deleteBtn}><Text style={styles.deleteText}>🗑️</Text></TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+
+        {products.length === 0 && (
+          <View style={styles.empty}>
+            <Text style={styles.emptyIcon}>📦</Text>
+            <Text style={styles.emptyText}>Mahsulotlar topilmadi</Text>
+            <Text style={styles.emptyHint}>Web panel → Mahsulotlar bo'limida qo'shing</Text>
+          </View>
+        )}
+      </ScrollView>
+
+      <TouchableOpacity style={styles.fab} onPress={openAdd} activeOpacity={0.8}>
+        <Text style={styles.fabText}>＋</Text>
+      </TouchableOpacity>
+
+      <Modal visible={showModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{editing ? "✏️ Tahrirlash" : "➕ Yangi mahsulot"}</Text>
+              <TouchableOpacity onPress={() => { setShowModal(false); resetForm(); }}><Text style={styles.modalClose}>✕</Text></TouchableOpacity>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.name}>{p.name}</Text>
-              {p.description ? <Text style={styles.desc}>{p.description}</Text> : null}
+
+            <Text style={styles.label}>Holati</Text>
+            <View style={styles.statusRow}>
+              {PRODUCT_STATUSES.map((s) => {
+                const active = status === s.key;
+                return (
+                  <TouchableOpacity
+                    key={s.key}
+                    style={[styles.statusBtn, active && { backgroundColor: s.bg, borderColor: s.text }]}
+                    onPress={() => setStatus(s.key)}
+                  >
+                    <Text style={[styles.statusBtnText, active && { color: s.text, fontWeight: "700" }]}>
+                      {s.emoji} {s.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-            <View style={{ alignItems: "flex-end" }}>
-              <Text style={styles.price}>{(p.price || 0).toLocaleString()}</Text>
-              <TouchableOpacity onPress={() => togglePublish(p)} style={[styles.publishBadge, { backgroundColor: p.isPublished ? "#dcfce7" : "#f3f4f6" }]}>
-                <Text style={{ fontSize: 10, fontWeight: "600", color: p.isPublished ? "#16a34a" : "#6b7280" }}>{p.isPublished ? "✅ Chop" : "🙈 Yashirin"}</Text>
-              </TouchableOpacity>
+
+            <Text style={styles.label}>Nomi *</Text>
+            <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Mahsulot nomi" placeholderTextColor={colors.textMuted} />
+            <Text style={styles.label}>Tavsif</Text>
+            <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder="Qisqacha" placeholderTextColor={colors.textMuted} />
+            <Text style={styles.label}>Narxi (so'm) *</Text>
+            <TextInput style={styles.input} value={price} onChangeText={setPrice} placeholder="0" keyboardType="numeric" placeholderTextColor={colors.textMuted} />
+            <Text style={styles.label}>Material</Text>
+            <TextInput style={styles.input} value={material} onChangeText={setMaterial} placeholder="Karton, gofrokarton..." placeholderTextColor={colors.textMuted} />
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <View style={{ flex: 1 }}><Text style={styles.label}>Uzunlik</Text><TextInput style={styles.input} value={length} onChangeText={setLength} keyboardType="numeric" placeholder="sm" placeholderTextColor={colors.textMuted} /></View>
+              <View style={{ flex: 1 }}><Text style={styles.label}>Kenglik</Text><TextInput style={styles.input} value={width} onChangeText={setWidth} keyboardType="numeric" placeholder="sm" placeholderTextColor={colors.textMuted} /></View>
+              <View style={{ flex: 1 }}><Text style={styles.label}>Balandlik</Text><TextInput style={styles.input} value={height} onChangeText={setHeight} keyboardType="numeric" placeholder="sm" placeholderTextColor={colors.textMuted} /></View>
             </View>
-          </View>
-          <View style={styles.metaRow}>
-            {p.material && <View style={styles.metaPill}><Text style={styles.metaText}>🧱 {p.material}</Text></View>}
-            {p.length && <View style={styles.metaPill}><Text style={styles.metaText}>📐 {p.length}x{p.width}x{p.height}</Text></View>}
-          </View>
-          <View style={styles.cardActions}>
-            <TouchableOpacity onPress={() => openEdit(p)} style={styles.editBtn}><Text style={styles.editText}>✏️ Tahrirlash</Text></TouchableOpacity>
-            <TouchableOpacity onPress={() => handleDelete(p.id)} style={styles.deleteBtn}><Text style={styles.deleteText}>🗑️</Text></TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      ))}
-
-      {products.length === 0 && (
-        <View style={styles.empty}><Text style={styles.emptyText}>Mahsulotlar topilmadi</Text></View>
-      )}
-    </ScrollView>
-
-    {/* FAB */}
-    <TouchableOpacity style={styles.fab} onPress={openAdd} activeOpacity={0.8}>
-      <Text style={styles.fabText}>＋</Text>
-    </TouchableOpacity>
-
-    {/* Modal */}
-    <Modal visible={showModal} animationType="slide" transparent>
-      <View style={styles.modalOverlay}>
-        <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{editing ? "✏️ Tahrirlash" : "➕ Yangi mahsulot"}</Text>
-            <TouchableOpacity onPress={() => { setShowModal(false); resetForm(); }}><Text style={styles.modalClose}>✕</Text></TouchableOpacity>
-          </View>
-          <Text style={styles.label}>Nomi *</Text>
-          <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Mahsulot nomi" placeholderTextColor={colors.textMuted} />
-          <Text style={styles.label}>Tavsif</Text>
-          <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder="Qisqacha" placeholderTextColor={colors.textMuted} />
-          <Text style={styles.label}>Narxi (so'm) *</Text>
-          <TextInput style={styles.input} value={price} onChangeText={setPrice} placeholder="0" keyboardType="numeric" placeholderTextColor={colors.textMuted} />
-          <Text style={styles.label}>Material</Text>
-          <TextInput style={styles.input} value={material} onChangeText={setMaterial} placeholder="Karton, gofrokarton..." placeholderTextColor={colors.textMuted} />
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <View style={{ flex: 1 }}><Text style={styles.label}>Uzunlik</Text><TextInput style={styles.input} value={length} onChangeText={setLength} keyboardType="numeric" placeholder="sm" placeholderTextColor={colors.textMuted} /></View>
-            <View style={{ flex: 1 }}><Text style={styles.label}>Kenglik</Text><TextInput style={styles.input} value={width} onChangeText={setWidth} keyboardType="numeric" placeholder="sm" placeholderTextColor={colors.textMuted} /></View>
-            <View style={{ flex: 1 }}><Text style={styles.label}>Balandlik</Text><TextInput style={styles.input} value={height} onChangeText={setHeight} keyboardType="numeric" placeholder="sm" placeholderTextColor={colors.textMuted} /></View>
-          </View>
-          <View style={styles.modalActions}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => { setShowModal(false); resetForm(); }}><Text style={styles.cancelText}>Bekor</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}><Text style={styles.saveText}>{saving ? "⏳..." : "✅ Saqlash"}</Text></TouchableOpacity>
-          </View>
-        </ScrollView>
-      </View>
-    </Modal>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => { setShowModal(false); resetForm(); }}><Text style={styles.cancelText}>Bekor</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}><Text style={styles.saveText}>{saving ? "⏳..." : "✅ Saqlash"}</Text></TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -156,15 +250,24 @@ export default function ProductsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, padding: spacing.lg },
   header: { marginBottom: spacing.lg },
-  count: { fontSize: 14, fontWeight: "600", color: colors.textSecondary },
+  count: { fontSize: 16, fontWeight: "700", color: colors.text },
+  hint: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.md, ...shadows.sm },
   cardRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  iconWrap: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: "#f0fdfa", justifyContent: "center", alignItems: "center" },
+  iconWrap: { width: 56, height: 56, borderRadius: radius.md, backgroundColor: "#f0fdfa", justifyContent: "center", alignItems: "center", overflow: "hidden" },
+  productImage: { width: 56, height: 56, borderRadius: radius.md },
   icon: { fontSize: 22 },
   name: { fontSize: 15, fontWeight: "700", color: colors.text },
   desc: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  stockText: { fontSize: 11, color: colors.textSecondary, marginTop: 4 },
   price: { fontSize: 15, fontWeight: "800", color: colors.primary },
   publishBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginTop: 4 },
+  statusRow: { flexDirection: "row", gap: 8, marginTop: spacing.sm },
+  statusBtn: {
+    flex: 1, paddingVertical: 8, borderRadius: radius.md, alignItems: "center",
+    backgroundColor: colors.surfaceAlt, borderWidth: 1.5, borderColor: colors.border,
+  },
+  statusBtnText: { fontSize: 11, color: colors.textSecondary, fontWeight: "600" },
   metaRow: { flexDirection: "row", gap: 6, marginTop: spacing.sm, flexWrap: "wrap" },
   metaPill: { backgroundColor: colors.surfaceAlt, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   metaText: { fontSize: 11, color: colors.textSecondary },
@@ -174,11 +277,13 @@ const styles = StyleSheet.create({
   deleteBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.md, backgroundColor: "#fee2e2", alignItems: "center" },
   deleteText: { fontSize: 14 },
   empty: { padding: 40, alignItems: "center" },
-  emptyText: { color: colors.textMuted },
+  emptyIcon: { fontSize: 40, marginBottom: 8 },
+  emptyText: { color: colors.text, fontWeight: "700", fontSize: 16 },
+  emptyHint: { color: colors.textMuted, marginTop: 6, textAlign: "center" },
   fab: { position: "absolute", bottom: 24, right: 20, width: 60, height: 60, borderRadius: 30, backgroundColor: colors.primary, justifyContent: "center", alignItems: "center", ...shadows.lg, zIndex: 100 },
   fabText: { fontSize: 28, color: "#fff", fontWeight: "300", marginTop: -2 },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
-  modalScroll: { maxHeight: "85%", backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  modalScroll: { maxHeight: "90%", backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
   modalContent: { padding: spacing.xxl, paddingBottom: 40 },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg },
   modalTitle: { fontSize: 20, fontWeight: "800", color: colors.text },

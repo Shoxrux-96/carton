@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from "react";
 import {
   View, Text, ScrollView, StyleSheet, RefreshControl,
-  TouchableOpacity, TextInput, Modal, Alert, Image,
+  TouchableOpacity, TextInput, Modal, Alert, Image, Linking,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { apiFetch } from "../api";
 import { colors, radius, shadows, spacing } from "../theme";
+import { toTelUri } from "../lib/phone";
 
 const positions = ["Buxgalter", "Boshqaruvchi", "Ishchi", "Qorovul", "Haydovchi", "Oshpaz", "Boshqa"];
 const formatSum = (n: number) => n.toLocaleString("uz-UZ") + " so'm";
@@ -91,6 +92,21 @@ export default function EmployeesScreen({ navigation }: any) {
     ]);
   };
 
+  const callEmployee = async (rawPhone?: string | null) => {
+    if (!rawPhone) return;
+    const uri = toTelUri(rawPhone);
+    try {
+      const can = await Linking.canOpenURL(uri);
+      if (!can) {
+        Alert.alert("Xatolik", "Telefon qo'ng'irog'ini ochib bo'lmadi");
+        return;
+      }
+      await Linking.openURL(uri);
+    } catch {
+      Alert.alert("Xatolik", "Telefon qo'ng'irog'ini ochib bo'lmadi");
+    }
+  };
+
   const activeCount = employees.filter(e => e.status === "active").length;
   const totalSalary = employees.filter(e => e.status === "active").reduce((s, e) => s + (e.salary || 0), 0);
 
@@ -149,7 +165,15 @@ export default function EmployeesScreen({ navigation }: any) {
               <View style={{ flex: 1 }}>
                 <Text style={styles.empName}>{emp.name}</Text>
                 <Text style={styles.empPosition}>{emp.position || "—"}</Text>
-                {emp.phone && <Text style={styles.empPhone}>📞 {emp.phone}</Text>}
+                {emp.phone ? (
+                  <TouchableOpacity onPress={() => callEmployee(emp.phone)} hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}>
+                    <Text style={styles.empPhone}>📞 {emp.phone}  ·  Qo'ng'iroq</Text>
+                  </TouchableOpacity>
+                ) : emp.loginPhone ? (
+                  <TouchableOpacity onPress={() => callEmployee(emp.loginPhone)} hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}>
+                    <Text style={styles.empPhone}>📞 {emp.loginPhone}  ·  Qo'ng'iroq</Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
               <View style={styles.empRight}>
                 <Text style={styles.empSalary}>{formatSum(emp.salary || 0)}</Text>
@@ -269,7 +293,7 @@ const styles = StyleSheet.create({
   empPhoto: { width: 44, height: 44, borderRadius: 14 },
   empName: { fontSize: 15, fontWeight: "700", color: colors.text },
   empPosition: { fontSize: 12, color: colors.textMuted },
-  empPhone: { fontSize: 11, color: colors.textSecondary, marginTop: 2 },
+  empPhone: { fontSize: 12, color: colors.primary, marginTop: 4, fontWeight: "600" },
   empRight: { alignItems: "flex-end", gap: 4 },
   empSalary: { fontSize: 13, fontWeight: "700", color: colors.text },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },

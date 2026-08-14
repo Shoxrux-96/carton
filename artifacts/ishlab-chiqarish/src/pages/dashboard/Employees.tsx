@@ -234,8 +234,15 @@ export default function Employees() {
                 employees.map((e: any) => (
                   <tr key={e.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4">
-                      {e.photo ? (
-                        <img src={e.photo} alt={e.name} className="w-12 h-16 object-cover rounded-lg border border-border" />
+                      {e.faceImage || e.photo ? (
+                        <div className="relative">
+                          <img src={e.faceImage || e.photo} alt={e.name} className="w-12 h-16 object-cover rounded-lg border border-border" />
+                          {e.faceDescriptor ? (
+                            <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-500 text-white text-[8px] flex items-center justify-center" title="Face ID ro'yxatdan o'tgan">✓</span>
+                          ) : (
+                            <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-white text-[8px] flex items-center justify-center" title="Rasm yuklangan, Face ID kutilmoqda">!</span>
+                          )}
+                        </div>
                       ) : (
                         <div className="w-12 h-16 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
                           <Camera className="w-4 h-4" />
@@ -372,6 +379,7 @@ export default function Employees() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2">{t('auto_account_note')}</p>
+            <p className="text-xs text-amber-600 mt-1">📸 3×4 rasm yuklang — Face ID davomat uchun avtomatik ro'yxatdan o'tkaziladi</p>
           </div>
 
           <div className="pt-4 flex justify-end gap-3">

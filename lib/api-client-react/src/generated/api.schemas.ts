@@ -63,6 +63,7 @@ export interface InventoryItem {
   productId: number;
   productName: string;
   quantity: number;
+  price: number;
   updatedAt: string;
 }
 

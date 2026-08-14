@@ -18,8 +18,17 @@ const mapProduct = (p: any) => ({
   color: p.color,
   clientLogo: p.clientLogo,
   isPublished: p.isPublished,
+  status: p.isPublished ? "published" : "hidden",
   createdAt: p.createdAt,
 });
+
+function applyStatus(updates: Record<string, any>, body: { status?: string; isPublished?: boolean }) {
+  if (body.status !== undefined) {
+    updates.isPublished = body.status === "published";
+  } else if (body.isPublished !== undefined) {
+    updates.isPublished = body.isPublished;
+  }
+}
 
 router.get("/", async (req, res) => {
   const published = req.query.published;
@@ -42,12 +51,14 @@ router.get("/:id", async (req, res) => {
 });
 
 router.post("/", authMiddleware, async (req, res) => {
-  const { name, description, price, image, length, width, height, material, color, clientLogo } = req.body;
+  const { name, description, price, image, length, width, height, material, color, clientLogo, status, isPublished } = req.body;
 
   if (!name || price === undefined) {
     res.status(400).json({ error: "Nomi va narxi talab qilinadi" });
     return;
   }
+
+  const published = status !== undefined ? status === "published" : Boolean(isPublished);
 
   const [product] = await db.insert(productsTable).values({
     name,
@@ -60,6 +71,7 @@ router.post("/", authMiddleware, async (req, res) => {
     material: material || null,
     color: color || null,
     clientLogo: clientLogo || null,
+    isPublished: published,
   }).returning();
 
   res.status(201).json(mapProduct(product));
@@ -67,7 +79,7 @@ router.post("/", authMiddleware, async (req, res) => {
 
 router.put("/:id", authMiddleware, async (req, res) => {
   const id = parseInt(req.params.id);
-  const { name, description, price, image, length, width, height, material, color, clientLogo, isPublished } = req.body;
+  const { name, description, price, image, length, width, height, material, color, clientLogo, isPublished, status } = req.body;
 
   const updates: Record<string, any> = {};
   if (name !== undefined) updates.name = name;
@@ -80,9 +92,23 @@ router.put("/:id", authMiddleware, async (req, res) => {
   if (material !== undefined) updates.material = material;
   if (color !== undefined) updates.color = color;
   if (clientLogo !== undefined) updates.clientLogo = clientLogo;
-  if (isPublished !== undefined) updates.isPublished = isPublished;
+  applyStatus(updates, { status, isPublished });
+
+  if (Object.keys(updates).length === 0) {
+    const [existing] = await db.select().from(productsTable).where(eq(productsTable.id, id));
+    if (!existing) {
+      res.status(404).json({ error: "Mahsulot topilmadi" });
+      return;
+    }
+    res.json(mapProduct(existing));
+    return;
+  }
 
   const [product] = await db.update(productsTable).set(updates).where(eq(productsTable.id, id)).returning();
+  if (!product) {
+    res.status(404).json({ error: "Mahsulot topilmadi" });
+    return;
+  }
 
   res.json(mapProduct(product));
 });

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Carton ERP",
+    "name": "Shovot Carton",
     "slug": "carton-erp",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,7 +13,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "uz.shovotcartonpaper.erp",
+      "bundleIdentifier": "uz.shovotcarton.erp",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Davomatni tasdiqlash uchun Face ID ishlatiladi"
       }
@@ -22,7 +22,7 @@
       "adaptiveIcon": {
         "backgroundColor": "#f59e0b"
       },
-      "package": "uz.shovotcartonpaper.erp",
+      "package": "uz.shovotcarton.erp",
       "permissions": [
         "CAMERA",
         "ACCESS_FINE_LOCATION",

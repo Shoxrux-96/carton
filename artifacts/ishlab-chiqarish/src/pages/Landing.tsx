@@ -6,9 +6,11 @@ import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
 import customFetch from "@/lib/custom-fetch";
 import { motion } from "framer-motion";
-import { useState, useRef, useEffect } from "react";
-import { Phone, Mail, MapPin, ChevronRight, Globe, Award, Truck, Package, Send, Loader2, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { Mail, MapPin, ChevronRight, Award, Truck, Package, Send, Loader2, PackageOpen, Boxes, Stamp, Palette, ArrowRightLeft, Phone, Ruler, Globe } from "lucide-react";
 import { useLang } from "@/lib/i18n";
+import { useAuth } from "@/hooks/use-auth";
+import SiteNavbar from "@/components/SiteNavbar";
 
 const DEFAULT_IMAGES = [
   `${import.meta.env.BASE_URL}images/carton-gofra.png`,
@@ -24,76 +26,17 @@ export default function Landing() {
     queryFn: () => customFetch("/api/public/products").then(r => r.json()),
   });
 
-  const { t, lang, setLang } = useLang();
-  const [langOpen, setLangOpen] = useState(false);
-  const langRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  const { t, lang } = useLang();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col font-sans">
+    <div className="min-h-screen bg-background flex flex-col font-sans scroll-smooth">
       {/* Navbar */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-600 to-amber-400 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-amber-500/30">
-              <Package className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="text-xl font-bold tracking-tight text-foreground leading-tight">Shovot Carton Paper</div>
-              <div className="text-xs text-muted-foreground">shovotcartonpaper.uz</div>
-            </div>
-          </div>
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            <a href="#about" className="hover:text-foreground transition-colors">{t("landing_about")}</a>
-            <a href="#catalog" className="hover:text-foreground transition-colors">{t("landing_catalog")}</a>
-            <a href="#contact" className="hover:text-foreground transition-colors">{t("landing_contact")}</a>
-          </nav>
-          <div className="flex items-center gap-3">
-            {/* Language Dropdown */}
-            <div className="relative" ref={langRef}>
-              <button
-                onClick={() => setLangOpen(!langOpen)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:border-amber-300 transition-colors"
-              >
-                <Globe className="w-4 h-4" />
-                <span>{lang === "uz" ? "UZ" : "RU"}</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${langOpen ? "rotate-180" : ""}`} />
-              </button>
-              {langOpen && (
-                <div className="absolute right-0 top-full mt-2 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden min-w-[140px]">
-                  <button
-                    onClick={() => { setLang("uz"); setLangOpen(false); }}
-                    className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 ${lang === "uz" ? "bg-amber-50 text-amber-700" : "hover:bg-muted"}`}
-                  >
-                    🇺🇿 O'zbekcha
-                  </button>
-                  <button
-                    onClick={() => { setLang("ru"); setLangOpen(false); }}
-                    className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 ${lang === "ru" ? "bg-amber-50 text-amber-700" : "hover:bg-muted"}`}
-                  >
-                    🇷🇺 Русский
-                  </button>
-                </div>
-              )}
-            </div>
-            <Link href="/login">
-              <Button variant="outline" className="rounded-full border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800 font-semibold">
-                {t("landing_login")}
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <SiteNavbar />
 
       {/* Hero */}
-      <section className="relative pt-16 pb-24 overflow-hidden bg-gradient-to-br from-amber-50 via-background to-orange-50">
+      <section id="top" className="relative pt-16 pb-24 overflow-hidden bg-gradient-to-br from-amber-50 via-background to-orange-50">
         <div className="absolute inset-0 opacity-5 pointer-events-none" style={{backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d97706' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"}} />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -136,12 +79,12 @@ export default function Landing() {
                 transition={{ duration: 0.6, delay: 0.3 }}
                 className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
               >
-                <a href="#catalog">
+                <Link href="/catalog">
                   <Button size="lg" className="rounded-full w-full sm:w-auto text-base px-8 h-13 bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-500/25 group">
                     {t("landing_view_catalog")}
                     <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
-                </a>
+                </Link>
                 <a href="#contact">
                   <Button size="lg" variant="outline" className="rounded-full w-full sm:w-auto text-base px-8 h-13 border-amber-300 text-amber-800 hover:bg-amber-50">
                     {t("landing_contact")}
@@ -180,7 +123,7 @@ export default function Landing() {
                 <div className="absolute -inset-4 bg-gradient-to-br from-amber-400/20 to-orange-400/20 rounded-3xl blur-2xl" />
                 <img
                   src={`${import.meta.env.BASE_URL}images/hero-box.png`}
-                  alt="Karton qutilар"
+                  alt={t("landing_hero_image_alt")}
                   className="relative w-full max-w-md object-contain drop-shadow-2xl"
                 />
               </div>
@@ -189,8 +132,113 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* About */}
+      <section id="about" className="py-20 scroll-mt-24 bg-gradient-to-b from-background to-amber-50/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* About card with logo */}
+          <div className="max-w-6xl mx-auto rounded-3xl overflow-hidden shadow-xl border border-amber-200 bg-white">
+            <div className="flex flex-col lg:flex-row items-stretch">
+              <div className="flex items-center justify-center p-10 lg:p-14 lg:w-96 shrink-0 bg-gradient-to-br from-amber-50 via-white to-orange-50">
+                <img
+                  src={`${import.meta.env.BASE_URL}images/logo-circle.png`}
+                  alt="Shovot Carton"
+                  className="w-44 h-44 lg:w-56 lg:h-56 object-contain drop-shadow-2xl"
+                />
+              </div>
+              <div className="flex-1 p-8 lg:p-12 flex flex-col justify-center">
+                <div className="flex items-center gap-3 mb-4">
+                  <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900">
+                    {t("landing_about_section_title")}
+                  </h2>
+                  <div className="h-1 w-10 rounded-full bg-amber-500" />
+                </div>
+                <p className="text-muted-foreground leading-relaxed text-base md:text-lg">
+                  {t("landing_about_section_desc")}
+                </p>
+                <div className="flex flex-wrap gap-3 mt-6">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 text-amber-800 px-4 py-1.5 text-sm font-semibold">
+                    <Package className="w-4 h-4" /> {t("landing_service_boxes")}
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 text-amber-800 px-4 py-1.5 text-sm font-semibold">
+                    <Truck className="w-4 h-4" /> {t("landing_service_delivery")}
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 text-amber-800 px-4 py-1.5 text-sm font-semibold">
+                    <Stamp className="w-4 h-4" /> {t("landing_service_logo")}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Services */}
+      <section id="services" className="py-20 scroll-mt-24 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-10">
+              <h3 className="text-2xl md:text-3xl font-extrabold text-gray-900">
+                {t("landing_services_title")}
+              </h3>
+              <p className="mt-3 text-muted-foreground max-w-2xl mx-auto">
+                {t("landing_services_desc")}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                {
+                  icon: PackageOpen,
+                  title: t("landing_service_boxes"),
+                  desc: t("landing_service_boxes_desc"),
+                },
+                {
+                  icon: Boxes,
+                  title: t("landing_service_packaging"),
+                  desc: t("landing_service_packaging_desc"),
+                },
+                {
+                  icon: Stamp,
+                  title: t("landing_service_logo"),
+                  desc: t("landing_service_logo_desc"),
+                },
+                {
+                  icon: Palette,
+                  title: t("landing_service_design"),
+                  desc: t("landing_service_design_desc"),
+                },
+                {
+                  icon: ArrowRightLeft,
+                  title: t("landing_service_transport"),
+                  desc: t("landing_service_transport_desc"),
+                },
+                {
+                  icon: Truck,
+                  title: t("landing_service_delivery"),
+                  desc: t("landing_service_delivery_desc"),
+                },
+              ].map((s, i) => (
+                <motion.div
+                  key={s.title}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: i * 0.08 }}
+                  whileHover={{ y: -6 }}
+                  className="group rounded-2xl bg-white border border-amber-100 p-7 shadow-sm hover:shadow-xl hover:border-amber-300 transition-all duration-300"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white mb-5 shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <s.icon className="w-7 h-7" />
+                  </div>
+                  <h4 className="text-lg font-bold text-gray-900 mb-2">{s.title}</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+      </section>
+
       {/* About / Features */}
-      <section id="about" className="py-20 bg-background">
+      <section id="features" className="py-20 scroll-mt-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-bold">{t("landing_why_us")}</h2>
@@ -224,10 +272,10 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Catalog */}
-      <section id="catalog" className="py-24 bg-secondary/20 border-y border-border/50">
+      {/* Catalog preview */}
+      <section id="catalog" className="py-24 scroll-mt-24 bg-secondary/20 border-y border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold">{t("landing_catalog_title")}</h2>
             <p className="mt-4 text-muted-foreground max-w-2xl mx-auto text-lg">
               {t("landing_catalog_desc")}
@@ -239,9 +287,9 @@ export default function Landing() {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {Array.isArray(products) && products.map((product: any, i) => {
-                 const imgSrc = product.image || DEFAULT_IMAGES[i % DEFAULT_IMAGES.length];
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {Array.isArray(products) && products.slice(0, 3).map((product: any, i: number) => {
+                const imgSrc = product.image || DEFAULT_IMAGES[i % DEFAULT_IMAGES.length];
                 return (
                   <motion.div
                     key={product.id}
@@ -249,7 +297,7 @@ export default function Landing() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: i * 0.1 }}
-                    className="bg-card rounded-3xl overflow-hidden shadow-md border border-border/50 hover:shadow-xl hover:border-amber-200 transition-all duration-300 group"
+                    className="bg-card rounded-3xl overflow-hidden shadow-md border border-border/50 hover:shadow-xl hover:border-amber-200 transition-all duration-300 group flex flex-col"
                   >
                     <div className="aspect-[4/3] overflow-hidden bg-gradient-to-br from-amber-50 to-orange-50 relative flex items-center justify-center">
                       <img
@@ -257,25 +305,56 @@ export default function Landing() {
                         alt={product.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       />
+                      <Link
+                        href={`/catalog/${product.id}`}
+                        className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/30 transition-colors"
+                      >
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-amber-600 text-white font-semibold text-sm shadow-lg">
+                          <Boxes className="w-4 h-4" /> {t("catalog_view_3d")}
+                        </span>
+                      </Link>
                     </div>
-                    <div className="p-6">
+                    <div className="p-6 flex flex-col flex-1">
                       <h3 className="text-xl font-bold mb-2">{product.name}</h3>
                       <p className="text-muted-foreground text-sm mb-4 min-h-[40px]">
                         {product.description || t("landing_product_detail")}
                       </p>
                       {(product.length || product.width || product.height || product.material) && (
                         <div className="flex flex-wrap gap-2 mb-4">
-                          {product.length && <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-xs font-medium text-amber-700 border border-amber-100">{product.length}×{product.width || "—"}×{product.height || "—"} sm</span>}
+                          {(product.length || product.width || product.height) && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 text-xs font-medium text-amber-700 border border-amber-100">
+                              <Ruler className="w-3 h-3" />
+                              {product.length || "—"}×{product.width || "—"}×{product.height || "—"} sm
+                            </span>
+                          )}
                           {product.material && <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-xs font-medium text-amber-700 border border-amber-100">{product.material}</span>}
                           {product.color && <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-xs font-medium text-amber-700 border border-amber-100">{product.color}</span>}
                         </div>
                       )}
-                      <div className="flex items-center justify-between pt-4 border-t border-border">
-                        <span className="text-sm font-medium text-muted-foreground">{t("landing_price_label")}</span>
-                        <span className="text-2xl font-bold text-amber-600">
-                          {Number(product.price).toLocaleString("uz-UZ")} so'm
-                        </span>
+                      <div className="pt-4 border-t border-border mt-auto">
+                        {isAdmin ? (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-muted-foreground">{t("landing_price_label")}</span>
+                            <span className="text-2xl font-bold text-amber-600">
+                              {Number(product.price).toLocaleString(lang === "ru" ? "ru-RU" : "uz-UZ")} {t("landing_currency")}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-2">
+                            <Phone className="w-4 h-4 text-amber-600 shrink-0" />
+                            <span className="text-sm text-muted-foreground">{t("landing_price_inquiry")}</span>
+                            <a href="tel:+998995054004" className="font-bold text-amber-700 hover:underline shrink-0">
+                              +998 99 505 40 04
+                            </a>
+                          </div>
+                        )}
                       </div>
+                      <Link href={`/catalog/${product.id}`} className="mt-4">
+                        <Button className="w-full rounded-xl bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-500/25">
+                          {t("catalog_view_3d")}
+                          <ArrowRightLeft className="ml-2 w-4 h-4" />
+                        </Button>
+                      </Link>
                     </div>
                   </motion.div>
                 );
@@ -287,11 +366,20 @@ export default function Landing() {
               )}
             </div>
           )}
+
+          <div className="text-center mt-12">
+            <Link href="/catalog">
+              <Button size="lg" className="rounded-full text-base px-10 h-13 bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-500/25 group">
+                {t("landing_view_all")}
+                <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Contact */}
-      <section id="contact" className="py-20 bg-gradient-to-b from-background to-amber-50/30">
+      <section id="contact" className="py-20 scroll-mt-24 bg-gradient-to-b from-background to-amber-50/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-bold">{t("landing_contact_title")}</h2>
@@ -301,50 +389,6 @@ export default function Landing() {
           </div>
 
           <ContactForm />
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mt-12">
-            <motion.a
-              href="tel:+998935001234"
-              whileHover={{ y: -4 }}
-              className="flex flex-col items-center gap-4 p-8 bg-amber-50 border border-amber-100 rounded-2xl hover:shadow-lg hover:border-amber-200 transition-all duration-300 text-center"
-            >
-              <div className="w-14 h-14 rounded-full bg-amber-600 flex items-center justify-center text-white">
-                <Phone className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="font-bold text-lg">{t("landing_phone")}</p>
-                <p className="text-muted-foreground mt-1">+998 99 505 40 04</p>
-                <p className="text-muted-foreground">+998 62 234 56 78</p>
-              </div>
-            </motion.a>
-
-            <motion.a
-              href="mailto:shovotcartonpaper@gmail.com"
-              whileHover={{ y: -4 }}
-              className="flex flex-col items-center gap-4 p-8 bg-amber-50 border border-amber-100 rounded-2xl hover:shadow-lg hover:border-amber-200 transition-all duration-300 text-center"
-            >
-              <div className="w-14 h-14 rounded-full bg-amber-600 flex items-center justify-center text-white">
-                <Mail className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="font-bold text-lg">{t("landing_email")}</p>
-                <p className="text-muted-foreground mt-1">shovotcartonpaper@gmail.com</p>
-              </div>
-            </motion.a>
-
-            <motion.div
-              whileHover={{ y: -4 }}
-              className="flex flex-col items-center gap-4 p-8 bg-amber-50 border border-amber-100 rounded-2xl hover:shadow-lg hover:border-amber-200 transition-all duration-300 text-center"
-            >
-              <div className="w-14 h-14 rounded-full bg-amber-600 flex items-center justify-center text-white">
-                <MapPin className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="font-bold text-lg">{t("landing_address")}</p>
-                <p className="text-muted-foreground mt-1">{t("landing_address_value")}</p>
-              </div>
-            </motion.div>
-          </div>
         </div>
       </section>
 
@@ -354,12 +398,14 @@ export default function Landing() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div>
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center text-white">
-                  <Package className="w-5 h-5" />
-                </div>
+                <img
+                  src={`${import.meta.env.BASE_URL}images/logo-circle.png`}
+                  alt="Shovot Carton"
+                  className="w-14 h-14 rounded-full object-contain bg-white ring-2 ring-amber-400/40 p-1"
+                />
                 <div>
-                  <div className="font-bold text-lg leading-tight">Shovot Carton Paper</div>
-                  <div className="text-xs text-gray-400">shovotcartonpaper.uz</div>
+                  <div className="font-bold text-lg leading-tight">Shovot Carton</div>
+                  <div className="text-xs text-gray-400">shovotcarton.uz</div>
                 </div>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed">
@@ -398,9 +444,9 @@ export default function Landing() {
 
           <div className="mt-10 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-gray-500 text-sm">
-              © {new Date().getFullYear()} Shovot Carton Paper. {t("landing_rights")}
+              © {new Date().getFullYear()} Shovot Carton. {t("landing_rights")}
             </p>
-            <p className="text-gray-600 text-sm">shovotcartonpaper.uz</p>
+            <p className="text-gray-600 text-sm">shovotcarton.uz</p>
           </div>
         </div>
       </footer>
@@ -525,7 +571,7 @@ function ContactForm() {
           allowFullScreen
           loading="lazy"
           referrerPolicy="strict-origin-when-cross-origin"
-          title="Shovot Carton Paper manzili"
+          title={t("landing_map_title")}
         />
       </motion.div>
     </div>

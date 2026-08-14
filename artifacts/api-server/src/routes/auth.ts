@@ -1,9 +1,33 @@
 import { Router } from "express";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, employeesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { signToken, authMiddleware } from "../lib/auth.js";
 
 const router = Router();
+
+function normalizePhone(phone?: string | null) {
+  let digits = (phone || "").replace(/\D/g, "");
+  while (digits.startsWith("998998") && digits.length > 12) {
+    digits = digits.slice(3);
+  }
+  if (digits.length === 9) {
+    digits = `998${digits}`;
+  }
+  return digits;
+}
+
+async function findEmployeeForUser(userPhone: string) {
+  const clean = normalizePhone(userPhone);
+  const [byLogin] = await db
+    .select()
+    .from(employeesTable)
+    .where(eq(employeesTable.loginPhone, clean))
+    .limit(1);
+  if (byLogin) return byLogin;
+
+  const employees = await db.select().from(employeesTable);
+  return employees.find((e) => normalizePhone(e.phone) === clean) ?? null;
+}
 
 router.post("/login", async (req, res) => {
   let { phone, password } = req.body;
@@ -14,7 +38,7 @@ router.post("/login", async (req, res) => {
   }
 
   // Telefon raqamni tozalash
-  phone = phone.replace(/[\s\+\-\(\)]/g, "");
+  phone = normalizePhone(phone);
 
   if (password.length < 8) {
     res.status(400).json({ error: "Parol kamida 8 belgidan iborat bo'lishi kerak" });
@@ -82,11 +106,17 @@ router.get("/profile", authMiddleware, async (req, res) => {
   }
 
   const user = users[0];
+  const employee = await findEmployeeForUser(user.phone);
+
   res.json({
     id: user.id,
     phone: user.phone,
     role: user.role,
     createdAt: user.createdAt,
+    name: employee?.name ?? (user.role === "admin" ? "Administrator" : user.role === "owner" ? "Egasi" : null),
+    position: employee?.position ?? (user.role === "admin" || user.role === "owner" ? "Administrator" : null),
+    faceImage: employee?.faceImage ?? null,
+    employeeId: employee?.id ?? null,
   });
 });
 

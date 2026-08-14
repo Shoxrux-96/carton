@@ -301,6 +301,7 @@ export default function Finance() {
       const record: FinanceRecord = {
         id: Date.now(),
         ...data,
+        date: payload.date,
         category: data.category || (data.type === "income" ? "Kirim" : "Chiqim"),
         description: data.description || "",
       };

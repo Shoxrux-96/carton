@@ -2,7 +2,8 @@ import { Router } from "express";
 import { db, employeesTable, attendanceTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
-import { extractDescriptor, findBestMatch, initFaceApi } from "../lib/face.js";
+import { extractDescriptor, findBestMatch, analyzeEyeState } from "../lib/face.js";
+import { parseLivenessProof, validateLivenessProof } from "../lib/liveness.js";
 import multer from "multer";
 
 const router = Router();
@@ -47,6 +48,26 @@ router.post("/register/:id", authMiddleware, upload.single("face"), async (req, 
   }
 });
 
+// Real-time liveness frame analysis (Expo Go compatible — server-side eye detection)
+router.post("/liveness-frame", upload.single("frame"), async (req, res) => {
+  if (!req.file) {
+    res.status(400).json({ error: "Kadr talab qilinadi" });
+    return;
+  }
+
+  try {
+    const analysis = await analyzeEyeState(req.file.buffer);
+    if (!analysis) {
+      res.json({ faceDetected: false });
+      return;
+    }
+    res.json(analysis);
+  } catch (e: any) {
+    console.error("[Face] Liveness frame error:", e);
+    res.status(500).json({ error: e.message || "Kadr tahlil qilinmadi" });
+  }
+});
+
 // Recognize face and mark attendance
 router.post("/attendance", upload.single("face"), async (req, res) => {
   if (!req.file) {
@@ -55,6 +76,13 @@ router.post("/attendance", upload.single("face"), async (req, res) => {
   }
 
   try {
+    const livenessProof = parseLivenessProof(req.body?.livenessProof);
+    const livenessCheck = validateLivenessProof(livenessProof);
+    if (!livenessCheck.ok) {
+      res.status(400).json({ error: livenessCheck.error });
+      return;
+    }
+
     // Load office settings
     const fs = await import("fs");
     const path = await import("path");
@@ -154,7 +182,7 @@ router.post("/attendance", upload.single("face"), async (req, res) => {
       employeeId: match.employeeId,
       date: today,
       status: attendanceStatus,
-      notes: `Face ID (${match.distance.toFixed(3)}) — ${currentTime}`,
+      notes: `Face ID (${match.distance.toFixed(3)}) — ${currentTime} | Liveness: ${livenessProof!.blinkCount} blink`,
     });
 
     res.json({

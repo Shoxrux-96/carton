@@ -1,11 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  TextInput, Alert, ActivityIndicator, Image,
+  TextInput, Alert, ActivityIndicator, Image, RefreshControl,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { apiFetch, getUser, clearToken, setUser } from "../api";
 import { colors, radius, shadows, spacing } from "../theme";
 import { useI18n } from "../i18n";
+import AppLogo from "../components/AppLogo";
+import { faceImageKey, getCachedFaceImage, syncUserProfile } from "../lib/employee-profile";
+
+function roleLabel(role?: string | null) {
+  if (role === "admin") return "👑 Admin";
+  if (role === "owner") return "👑 Egasi";
+  if (role === "manager" || role === "boshqaruvchi") return "👔 Boshqaruvchi";
+  if (role === "driver" || role === "haydovchi") return "🚗 Haydovchi";
+  return "👷 Xodim";
+}
 
 interface Props {
   navigation: any;
@@ -20,23 +31,36 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [faceImg, setFaceImg] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
+  const loadProfile = useCallback(async () => {
+    const cached = await getCachedFaceImage();
+    if (cached) setFaceImg(cached);
+
+    const profile = await syncUserProfile();
+    if (profile) {
+      setUserState(profile);
+      setPhone(profile.phone || "");
+      setFaceImg(profile.faceImage ?? null);
+    } else {
       const u = await getUser();
       setUserState(u);
       setPhone(u?.phone || "");
-      // Get face image
-      try {
-        const emps = await apiFetch("/employees");
-        if (Array.isArray(emps) && u?.phone) {
-          const me = emps.find((e: any) => e.phone?.replace(/\+/g, "") === u.phone?.replace(/\+/g, ""));
-          if (me?.faceImage) setFaceImg(me.faceImage);
-        }
-      } catch {}
-    })();
+    }
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadProfile();
+    }, [loadProfile]),
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadProfile();
+    setRefreshing(false);
+  };
 
   const handleSave = async () => {
     setLoading(true);
@@ -61,22 +85,38 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Avatar section */}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+    >
+      <View style={styles.topHeader}>
+        <AppLogo size={48} />
+      </View>
+
       <View style={styles.avatarSection}>
-        {faceImg ? (
-          <Image source={{ uri: faceImg }} style={styles.avatarPhoto} />
-        ) : (
-          <View style={styles.avatarLarge}>
-            <Text style={styles.avatarText}>
-              {user?.name?.charAt(0) || user?.phone?.slice(-2) || "U"}
-            </Text>
-          </View>
-        )}
+        <View style={styles.avatarRing}>
+          {user?.role === "admin" || user?.role === "owner" ? (
+            <View style={styles.avatarLogoWrap}>
+              <AppLogo size={108} />
+            </View>
+          ) : faceImg ? (
+            <Image key={faceImageKey(faceImg)} source={{ uri: faceImg }} style={styles.avatarPhoto} />
+          ) : (
+            <View style={styles.avatarLarge}>
+              <Text style={styles.avatarText}>
+                {user?.name?.charAt(0) || user?.phone?.slice(-2) || "U"}
+              </Text>
+            </View>
+          )}
+        </View>
         <Text style={styles.name}>{user?.name || user?.phone || "Foydalanuvchi"}</Text>
         <View style={styles.rolePill}>
-          <Text style={styles.roleText}>{user?.role === "admin" ? "👑 Admin" : user?.role === "driver" ? "🚗 Haydovchi" : "👷 Xodim"}</Text>
+          <Text style={styles.roleText}>{roleLabel(user?.role)}</Text>
         </View>
+        {user?.position ? (
+          <Text style={styles.positionText}>{user.position}</Text>
+        ) : null}
       </View>
 
       {/* Info cards */}
@@ -94,7 +134,12 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
 
         <View style={styles.field}>
           <Text style={styles.fieldLabel}>🏷️ Rol</Text>
-          <Text style={styles.fieldValue}>{user?.role || "—"}</Text>
+          <Text style={styles.fieldValue}>{roleLabel(user?.role)}</Text>
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.fieldLabel}>💼 Lavozim</Text>
+          <Text style={styles.fieldValue}>{user?.position || "—"}</Text>
         </View>
 
         {editing && (
@@ -149,20 +194,42 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.xl, paddingBottom: 60 },
-  avatarSection: { alignItems: "center", marginBottom: spacing.xxl, marginTop: spacing.lg },
-  avatarLarge: {
-    width: 80, height: 80, borderRadius: 24, backgroundColor: colors.primary,
-    justifyContent: "center", alignItems: "center", ...shadows.md,
+  content: { paddingHorizontal: spacing.xl, paddingBottom: 60 },
+  topHeader: {
+    alignItems: "center",
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    marginBottom: spacing.xxl,
   },
-  avatarText: { fontSize: 32, fontWeight: "bold", color: "#fff" },
-  avatarPhoto: { width: 80, height: 80, borderRadius: 24, ...shadows.md },
-  name: { fontSize: 22, fontWeight: "800", color: colors.text, marginTop: spacing.md },
+  avatarSection: { alignItems: "center", marginBottom: spacing.xxl },
+  avatarRing: {
+    padding: 4,
+    borderRadius: 999,
+    borderWidth: 3,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+    ...shadows.md,
+    marginBottom: spacing.lg,
+  },
+  avatarLarge: {
+    width: 120, height: 120, borderRadius: 60, backgroundColor: colors.primary,
+    justifyContent: "center", alignItems: "center",
+  },
+  avatarText: { fontSize: 44, fontWeight: "800", color: "#fff" },
+  avatarPhoto: { width: 120, height: 120, borderRadius: 60 },
+  avatarLogoWrap: {
+    width: 120, height: 120, borderRadius: 60,
+    backgroundColor: "#fff", justifyContent: "center", alignItems: "center",
+  },
+  name: { fontSize: 24, fontWeight: "800", color: colors.text, textAlign: "center" },
   rolePill: {
     backgroundColor: colors.surfaceAlt, paddingHorizontal: 12, paddingVertical: 4,
     borderRadius: radius.full, marginTop: spacing.sm,
   },
   roleText: { fontSize: 13, fontWeight: "600", color: colors.textSecondary },
+  positionText: { fontSize: 14, fontWeight: "600", color: colors.text, marginTop: 6 },
   card: {
     backgroundColor: colors.surface, borderRadius: radius.xl,
     padding: spacing.xl, ...shadows.sm, marginBottom: spacing.lg,

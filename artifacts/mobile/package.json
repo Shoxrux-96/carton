@@ -19,7 +19,6 @@
     "@react-navigation/native-stack": "^7.3.0",
     "expo": "~54.0.0",
     "expo-camera": "^17.0.10",
-    "expo-face-detector": "^13.0.2",
     "expo-image-picker": "~17.0.11",
     "expo-local-authentication": "~17.0.8",
     "expo-location": "~19.0.0",

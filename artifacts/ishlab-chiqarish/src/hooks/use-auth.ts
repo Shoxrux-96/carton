@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 interface User {
   id: number;
   phone: string;
+  role?: string;
 }
 
 export const useAuth = () => {

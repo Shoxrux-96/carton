@@ -7,7 +7,7 @@ const router = Router();
 router.get("/products", async (_req, res) => {
   const products = await db.select().from(productsTable)
     .where(eq(productsTable.isPublished, true))
-    .orderBy(productsTable.createdAt);
+    .orderBy(productsTable.id);
   res.json(products.map((p: any) => ({
     id: p.id,
     name: p.name,

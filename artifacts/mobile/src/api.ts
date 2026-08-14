@@ -1,6 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const API_BASE = "http://192.168.1.8:3003/api";
+const API_BASE = "http://192.168.1.6:3003/api";
+
+export { API_BASE };
 
 export async function getToken(): Promise<string | null> {
   return AsyncStorage.getItem("token");
@@ -13,6 +15,7 @@ export async function setToken(token: string): Promise<void> {
 export async function clearToken(): Promise<void> {
   await AsyncStorage.removeItem("token");
   await AsyncStorage.removeItem("user");
+  await AsyncStorage.removeItem("employeeFaceImage");
 }
 
 export async function getUser(): Promise<any | null> {
@@ -68,14 +71,15 @@ export async function apiFetch<T = any>(
 
 export async function apiFetchFormData<T = any>(
   path: string,
-  formData: FormData
+  formData: FormData,
+  timeoutMs = 30000,
 ): Promise<T> {
   const token = await getToken();
   const headers: Record<string, string> = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(`${API_BASE}${path}`, {
@@ -88,7 +92,7 @@ export async function apiFetchFormData<T = any>(
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     return data;
   } catch (e: any) {
-    if (e.name === "AbortError") throw new Error("Serverdan javob kelmadi (30s)");
+    if (e.name === "AbortError") throw new Error(`Serverdan javob kelmadi (${Math.round(timeoutMs / 1000)}s)`);
     if (e.message === "Network request failed") throw new Error("Serverga ulanib bo'lmadi. Wi-Fi yoki server manzilini tekshiring");
     throw e;
   } finally {
