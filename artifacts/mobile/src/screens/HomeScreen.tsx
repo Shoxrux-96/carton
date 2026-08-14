@@ -8,6 +8,7 @@ import { LineChart, BarChart } from "react-native-chart-kit";
 import { apiFetch, getUser, clearToken, getUserRole } from "../api";
 import { colors, radius, shadows, spacing } from "../theme";
 import { faceImageKey, syncUserProfile } from "../lib/employee-profile";
+import AppLogo from "../components/AppLogo";
 
 const { width } = Dimensions.get("window");
 const chartWidth = width - 40;
@@ -20,6 +21,7 @@ interface Props {
 const roleLabels: Record<string, { label: string; color: string; bg: string; emoji: string }> = {
   admin: { label: "Admin", color: "#fff", bg: colors.primary, emoji: "👑" },
   owner: { label: "Egasi", color: "#fff", bg: colors.primary, emoji: "👑" },
+  manager: { label: "Boshqaruvchi", color: "#fff", bg: colors.warning, emoji: "👔" },
   driver: { label: "Haydovchi", color: "#fff", bg: colors.info, emoji: "🚗" },
   employee: { label: "Xodim", color: "#fff", bg: colors.success, emoji: "👷" },
 };
@@ -71,12 +73,9 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
 
       const profile = await syncUserProfile();
       const admin = r === "admin" || r === "owner";
-      if (!admin && profile?.faceImage) {
-        setFaceImg(profile.faceImage);
-        if (profile.name) setUserState(profile);
-      } else {
-        setFaceImg(null);
-        if (profile?.name) setUserState((prev: any) => ({ ...prev, name: profile.name }));
+      if (profile) {
+        setUserState(profile);
+        setFaceImg(admin ? null : (profile.faceImage ?? null));
       }
 
       // Load chart data
@@ -157,7 +156,11 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
       <View style={styles.headerBg}>
         <View style={styles.headerContent}>
           <View style={styles.profileSection}>
-            {(faceImg && !isAdminRole) ? (
+            {isAdminRole ? (
+              <View style={styles.logoAvatar}>
+                <AppLogo size={72} />
+              </View>
+            ) : faceImg ? (
               <Image key={faceImageKey(faceImg)} source={{ uri: faceImg }} style={styles.avatarImage} />
             ) : (
               <View style={styles.avatarLarge}>
@@ -312,6 +315,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   avatarLargeText: { fontSize: 32, fontWeight: "800", color: "#fff" },
+  logoAvatar: {
+    width: 80, height: 80, borderRadius: 24,
+    backgroundColor: "#fff", justifyContent: "center",
+    alignItems: "center", marginBottom: spacing.md,
+    borderWidth: 3, borderColor: "rgba(255,255,255,0.4)",
+  },
   avatarImage: { width: 80, height: 80, borderRadius: 24, borderWidth: 3, borderColor: "rgba(255,255,255,0.4)", marginBottom: spacing.md },
   fullName: { fontSize: 22, fontWeight: "800", color: "#fff", letterSpacing: -0.3, textAlign: "center" },
   roleBadge: {

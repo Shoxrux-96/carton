@@ -35,19 +35,18 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
   const [faceImg, setFaceImg] = useState<string | null>(null);
 
   const loadProfile = useCallback(async () => {
-    const cached = await getCachedFaceImage();
-    if (cached) setFaceImg(cached);
-
     const profile = await syncUserProfile();
     if (profile) {
       setUserState(profile);
       setPhone(profile.phone || "");
       setFaceImg(profile.faceImage ?? null);
-    } else {
-      const u = await getUser();
-      setUserState(u);
-      setPhone(u?.phone || "");
+      return;
     }
+    const u = await getUser();
+    setUserState(u);
+    setPhone(u?.phone || "");
+    const cached = await getCachedFaceImage();
+    setFaceImg(cached);
   }, []);
 
   useFocusEffect(
@@ -84,19 +83,17 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
     onLogout();
   };
 
+  const isAdmin = user?.role === "admin" || user?.role === "owner";
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
-      <View style={styles.topHeader}>
-        <AppLogo size={48} />
-      </View>
-
-      <View style={styles.avatarSection}>
+      <View style={[styles.avatarSection, { marginTop: spacing.xl }]}>
         <View style={styles.avatarRing}>
-          {user?.role === "admin" || user?.role === "owner" ? (
+          {isAdmin ? (
             <View style={styles.avatarLogoWrap}>
               <AppLogo size={108} />
             </View>
