@@ -2,15 +2,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 import { apiFetchFormData } from "../api";
 
-export const BLINKS_REQUIRED = 3;
+export const BLINKS_REQUIRED = 0;
 
 const EYE_OPEN = 0.62;
 const EYE_CLOSED = 0.38;
 const MIN_CLOSED_MS = 100;
 const MAX_CLOSED_MS = 1000;
 const MIN_BLINK_GAP_MS = 280;
-const SCAN_INTERVAL_OPEN_MS = 900;
-const SCAN_INTERVAL_CLOSED_MS = 450;
+const SCAN_INTERVAL_OPEN_MS = 600;
+const SCAN_INTERVAL_CLOSED_MS = 300;
 const MIN_FACE_PRESENCE_MS = 1200;
 const MIN_MOVEMENT_VARIANCE = 6;
 
@@ -169,7 +169,7 @@ export function useBlinkLiveness(
       if (!firstFaceAt.current) {
         firstFaceAt.current = now;
         setPhase("hold_still");
-        setStatusText("Zo'r! Endi tabiiy ravishda 3 marta ko'z yuming");
+        setStatusText("Yuz aniqlanmoqda — ozgina qimirlang yoki boshni aylantiring");
         scheduleNextScan(SCAN_INTERVAL_OPEN_MS);
         return;
       }
@@ -191,6 +191,19 @@ export function useBlinkLiveness(
       if (samples.current.length > 40) samples.current.shift();
 
       setPhase("blink");
+
+      // If no blink requirement, accept small head movement + presence as liveness
+      if (BLINKS_REQUIRED <= 0) {
+        const mv = computeMovementVariance(samples.current);
+        // require some movement to avoid static photos
+        if (Date.now() - firstFaceAt.current! >= MIN_FACE_PRESENCE_MS && mv >= MIN_MOVEMENT_VARIANCE) {
+          finishVerification();
+          return;
+        }
+        setStatusText("Iltimos, boshni ozgina qimirlatib ko'rsating (bir necha soniya)");
+        scheduleNextScan(SCAN_INTERVAL_OPEN_MS);
+        return;
+      }
 
       if (eyePhase.current === "open" && avg < EYE_CLOSED) {
         eyePhase.current = "closed";

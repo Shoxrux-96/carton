@@ -335,7 +335,7 @@ export default function FaceAttendanceScreen() {
 
         <View style={s.statusCard}>
           <Text style={s.statusText}>{statusText}</Text>
-          <Text style={s.statusHint}>{t("blinkHint")}</Text>
+          <Text style={s.statusHint}>{blinksRequired > 0 ? t("blinkHint") : t("livenessHint")}</Text>
 
           <Animated.View style={[s.progressRow, { transform: [{ scale: successScale }] }]}>
             {Array.from({ length: blinksRequired }).map((_, i) => {

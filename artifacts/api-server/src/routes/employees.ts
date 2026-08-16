@@ -3,6 +3,9 @@ import { db, employeesTable, usersTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
 import { processEmployeePhoto } from "../lib/employee-face.js";
+import multer from "multer";
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
 
@@ -18,8 +21,13 @@ router.get("/:id", authMiddleware, async (req, res) => {
   res.json({ ...employee, salary: parseFloat(employee.salary) });
 });
 
-router.post("/", authMiddleware, async (req, res) => {
-  const { name, phone, position, salary, hireDate, notes, photo, loginPhone, loginPassword } = req.body;
+router.post("/", authMiddleware, upload.single("photo"), async (req, res) => {
+  const body = req.body || {};
+  let { name, phone, position, salary, hireDate, notes, photo, loginPhone, loginPassword } = body;
+  // If multipart upload with file was sent as `photo`, convert to data URL
+  if (req.file) {
+    photo = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+  }
   if (!name) { res.status(400).json({ error: "Ismi talab qilinadi" }); return; }
 
   const actualLoginPhone = loginPhone || phone;
@@ -60,9 +68,13 @@ router.post("/", authMiddleware, async (req, res) => {
   res.status(201).json({ ...employee, salary: parseFloat(employee.salary), faceImage: employee.faceImage });
 });
 
-router.put("/:id", authMiddleware, async (req, res) => {
+router.put("/:id", authMiddleware, upload.single("photo"), async (req, res) => {
   const id = parseInt(req.params.id);
-  const { name, phone, position, salary, hireDate, status, notes, photo, loginPhone, loginPassword } = req.body;
+  const body = req.body || {};
+  let { name, phone, position, salary, hireDate, status, notes, photo, loginPhone, loginPassword } = body;
+  if (req.file) {
+    photo = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+  }
   const updates: Record<string, any> = {};
   if (name !== undefined) updates.name = name;
   if (phone !== undefined) updates.phone = phone;

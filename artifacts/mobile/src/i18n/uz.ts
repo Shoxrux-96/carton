@@ -117,6 +117,7 @@ export default {
   // Face ID
   blinkInstruction: "Davomatdan o'tish uchun\nko'zingizni 3 marta oching-yuming",
   blinkHint: "Ko'zingizni tabiiy oching-yuming — ekranga bosing shart emas",
+  livenessHint: "Iltimos, boshni ozgina qimirlatib yoki burang — bir necha soniya",
   blinksDone: "marta ko'z ochib-yumildi",
   livenessVerified: "Tasdiqlandi! Rasm olinmoqda...",
   faceAnalyzing: "Yuz tahlil qilinmoqda...",
