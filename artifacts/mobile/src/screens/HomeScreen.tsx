@@ -210,31 +210,35 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
       </View>
       )}
 
-      {/* Stats — admin */}
-      {isAdminRole && stats && (
-        <Animated.View style={[styles.statsContainer, { opacity: fadeAnim, marginTop: 20 }]}>
-          <View style={styles.statsRow}>
-            <View style={[styles.statCard, { borderLeftColor: colors.primary }]}>
-              <Text style={styles.statValue}>{stats?.totalProducts ?? 0}</Text>
-              <Text style={styles.statLabel}>Mahsulotlar</Text>
-            </View>
-            <View style={[styles.statCard, { borderLeftColor: colors.success }]}>
-              <Text style={styles.statValue}>{stats?.totalProductionToday ?? 0}</Text>
-              <Text style={styles.statLabel}>Bugungi ishlab chiqarish</Text>
-            </View>
+      {/* Stats — shown for all users; placeholders if not available */}
+      <Animated.View style={[styles.statsContainer, { opacity: fadeAnim, marginTop: 20 }]}>
+        <Text style={[styles.sectionTitle, { paddingHorizontal: spacing.xl }]}>Ko'rsatkichlar</Text>
+        <View style={styles.statsRow}>
+          <View style={[styles.statCard, { borderLeftColor: colors.primary }]}>
+            <Text style={styles.statValue}>{stats?.totalProducts ?? "—"}</Text>
+            <Text style={styles.statLabel}>Mahsulotlar</Text>
           </View>
-          <View style={styles.statsRow}>
-            <View style={[styles.statCard, { borderLeftColor: colors.warning }]}>
-              <Text style={styles.statValue}>{stats?.activeOrders ?? 0}</Text>
-              <Text style={styles.statLabel}>Faol buyurtma</Text>
-            </View>
-            <View style={[styles.statCard, { borderLeftColor: colors.info }]}>
-              <Text style={styles.statValue}>{stats?.totalEmployees ?? 0}</Text>
-              <Text style={styles.statLabel}>Xodimlar</Text>
-            </View>
+          <View style={[styles.statCard, { borderLeftColor: colors.success }]}>
+            <Text style={styles.statValue}>{stats?.totalProductionToday ?? "—"}</Text>
+            <Text style={styles.statLabel}>Bugungi ishlab chiqarish</Text>
           </View>
-        </Animated.View>
-      )}
+        </View>
+        <View style={styles.statsRow}>
+          <View style={[styles.statCard, { borderLeftColor: colors.warning }]}>
+            <Text style={styles.statValue}>{stats?.activeOrders ?? "—"}</Text>
+            <Text style={styles.statLabel}>Faol buyurtma</Text>
+          </View>
+          <View style={[styles.statCard, { borderLeftColor: colors.info }]}>
+            <Text style={styles.statValue}>{stats?.totalEmployees ?? "—"}</Text>
+            <Text style={styles.statLabel}>Xodimlar</Text>
+          </View>
+        </View>
+        {!stats && (
+          <View style={{ paddingHorizontal: spacing.xl, marginTop: 8 }}>
+            <Text style={{ color: colors.textMuted, fontSize: 12 }}>Ma'lumotlar yuklanmadi — iltimos tizimga kiring yoki internetni tekshiring.</Text>
+          </View>
+        )}
+      </Animated.View>
 
       {/* Charts — admin */}
       {isAdminRole && salesChart && (
