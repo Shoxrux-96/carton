@@ -175,7 +175,7 @@ export default function FinanceScreen() {
               <Text style={[styles.th, { flex: 1, textAlign: "right" }]}>Summa</Text>
             </View>
             {filtered.slice(0, 50).map((tx: any, i: number) => (
-              <TouchableOpacity key={tx.id || i} style={styles.tableRow} onLongPress={() => handleDelete(tx.id)} activeOpacity={0.7}>
+              <TouchableOpacity key={tx.id ?? `${tx.description ?? "tx"}-${i}`} style={styles.tableRow} onLongPress={() => handleDelete(tx.id)} activeOpacity={0.7}>
                 <Text style={[styles.td, { flex: 1, color: colors.textMuted, fontSize: 11 }]}>
                   {tx.date ? new Date(tx.date).toLocaleDateString("uz") : "—"}
                 </Text>

@@ -185,7 +185,7 @@ export default function Products() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-48 rounded-2xl bg-muted animate-pulse" />
+            <div key={`product-skeleton-${i}`} className="h-48 rounded-2xl bg-muted animate-pulse" />
           ))
         ) : !Array.isArray(products) || products.length === 0 ? (
           <div className="col-span-full text-center py-20">

@@ -11,7 +11,7 @@ router.get("/", authMiddleware, async (_req, res) => {
 });
 
 router.put("/:platform", authMiddleware, async (req, res) => {
-  const { platform } = req.params;
+  const platform = Array.isArray(req.params.platform) ? req.params.platform[0] ?? "" : req.params.platform;
   const { url } = req.body;
 
   const existing = await db.select().from(socialLinksTable).where(eq(socialLinksTable.platform, platform)).limit(1);

@@ -138,7 +138,7 @@ function MobileProductionRecent({ authOpts }: { authOpts: any }) {
       <h3 className="text-sm font-bold text-foreground mb-2">{t("recent_records")}</h3>
       <div className="space-y-2">
         {recent.map((tx: any, i: number) => (
-          <Card key={tx.id || i} className="p-3 border-0 shadow-sm flex items-center gap-3">
+          <Card key={tx.id ?? `${tx.productName ?? "prod"}-${tx.date ?? i}`} className="p-3 border-0 shadow-sm flex items-center gap-3">
             <div className="p-2 rounded-lg bg-amber-100">
               <Wrench className="w-4 h-4 text-amber-600" />
             </div>

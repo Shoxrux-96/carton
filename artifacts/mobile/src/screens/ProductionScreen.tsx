@@ -151,7 +151,7 @@ export default function ProductionScreen() {
                 <Text style={[styles.tableHeaderText, { flex: 1.5, textAlign: "right" }]}>Summa</Text>
               </View>
               {byProduct.map((item, i) => (
-                <View key={item.productId || i} style={styles.tableRow}>
+                <View key={item.productId ?? `${item.productName ?? "product"}-${i}`} style={styles.tableRow}>
                   <Text style={[styles.tableCell, { flex: 2, fontWeight: "700", color: colors.primary }]}>{item.productName}</Text>
                   <Text style={[styles.tableCell, { flex: 1, textAlign: "right", color: colors.success, fontWeight: "700" }]}>+{item.totalQuantity} ta</Text>
                   <Text style={[styles.tableCell, { flex: 1.5, textAlign: "right", fontWeight: "600" }]}>{formatSum(item.totalSum)}</Text>

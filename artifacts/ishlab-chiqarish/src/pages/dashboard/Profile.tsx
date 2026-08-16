@@ -292,7 +292,7 @@ export default function Profile() {
                     <div className="flex gap-1">
                       {[1, 2, 3, 4, 5].map((i) => (
                         <div
-                          key={i}
+                          key={`pwd-strength-${i}`}
                           className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
                             i <= pwdScore ? pwdColors[pwdScore] : "bg-muted"
                           }`}

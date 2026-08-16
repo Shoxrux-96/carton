@@ -154,21 +154,61 @@ export default function Employees() {
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
     try {
-      try {
-        if (editing) {
-          await customFetch(`/api/employees/${editing.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json", ...authOpts.headers },
-            body: JSON.stringify(data),
-          });
-        } else {
-          await customFetch("/api/employees", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", ...authOpts.headers },
-            body: JSON.stringify(data),
-          });
+      if (editing) {
+        const partialData = new FormData();
+        const original = {
+          name: editing.name ?? "",
+          phone: editing.phone ?? "",
+          position: editing.position ?? "",
+          salary: editing.salary ?? 0,
+          hireDate: editing.hireDate ?? "",
+          notes: editing.notes ?? "",
+          loginPhone: editing.loginPhone ?? editing.phone ?? "",
+          loginPassword: editing.loginPassword ?? "",
+          photo: editing.faceImage ?? editing.photo ?? "",
+        };
+
+        Object.entries(data).forEach(([key, value]) => {
+          if (value === undefined || value === null) return;
+          const normalizedValue = key === "salary" ? Number(value) || 0 : String(value);
+          const originalValue = key === "salary" ? Number(original[key as keyof typeof original] ?? 0) : String(original[key as keyof typeof original] ?? "");
+
+          if (key === "photo") {
+            if (normalizedValue && normalizedValue !== originalValue) {
+              partialData.append(key, String(normalizedValue));
+            }
+            return;
+          }
+
+          if (normalizedValue === "" && (originalValue === "" || originalValue === "null" || originalValue === "undefined")) return;
+          if (normalizedValue !== originalValue) {
+            partialData.append(key, String(normalizedValue));
+          }
+        });
+
+        if (partialData.entries && partialData.entries().next().done) {
+          setIsAddOpen(false);
+          return;
         }
-      } catch {}
+
+        await customFetch(`/api/employees/${editing.id}`, {
+          method: "PATCH",
+          headers: { ...authOpts.headers },
+          body: partialData,
+        });
+      } else {
+        const formData = new FormData();
+        Object.entries(data).forEach(([key, value]) => {
+          if (value === undefined || value === null || value === "") return;
+          formData.append(key, String(value));
+        });
+
+        await customFetch("/api/employees", {
+          method: "POST",
+          headers: { ...authOpts.headers },
+          body: formData,
+        });
+      }
 
       queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
       setIsAddOpen(false);

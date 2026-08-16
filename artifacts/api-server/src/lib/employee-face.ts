@@ -17,17 +17,26 @@ export async function processEmployeePhoto(photo?: string | null): Promise<{
   }
 
   const buffer = Buffer.from(base64, "base64");
-  const descriptor = await extractDescriptor(buffer);
+  try {
+    const descriptor = await extractDescriptor(buffer);
 
-  if (!descriptor) {
+    if (!descriptor) {
+      return {
+        faceImage: photo,
+        faceError: "Yuz aniqlanmadi. Aniq yuz ko'rinadigan 3×4 rasm yuklang",
+      };
+    }
+
     return {
       faceImage: photo,
-      faceError: "Yuz aniqlanmadi. Aniq yuz ko'rinadigan 3×4 rasm yuklang",
+      faceDescriptor: JSON.stringify(descriptor),
+    };
+  } catch (err: any) {
+    // If face-api or tfjs fails (version mismatch or runtime error), don't block the update.
+    // Save the image so the user can still upload photos; leave descriptor absent.
+    return {
+      faceImage: photo,
+      faceError: typeof err === 'string' ? err : err?.message ?? 'Face processing failed',
     };
   }
-
-  return {
-    faceImage: photo,
-    faceDescriptor: JSON.stringify(descriptor),
-  };
 }

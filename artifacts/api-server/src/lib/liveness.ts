@@ -25,8 +25,8 @@ const BLINKS_REQUIRED = 0;
 const MIN_CLOSED_MS = 80;
 const MAX_CLOSED_MS = 1200;
 const MIN_BLINK_GAP_MS = 250;
-const MIN_SESSION_MS = 1000;
-const MIN_MOVEMENT = 4;
+const MIN_SESSION_MS = 800;
+const MIN_MOVEMENT = 0;
 
 export function parseLivenessProof(raw: unknown): LivenessProof | null {
   if (!raw) return null;
@@ -50,22 +50,18 @@ export function validateLivenessProof(proof: LivenessProof | null): { ok: true }
     return { ok: false, error: "Hayotilik tekshiruvi juda tez o'tkazildi. Qayta urinib ko'ring" };
   }
 
-  if (proof.movementVariance < MIN_MOVEMENT) {
-    return { ok: false, error: "Statik rasm aniqlandi. Jonli inson kameraga qarang, rasm emas" };
-  }
-
   const samples = proof.samples ?? [];
-  if (samples.length < 3) {
+  if (samples.length < 2) {
     return { ok: false, error: "Hayotilik ma'lumotlari yetarli emas" };
   }
 
   const first = samples[0];
   const allIdentical = samples.every(
     (s) =>
-      Math.abs(s.boundsX - first.boundsX) < 0.5 &&
-      Math.abs(s.boundsY - first.boundsY) < 0.5 &&
-      Math.abs(s.leftEyeOpen - first.leftEyeOpen) < 0.02 &&
-      Math.abs(s.rightEyeOpen - first.rightEyeOpen) < 0.02,
+      Math.abs(s.boundsX - first.boundsX) < 0.1 &&
+      Math.abs(s.boundsY - first.boundsY) < 0.1 &&
+      Math.abs(s.leftEyeOpen - first.leftEyeOpen) < 0.005 &&
+      Math.abs(s.rightEyeOpen - first.rightEyeOpen) < 0.005,
   );
   if (allIdentical) {
     return { ok: false, error: "Bir xil statik rasm aniqlandi. Kameraga jonli qarang" };

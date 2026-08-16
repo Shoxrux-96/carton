@@ -255,7 +255,7 @@ function OrderItemsEditor({
 
       <div className="space-y-2">
         {items.map((item, idx) => (
-          <div key={item.id || item.productId || idx} className="flex items-start gap-2 p-3 rounded-xl border-2 border-border bg-muted/20">
+          <div key={item.id ?? item.productId ?? `${item.name ?? "item"}-${idx}`} className="flex items-start gap-2 p-3 rounded-xl border-2 border-border bg-muted/20">
             <div className="flex-1 grid grid-cols-12 gap-2">
               {orderType === "delivery" ? (
                 <div className="col-span-3 flex flex-col gap-1">
@@ -858,7 +858,7 @@ export default function Orders() {
     const items = order.items;
     if (Array.isArray(items) && items.length > 0) {
       return items.map((item: any, i: number) => (
-        <div key={i} className="text-sm">
+        <div key={item.id ?? item.productId ?? `${item.name ?? "item"}-${i}`} className="text-sm">
           <span className="font-medium">{item.name}</span>
           <span className="text-muted-foreground ml-1.5">
             {item.quantity} ta × {formatSum(item.price)}

@@ -116,7 +116,7 @@ export default function SalesScreen() {
               <Text style={[st.th, { flex: 0.7, textAlign: "center" }]}>Turi</Text>
             </View>
             {filtered.map((r: any, i: number) => (
-              <View key={r.id || i} style={st.tr}>
+              <View key={r.id ?? `${r.productName ?? "sale"}-${i}`} style={st.tr}>
                 <Text style={[st.td, { flex: 0.9, fontSize: 10, color: colors.textMuted }]}>
                   {r.soldAt ? new Date(r.soldAt).toLocaleDateString("uz") : "—"}
                 </Text>

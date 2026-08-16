@@ -113,3 +113,21 @@ export async function apiFetchFormData<T = any>(
     clearTimeout(timeout);
   }
 }
+
+// Report client-side errors to the server log (fire-and-forget, never throws).
+export async function logClientError(
+  message: string,
+  context?: Record<string, any>,
+  stack?: string,
+): Promise<void> {
+  try {
+    const token = await getToken();
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    await fetch(`${API_BASE}/client-log`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ message, context: context ?? null, stack: stack ?? null, app: "mobile" }),
+    }).catch(() => {});
+  } catch {}
+}

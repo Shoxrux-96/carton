@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { db, clientsTable } from "@workspace/db";
-import { eq, desc, like, or } from "drizzle-orm";
+import { eq, desc, like, or, and, type SQL } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
+import { paramInt } from "../lib/params.js";
 
 const router = Router();
 
@@ -9,27 +10,28 @@ router.get("/", authMiddleware, async (req, res) => {
   const type = req.query.type as string | undefined;
   const search = req.query.search as string | undefined;
 
-  let query = db.select().from(clientsTable);
+  const conditions: SQL[] = [];
 
   if (type === "lead" || type === "customer") {
-    query = query.where(eq(clientsTable.type, type));
+    conditions.push(eq(clientsTable.type, type));
   }
 
   if (search) {
-    query = query.where(
-      or(
-        like(clientsTable.name, `%${search}%`),
-        like(clientsTable.phone, `%${search}%`),
-      )
+    const searchClause = or(
+      like(clientsTable.name, `%${search}%`),
+      like(clientsTable.phone, `%${search}%`),
     );
+    if (searchClause) conditions.push(searchClause);
   }
 
-  const clients = await query.orderBy(desc(clientsTable.createdAt));
+  const clients = await db.select().from(clientsTable)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(clientsTable.createdAt));
   res.json(clients);
 });
 
 router.get("/:id", authMiddleware, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = paramInt(req.params.id);
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, id));
   if (!client) {
     res.status(404).json({ error: "Topilmadi" });
@@ -59,7 +61,7 @@ router.post("/", authMiddleware, async (req, res) => {
 });
 
 router.put("/:id", authMiddleware, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = paramInt(req.params.id);
   const { name, phone, address, type, source, notes } = req.body;
 
   const updates: Record<string, any> = {};
@@ -75,7 +77,7 @@ router.put("/:id", authMiddleware, async (req, res) => {
 });
 
 router.delete("/:id", authMiddleware, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = paramInt(req.params.id);
   await db.delete(clientsTable).where(eq(clientsTable.id, id));
   res.json({ success: true });
 });

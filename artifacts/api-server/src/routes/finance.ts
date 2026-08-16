@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { db, transactionsTable } from "@workspace/db";
-import { eq, desc, sql, and } from "drizzle-orm";
+import { eq, desc, sql, and, type SQL } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
+import { paramInt } from "../lib/params.js";
 
 const router = Router();
 
@@ -10,19 +11,21 @@ router.get("/", authMiddleware, async (req, res) => {
   const from = req.query.from as string | undefined;
   const to = req.query.to as string | undefined;
 
-  let query = db.select().from(transactionsTable);
+  const conditions: SQL[] = [];
 
   if (type === "income" || type === "expense") {
-    query = query.where(eq(transactionsTable.type, type));
+    conditions.push(eq(transactionsTable.type, type));
   }
   if (from) {
-    query = query.where(sql`${transactionsTable.date} >= ${from}`);
+    conditions.push(sql`${transactionsTable.date} >= ${from}`);
   }
   if (to) {
-    query = query.where(sql`${transactionsTable.date} <= ${to}`);
+    conditions.push(sql`${transactionsTable.date} <= ${to}`);
   }
 
-  const rows = await query.orderBy(desc(transactionsTable.date));
+  const rows = await db.select().from(transactionsTable)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(transactionsTable.date));
   res.json(rows.map(r => ({ ...r, amount: parseFloat(r.amount) })));
 });
 
@@ -43,7 +46,7 @@ router.post("/", authMiddleware, async (req, res) => {
 });
 
 router.delete("/:id", authMiddleware, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = paramInt(req.params.id);
   await db.delete(transactionsTable).where(eq(transactionsTable.id, id));
   res.json({ success: true });
 });

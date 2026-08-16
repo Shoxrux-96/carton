@@ -2,8 +2,8 @@ import { Router } from "express";
 import { db, employeesTable, attendanceTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
-import { extractDescriptor, findBestMatch, analyzeEyeState } from "../lib/face.js";
-import { parseLivenessProof, validateLivenessProof } from "../lib/liveness.js";
+import { extractDescriptor, findBestMatch, detectFaceOnly } from "../lib/face.js";
+import { paramInt } from "../lib/params.js";
 import multer from "multer";
 
 const router = Router();
@@ -11,7 +11,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Register face for an employee
 router.post("/register/:id", authMiddleware, upload.single("face"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = paramInt(req.params.id);
 
   if (!req.file) {
     res.status(400).json({ error: "Rasm talab qilinadi" });
@@ -56,7 +56,7 @@ router.post("/liveness-frame", upload.single("frame"), async (req, res) => {
   }
 
   try {
-    const analysis = await analyzeEyeState(req.file.buffer);
+    const analysis = await detectFaceOnly(req.file.buffer);
     if (!analysis) {
       res.json({ faceDetected: false });
       return;
@@ -76,12 +76,7 @@ router.post("/attendance", upload.single("face"), async (req, res) => {
   }
 
   try {
-    const livenessProof = parseLivenessProof(req.body?.livenessProof);
-    const livenessCheck = validateLivenessProof(livenessProof);
-    if (!livenessCheck.ok) {
-      res.status(400).json({ error: livenessCheck.error });
-      return;
-    }
+    // Liveness check removed — only face appearance matching is required.
 
     // Load office settings
     const fs = await import("fs");
@@ -104,23 +99,29 @@ router.post("/attendance", upload.single("face"), async (req, res) => {
     // Determine status
     let attendanceStatus = "present";
 
-    // Check location if provided
+    // Location is REQUIRED — attendance only accepted inside the office geofence
     const { latitude, longitude } = req.body || {};
-    if (latitude && longitude) {
-      const lat1 = Number(latitude);
-      const lng1 = Number(longitude);
-      const lat2 = settings.lat;
-      const lng2 = settings.lng;
-      // Haversine distance
-      const R = 6371000;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLng = (lng2 - lng1) * Math.PI / 180;
-      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
-      const distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      if (distance > settings.radius) {
-        res.status(400).json({ error: `Siz ishxonadan uzoqdasiz (${Math.round(distance)}m). Ruxsat etilgan: ${settings.radius}m` });
-        return;
-      }
+    if (!latitude || !longitude) {
+      res.status(400).json({ error: "Joylashuv aniqlanmadi. GPS va joylashuv ruxsatini yoqing, so'ng ishxona hududida davomatdan o'ting" });
+      return;
+    }
+    const lat1 = Number(latitude);
+    const lng1 = Number(longitude);
+    if (!Number.isFinite(lat1) || !Number.isFinite(lng1)) {
+      res.status(400).json({ error: "Joylashuv koordinatalari noto'g'ri" });
+      return;
+    }
+    const lat2 = settings.lat;
+    const lng2 = settings.lng;
+    // Haversine distance
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+    const distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    if (distance > settings.radius) {
+      res.status(400).json({ error: `Siz ishxonadan uzoqdasiz (${Math.round(distance)}m). Davomat faqat ishxona atrofida ${settings.radius}m radius ichida qabul qilinadi` });
+      return;
     }
 
     // Get all employees with face descriptors
@@ -147,6 +148,8 @@ router.post("/attendance", upload.single("face"), async (req, res) => {
     }
 
     const match = await findBestMatch(req.file.buffer, knownDescriptors);
+
+    const matchSimilarity = match ? Math.round((1 - (match.distance * match.distance) / 2) * 100) : 0;
 
     if (!match) {
       res.status(404).json({ error: "Yuz tanilmadi. Avval yuz ro'yxatdan o'tkazing" });
@@ -182,7 +185,7 @@ router.post("/attendance", upload.single("face"), async (req, res) => {
       employeeId: match.employeeId,
       date: today,
       status: attendanceStatus,
-      notes: `Face ID (${match.distance.toFixed(3)}) — ${currentTime} | Liveness: ${livenessProof!.blinkCount} blink`,
+      notes: `Face ID (${matchSimilarity}% o'xshashlik) — ${currentTime} | 📍 ${lat1.toFixed(6)}, ${lng1.toFixed(6)}`,
     });
 
     res.json({
@@ -192,8 +195,9 @@ router.post("/attendance", upload.single("face"), async (req, res) => {
       status: attendanceStatus,
       time: currentTime,
       distance: match.distance,
+      similarity: matchSimilarity,
       message: attendanceStatus === "present"
-        ? `${match.name} — davomat belgilandi ✅`
+        ? `${match.name} — davomat belgilandi ✅ (${matchSimilarity}% o'xshashlik)`
         : `${match.name} — kech qoldi ⏰ (${currentTime})`,
     });
   } catch (e: any) {

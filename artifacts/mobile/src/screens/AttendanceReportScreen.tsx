@@ -96,7 +96,7 @@ export default function AttendanceReportScreen() {
           report.length > 0 ? report.map((r: any, i: number) => {
             const statusInfo = r.status === "present" ? { label: "Keldi ✅", bg: "#dcfce7", color: "#16a34a" } : r.status === "absent" ? { label: "Kelmadi ❌", bg: "#fee2e2", color: "#dc2626" } : { label: "Kechikdi ⏰", bg: "#fef3c7", color: "#d97706" };
             return (
-              <View key={r.id || i} style={st.card}>
+              <View key={r.id ?? `${r.employeeName ?? "employee"}-${i}`} style={st.card}>
                 <View style={st.cardRow}>
                   <View style={st.avatar}><Text style={st.avatarT}>{r.employeeName?.charAt(0) || "?"}</Text></View>
                   <View style={{ flex: 1 }}>

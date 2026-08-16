@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, ordersTable, productsTable, clientsTable, salesTable, inventoryTable, transactionsTable } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
+import { paramInt } from "../lib/params.js";
 
 const router = Router();
 
@@ -32,7 +33,7 @@ router.get("/", authMiddleware, async (_req, res) => {
 });
 
 router.get("/:id", authMiddleware, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = paramInt(req.params.id);
   const [order] = await orderWithJoins.where(eq(ordersTable.id, id));
   if (!order) {
     res.status(404).json({ error: "Topilmadi" });
@@ -64,7 +65,7 @@ router.post("/", authMiddleware, async (req, res) => {
 });
 
 router.put("/:id", authMiddleware, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = paramInt(req.params.id);
   const { productId, quantity, totalSum, status, deliveryStatus, notes, orderDate, deliveryDate } = req.body;
 
   // Yetkazilgan buyurtmani o'zgartirib bo'lmaydi
@@ -136,7 +137,7 @@ router.put("/:id", authMiddleware, async (req, res) => {
 });
 
 router.delete("/:id", authMiddleware, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = paramInt(req.params.id);
   await db.delete(ordersTable).where(eq(ordersTable.id, id));
   res.json({ success: true });
 });

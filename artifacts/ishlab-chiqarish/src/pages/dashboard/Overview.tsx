@@ -169,7 +169,7 @@ export default function Overview() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 11 }).map((_, i) => (
-              <Skeleton key={i} className="h-32 rounded-2xl" />
+              <Skeleton key={`overview-skeleton-${i}`} className="h-32 rounded-2xl" />
             ))}
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -327,9 +327,9 @@ export default function Overview() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {lowStockItems.map((item: any) => (
+                  {lowStockItems.map((item: any, index: number) => (
                     <div
-                      key={item.productId || item.id}
+                      key={item.productId ?? item.id ?? `${item.productName ?? "low-stock"}-${index}`}
                       className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
                     >
                       <div className="min-w-0 flex-1">

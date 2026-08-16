@@ -185,7 +185,7 @@ export default function Attendance() {
   const [officeSettings, setOfficeSettings] = useState(() => getLocal("carton_office_settings", {
     lat: 41.311081,
     lng: 69.240562,
-    radius: 100,
+    radius: 25,
     startTime: "09:00",
     endTime: "18:00",
     lateMinutes: 30,
@@ -765,7 +765,7 @@ export default function Attendance() {
                         </thead>
                         <tbody>
                           {yearData.map((r: any, idx: number) => (
-                            <tr key={r.employeeId || idx} className="border-b border-border/50">
+                            <tr key={r.employeeId ?? `${r.employeeName ?? "employee"}-${idx}`} className="border-b border-border/50">
                               <td className="px-4 py-3 font-medium">{r.employeeName}</td>
                               <td className="px-4 py-3 text-center font-mono">{r.totalWorkingDays}</td>
                               <td className="px-4 py-3 text-center font-mono text-green-600 font-semibold">{r.present}</td>

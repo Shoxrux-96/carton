@@ -5,8 +5,9 @@ export default async function customFetch(
   options: RequestInit = {}
 ): Promise<Response> {
   const token = getToken();
+  const hasFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(hasFormData ? {} : { "Content-Type": "application/json" }),
     ...(options.headers as Record<string, string>),
   };
   if (token) {

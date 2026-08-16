@@ -394,7 +394,7 @@ export default function Sales() {
             </div>
 
             {items.map((item, idx) => (
-              <div key={item.id || item.productId || idx} className="flex items-start gap-2 p-3 rounded-xl border-2 border-border bg-muted/20">
+              <div key={((item as any)?.id ?? (item as any)?.productId ?? `${(item as any)?.name ?? "item"}-${idx}`)} className="flex items-start gap-2 p-3 rounded-xl border-2 border-border bg-muted/20">
                 <div className="flex-1 grid grid-cols-12 gap-2">
                   <div className="col-span-5">
                     <select

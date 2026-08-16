@@ -23,7 +23,7 @@ export default function MobileAttendance() {
   const officeSettings = {
     lat: 41.311081,
     lng: 69.240562,
-    radius: 100,
+    radius: 25,
     startTime: "09:00",
     endTime: "18:00",
     lateMinutes: 30,

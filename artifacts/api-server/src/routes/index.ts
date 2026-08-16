@@ -16,6 +16,7 @@ import faceRouter from "./face.js";
 import publicRouter from "./public.js";
 import socialLinksRouter from "./social-links.js";
 import settingsRouter from "./settings.js";
+import clientLogRouter from "./client-log.js";
 
 const router: IRouter = Router();
 
@@ -38,5 +39,6 @@ router.use("/face", faceRouter);
 router.use("/public", publicRouter);
 router.use("/social-links", socialLinksRouter);
 router.use("/settings", settingsRouter);
+router.use("/client-log", clientLogRouter);
 
 export default router;

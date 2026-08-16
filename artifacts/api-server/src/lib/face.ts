@@ -71,6 +71,26 @@ export async function analyzeEyeState(imageBuffer: Buffer): Promise<EyeAnalysis 
   };
 }
 
+export async function detectFaceOnly(imageBuffer: Buffer): Promise<EyeAnalysis | null> {
+  await initFaceApi();
+
+  const img = await loadImage(imageBuffer);
+  const detection = await faceapi.detectSingleFace(img);
+  if (!detection) return null;
+
+  const box = detection.box;
+
+  return {
+    faceDetected: true,
+    leftEyeOpen: 0,
+    rightEyeOpen: 0,
+    boundsX: box.x,
+    boundsY: box.y,
+    boundsW: box.width,
+    boundsH: box.height,
+  };
+}
+
 export async function extractDescriptor(imageBuffer: Buffer): Promise<number[] | null> {
   await initFaceApi();
 
@@ -84,6 +104,8 @@ export async function extractDescriptor(imageBuffer: Buffer): Promise<number[] |
 
   return Array.from(detection.descriptor);
 }
+
+const FACE_MATCH_THRESHOLD = 0.7;
 
 export async function findBestMatch(
   imageBuffer: Buffer,
@@ -104,17 +126,17 @@ export async function findBestMatch(
     const d = kd.descriptor instanceof Float32Array
       ? kd.descriptor
       : Float32Array.from(kd.descriptor);
-    return new faceapi.LabeledFaceDescriptors(kd.name, [d]);
+    return new faceapi.LabeledFaceDescriptors(String(kd.employeeId), [d]);
   });
 
   if (labeledDescriptors.length === 0) return null;
 
-  const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+  const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, FACE_MATCH_THRESHOLD);
   const bestMatch = faceMatcher.findBestMatch(queryDescriptor);
 
   if (bestMatch.label === "unknown") return null;
 
-  const matched = knownDescriptors.find((kd) => kd.name === bestMatch.label);
+  const matched = knownDescriptors.find((kd) => String(kd.employeeId) === bestMatch.label);
   if (!matched) return null;
 
   return {

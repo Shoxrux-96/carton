@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { ActivityIndicator, View, StatusBar, Text } from "react-native";
-import { getToken, getUserRole } from "./src/api";
+import { ActivityIndicator, View, StatusBar, Text, ErrorUtils } from "react-native";
+import { getToken, getUserRole, logClientError } from "./src/api";
 import { colors } from "./src/theme";
 import { I18nProvider } from "./src/i18n";
 
@@ -241,6 +241,25 @@ export default function App() {
       }
       setIsLoggedIn(!!token);
     })();
+  }, []);
+
+  // Forward any uncaught JS error to the server log so it can be debugged.
+  useEffect(() => {
+    try {
+      const base = ErrorUtils && typeof ErrorUtils.getGlobalHandler === "function"
+        ? ErrorUtils.getGlobalHandler()
+        : null;
+      ErrorUtils.setGlobalHandler((error: any, isFatal?: boolean) => {
+        try {
+          logClientError(
+            isFatal ? "mobile:uncaught-fatal" : "mobile:uncaught",
+            {},
+            error?.stack || (error instanceof Error ? error.message : String(error)),
+          );
+        } catch {}
+        if (base) base(error, isFatal);
+      });
+    } catch {}
   }, []);
 
   const handleLogin = async () => {

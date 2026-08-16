@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, attendanceTable, employeesTable } from "@workspace/db";
 import { eq, sql, and } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
+import { paramInt } from "../lib/params.js";
 
 const router = Router();
 
@@ -59,7 +60,7 @@ router.post("/", authMiddleware, async (req, res) => {
 });
 
 router.put("/:id", authMiddleware, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = paramInt(req.params.id);
   const { status, notes } = req.body;
   const updates: Record<string, any> = {};
   if (status !== undefined) updates.status = status;

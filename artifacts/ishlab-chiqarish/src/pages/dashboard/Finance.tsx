@@ -513,7 +513,7 @@ export default function Finance() {
                   <div className="grid grid-cols-3 gap-2">
                     {["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"].map((m, i) => (
                       <button
-                        key={i}
+                        key={`finance-month-${m}-${i}`}
                         onClick={() => { setSelectedMonth(i); setShowDatePicker(false); }}
                         className={`py-2.5 rounded-xl text-sm font-medium transition-all ${
                           selectedMonth === i

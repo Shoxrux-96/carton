@@ -32,7 +32,7 @@ router.post("/", authMiddleware, async (req, res) => {
 });
 
 router.delete("/:id", authMiddleware, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] ?? "" : req.params.id);
   await db.delete(warehousesTable).where(eq(warehousesTable.id, id));
   res.json({ success: true, message: "Ombor o'chirildi" });
 });
