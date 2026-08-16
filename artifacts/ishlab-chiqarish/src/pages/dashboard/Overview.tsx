@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useLang } from "@/lib/i18n";
 import { DashboardLayout, PageHeader } from "@/components/layout/DashboardLayout";
 import { useAuthHeaders } from "@/hooks/use-auth";
@@ -21,10 +21,12 @@ import {
   Clock, ArrowRight, DollarSign
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { format, subMonths } from "date-fns";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Line, LineChart } from "recharts";
+import { format, subMonths, subDays, eachDayOfInterval, subYears } from "date-fns";
 
 const MONTHS_UZ = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"];
+
+type FinPeriod = "daily" | "monthly" | "yearly";
 
 export default function Overview() {
   const { t } = useLang();
@@ -127,8 +129,31 @@ export default function Overview() {
     });
   }, [salesData, productionTx, lastSixMonths]);
 
+  const [finPeriod, setFinPeriod] = useState<FinPeriod>("monthly");
+
   const financeChartData = useMemo(() => {
     const tx = Array.isArray(financeData) ? financeData : [];
+    const sumIncome = (rows: any[]) => rows.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + (t.amount || 0), 0);
+    const sumExpense = (rows: any[]) => rows.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + (t.amount || 0), 0);
+
+    if (finPeriod === "daily") {
+      const days = eachDayOfInterval({ start: subDays(new Date(), 29), end: new Date() });
+      return days.map((day) => {
+        const ds = format(day, "yyyy-MM-dd");
+        const dayTx = tx.filter((t: any) => t.date?.startsWith(ds));
+        return { name: format(day, "dd.MM"), kirim: sumIncome(dayTx), chiqim: sumExpense(dayTx) };
+      });
+    }
+
+    if (finPeriod === "yearly") {
+      const now = new Date();
+      const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i).reverse();
+      return years.map((y) => {
+        const yTx = tx.filter((t: any) => new Date(t.date).getFullYear() === y);
+        return { name: String(y), kirim: sumIncome(yTx), chiqim: sumExpense(yTx) };
+      });
+    }
+
     return lastSixMonths.map(({ y, m, ym }) => {
       const monthTx = tx.filter((t: any) => {
         const d = new Date(t.date);
@@ -136,15 +161,11 @@ export default function Overview() {
       });
       return {
         name: `${MONTHS_UZ[m]} ${y}`,
-        kirim: monthTx
-          .filter((t: any) => t.type === "income")
-          .reduce((s: number, t: any) => s + (t.amount || 0), 0),
-        chiqim: monthTx
-          .filter((t: any) => t.type === "expense")
-          .reduce((s: number, t: any) => s + (t.amount || 0), 0),
+        kirim: sumIncome(monthTx),
+        chiqim: sumExpense(monthTx),
       };
     });
-  }, [financeData, lastSixMonths]);
+  }, [financeData, lastSixMonths, finPeriod]);
 
   const chartConfig1: ChartConfig = {
     sotuv: { label: t('sale_label'), color: "#10b981" },
@@ -257,14 +278,30 @@ export default function Overview() {
               </ChartContainer>
             </Card>
 
-            {/* Finance bar chart */}
+            {/* Finance line chart */}
             <Card className="p-6 border-0 shadow-lg">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
                 <div>
                   <h3 className="text-lg font-bold">{t('finance_indicators')}</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">{t('finance_indicators_desc')}</p>
                 </div>
                 <div className="flex items-center gap-3">
+                  <div className="flex rounded-lg bg-muted/60 p-0.5 text-xs font-medium">
+                    {(["daily", "monthly", "yearly"] as FinPeriod[]).map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setFinPeriod(p)}
+                        className={`rounded-md px-2.5 py-1 transition-colors ${
+                          finPeriod === p
+                            ? "bg-white text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {p === "daily" ? "Kunlik" : p === "monthly" ? "Oylik" : "Yillik"}
+                      </button>
+                    ))}
+                  </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
                     <span className="text-xs text-muted-foreground">{t('income')}</span>
@@ -276,14 +313,14 @@ export default function Overview() {
                 </div>
               </div>
               <ChartContainer config={chartConfig2} className="aspect-[2/1] w-full">
-                <BarChart data={financeChartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                <LineChart data={financeChartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" interval={Math.ceil(financeChartData.length / 6) - 1} />
                   <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="kirim" fill="#22c55e" radius={[4, 4, 0, 0]} maxBarSize={32} />
-                  <Bar dataKey="chiqim" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={32} />
-                </BarChart>
+                  <Line type="monotone" dataKey="kirim" stroke="#22c55e" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="chiqim" stroke="#ef4444" strokeWidth={2} dot={false} />
+                </LineChart>
               </ChartContainer>
             </Card>
           </div>
