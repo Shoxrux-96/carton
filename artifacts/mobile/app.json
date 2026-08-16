@@ -24,11 +24,18 @@
       },
       "package": "uz.shovotcarton.erp",
       "permissions": [
-        "CAMERA",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "USE_BIOMETRIC"
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.RECORD_AUDIO"
       ]
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7b33629b-c2dc-4dae-9644-3a2da9514ff7"
+      }
+    },
+    "owner": "shoxrux007"
   }
 }
