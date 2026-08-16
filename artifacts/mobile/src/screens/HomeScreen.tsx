@@ -188,7 +188,7 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
         <View style={styles.menuGrid}>
           {menuItems.map((m, i) => (
             <TouchableOpacity
-              key={i}
+              key={m.title || i}
               style={styles.menuItem}
               onPress={() => {
                 if (m.tab) {
