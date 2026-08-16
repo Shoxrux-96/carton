@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /apk/
+
+Sitemap: https://shovotcarton.uz/sitemap.xml
