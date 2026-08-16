@@ -6,6 +6,14 @@ packages:
 
 autoInstallPeers: false
 
+allowBuilds:
+  '@tensorflow/tfjs-node': true
+  canvas: true
+  core-js: true
+  esbuild: true
+
+verifyDepsBeforeRun: false
+
 catalog:
   '@replit/vite-plugin-cartographer': ^0.5.0
   '@replit/vite-plugin-dev-banner': ^0.1.1
@@ -36,6 +44,9 @@ onlyBuiltDependencies:
   - esbuild
   - msw
   - unrs-resolver
+  - canvas
+  - '@tensorflow/tfjs-node'
+  - core-js
 
 overrides:
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
