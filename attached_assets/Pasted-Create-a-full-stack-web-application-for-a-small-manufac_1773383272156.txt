@@ -1,0 +1,167 @@
+Create a full-stack web application for a **small manufacturing workshop inventory system**.
+
+GENERAL IDEA
+The system has two main parts:
+
+1. Public Landing Page
+2. Owner Dashboard (private)
+
+Only the **owner** can log in and access the dashboard.
+
+TECH STACK
+Backend: FastAPI (Python)
+Database: PostgreSQL
+ORM: SQLAlchemy
+Frontend: React + TailwindCSS
+Auth: JWT authentication
+
+PROJECT STRUCTURE
+Create a clean project structure with backend and frontend folders.
+
+FEATURES
+
+1. AUTHENTICATION
+
+* Only one role: OWNER
+* Login page
+* JWT authentication
+* Protect dashboard routes
+
+2. PRODUCTS MANAGEMENT
+   Owner can create products with these fields:
+
+* name
+* description
+* price
+* created_at
+
+3. WAREHOUSE MANAGEMENT
+   Owner can create warehouses.
+
+Warehouse fields:
+
+* id
+* name
+* created_at
+
+4. INVENTORY SYSTEM
+   Each warehouse stores product quantities.
+
+Inventory fields:
+
+* warehouse_id
+* product_id
+* quantity
+* updated_at
+
+5. PRODUCTION INPUT
+   Owner can input **daily produced products**.
+
+Production record fields:
+
+* product_id
+* warehouse_id
+* quantity
+* production_date
+
+When production is added:
+inventory.quantity += quantity
+
+6. SALES SYSTEM
+   Owner can register product sales.
+
+Sale fields:
+
+* product_id
+* warehouse_id
+* quantity
+* sold_at
+
+When a sale is registered:
+inventory.quantity -= quantity
+
+Prevent selling if inventory is not enough.
+
+7. DASHBOARD UI
+
+Dashboard pages:
+
+* Dashboard overview
+
+  * total products
+  * total warehouses
+  * inventory summary
+
+* Products
+
+  * create product
+  * list products
+
+* Warehouses
+
+  * create warehouse
+  * list warehouses
+
+* Production
+
+  * add daily production
+
+* Sales
+
+  * register sale
+
+* Inventory
+
+  * show current stock per warehouse
+
+Use a sidebar layout.
+
+8. PUBLIC LANDING PAGE
+
+Landing page sections:
+
+Navbar:
+
+* Logo
+* Login button
+
+Hero section:
+
+* Title
+* Description about the manufacturing company
+
+Products catalog:
+
+* Show list of products with name, description, price
+
+Contact section:
+
+* phone
+* email
+* address
+
+Footer:
+
+* company info
+* copyright
+
+9. API ENDPOINTS
+
+/auth/login
+/products
+/warehouses
+/inventory
+/production
+/sales
+
+10. ADDITIONAL REQUIREMENTS
+
+* Clean modular architecture
+* Use Pydantic schemas
+* Use service layer for business logic
+* Inventory must update automatically when production or sales happen
+* Include database models and migrations
+* Provide example API requests
+* Provide React dashboard UI pages
+
+Generate full project code with clear folder structure and comments.

@@ -1,0 +1,19 @@
+packages:
+  "framer-motion": "Smooth animations, page transitions, and interactive UI elements"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility function to efficiently merge Tailwind CSS classes"
+  "date-fns": "For formatting and displaying dates in Uzbek locale"
+  "react-hook-form": "Form state management"
+  "@hookform/resolvers": "Zod resolver for react-hook-form"
+  "zod": "Schema validation for forms"
+  "recharts": "For rendering beautiful dashboard statistics charts"
+
+images:
+  - path: "artifacts/ishlab-chiqarish/public/images/hero-bg.png"
+    description: "Abstract, elegant hero background with soft blue and teal gradient meshes, light leaks, clean and modern corporate style, highly aesthetic"
+    aspect_ratio: "16:9"
+
+notes:
+  - Application uses generated TanStack Query hooks from @workspace/api-client-react
+  - Authentication expects JWT token in localStorage and attaches it via Authorization Bearer header
+  - Using wouter for routing
