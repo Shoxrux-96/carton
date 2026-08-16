@@ -245,7 +245,7 @@ export default function OrdersScreen({ navigation }: any) {
             {/* Items */}
             {Array.isArray(order.items) && order.items.length > 0 ? (
               order.items.map((item: any, i: number) => (
-                <View key={i} style={styles.itemRow}>
+                <View key={item.id || item.productId || i} style={styles.itemRow}>
                   <Text style={styles.itemName}>{item.name}</Text>
                   <Text style={styles.itemQty}>{item.quantity} ta × {formatSum(item.price)}</Text>
                 </View>
