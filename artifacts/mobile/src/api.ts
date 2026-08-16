@@ -1,20 +1,25 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 
-// Try to detect the dev server host from Expo manifest (works for LAN mode and physical devices).
-// Fallback to Android emulator loopback `10.0.2.2` when manifest info is not available.
+// Standalone (APK) builds pin the backend to EXPO_PUBLIC_API_URL.
+// In dev (Expo Go / Metro) we fall back to the packager host so LAN and
+// physical devices work without extra config.
+const envBase = process.env.EXPO_PUBLIC_API_URL;
+
 let host = "10.0.2.2";
 try {
-  const manifest: any = (Constants as any).manifest || (Constants as any).expoConfig || {};
-  const debuggerHost = manifest.debuggerHost || manifest.hostUri || manifest.packagerOpts?.host || null;
-  if (debuggerHost) {
-    host = String(debuggerHost).split(":" )[0];
+  if (!envBase) {
+    const manifest: any = (Constants as any).manifest || (Constants as any).expoConfig || {};
+    const debuggerHost = manifest.debuggerHost || manifest.hostUri || manifest.packagerOpts?.host || null;
+    if (debuggerHost) {
+      host = String(debuggerHost).split(":" )[0];
+    }
   }
 } catch (e) {
   // ignore and use default
 }
 
-const API_BASE = `http://${host}:3003/api`;
+const API_BASE = envBase || `http://${host}:3003/api`;
 
 export { API_BASE };
 
