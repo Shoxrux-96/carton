@@ -62,6 +62,10 @@ export default defineConfig({
     port,
     host: "0.0.0.0",
     allowedHosts: true,
+    // Disable the HMR overlay to avoid blocking the UI when runtime overlay errors occur.
+    hmr: {
+      overlay: false,
+    },
     proxy: {
       "/api": {
         target: `http://127.0.0.1:${process.env.API_PORT || 3003}`,
