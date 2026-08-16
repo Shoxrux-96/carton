@@ -57,6 +57,49 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
   const [salesChart, setSalesChart] = React.useState<any>(null);
   const [financeChart, setFinanceChart] = React.useState<any>(null);
   const [faceImg, setFaceImg] = React.useState<string | null>(null);
+  const [finPeriod, setFinPeriod] = React.useState<"daily" | "monthly" | "yearly">("monthly");
+  const financeRaw = React.useRef<any[]>([]);
+
+  const monthNames = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"];
+  const money = (v: number) => Math.round(v / 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  const applyFinancePeriod = (p: "daily" | "monthly" | "yearly") => {
+    setFinPeriod(p);
+    const finArr = financeRaw.current;
+    const labels: string[] = [];
+    const income: number[] = [];
+    const expense: number[] = [];
+    const now = new Date();
+    const points: Date[] = [];
+
+    if (p === "daily") {
+      for (let i = 29; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); points.push(d); }
+    } else if (p === "yearly") {
+      for (let i = 4; i >= 0; i--) points.push(new Date(now.getFullYear() - i, 0, 1));
+    } else {
+      for (let i = 5; i >= 0; i--) points.push(new Date(now.getFullYear(), now.getMonth() - i, 1));
+    }
+
+    points.forEach((d) => {
+      let key: string;
+      if (p === "daily") {
+        key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        labels.push(`${pad(d.getDate())}.${pad(d.getMonth() + 1)}`);
+      } else if (p === "yearly") {
+        key = String(d.getFullYear());
+        labels.push(String(d.getFullYear()));
+      } else {
+        key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+        labels.push(`${monthNames[d.getMonth()]}-${String(d.getFullYear()).slice(2)}`);
+      }
+      const monthTx = finArr.filter((t: any) => String(t.date).startsWith(key));
+      income.push(money(monthTx.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + (t.amount || 0), 0)));
+      expense.push(money(monthTx.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + (t.amount || 0), 0)));
+    });
+
+    setFinanceChart({ labels, income, expense });
+  };
 
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
@@ -83,39 +126,25 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
         apiFetch("/production/transactions").catch(() => []),
         apiFetch("/finance").catch(() => []),
       ]);
+      const salesArr = Array.isArray(salesData) ? salesData : [];
+      const finArr = Array.isArray(financeData) ? financeData : [];
+      financeRaw.current = finArr;
 
-      // Sales chart — last 7 days production
-      const last7 = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(); d.setDate(d.getDate() - (6 - i));
-        return d.toISOString().split("T")[0];
-      });
-      const salesByDay = last7.map(day => {
-        const dayData = (Array.isArray(salesData) ? salesData : [])
-          .filter((t: any) => t.date?.startsWith(day) && t.type === "kirim");
-        return dayData.reduce((s: number, t: any) => s + (t.totalSum || 0), 0) / 1000;
-      });
-      setSalesChart({
-        labels: last7.map(d => d.slice(8, 10) + "." + d.slice(5, 7)),
-        datasets: [{ data: salesByDay.map(v => v || 0) }],
-      });
-
-      // Finance chart — monthly income vs expense
-      const months = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn"];
-      const currentMonth = new Date().getMonth();
-      const finLabels: string[] = [];
-      const incomeData: number[] = [];
-      const expenseData: number[] = [];
+      // Sales chart — last 6 months (monthly production)
+      const salesLabels: string[] = [];
+      const salesSeries: number[] = [];
+      const now = new Date();
       for (let i = 5; i >= 0; i--) {
-        const mIdx = currentMonth - i;
-        const m = mIdx >= 0 ? mIdx : mIdx + 12;
-        finLabels.push(months[m] || "?");
-        const monthStr = `${new Date().getFullYear()}-${String(m + 1).padStart(2, "0")}`;
-        const monthTx = (Array.isArray(financeData) ? financeData : [])
-          .filter((t: any) => t.date?.startsWith(monthStr));
-        incomeData.push(monthTx.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + (t.amount || 0), 0) / 1000);
-        expenseData.push(monthTx.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + (t.amount || 0), 0) / 1000);
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const ym = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+        salesLabels.push(`${monthNames[d.getMonth()]}-${String(d.getFullYear()).slice(2)}`);
+        const sum = salesArr.filter((t: any) => t.date?.startsWith(ym)).reduce((s: number, t: any) => s + (t.totalSum || 0), 0);
+        salesSeries.push(money(sum));
       }
-      setFinanceChart({ labels: finLabels, income: incomeData, expense: expenseData });
+      setSalesChart({ labels: salesLabels, datasets: [{ data: salesSeries.map(v => v || 0) }] });
+
+      // Finance chart — income vs expense per selected period
+      applyFinancePeriod(finPeriod);
     } catch {}
   };
 
@@ -126,7 +155,7 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
       // Auto-refresh every 15s
       const interval = setInterval(load, 15000);
       return () => clearInterval(interval);
-    }, [])
+    }, [finPeriod])
   );
 
   const onRefresh = async () => {
@@ -248,7 +277,7 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
           {salesChart ? (
             <View style={styles.chartCard}>
               <Text style={styles.chartTitle}>📈 Ishlab chiqarish trendi (ming so'm)</Text>
-              <Text style={styles.chartSubtitle}>Oxirgi 7 kun</Text>
+              <Text style={styles.chartSubtitle}>Oxirgi 6 oy</Text>
               <LineChart
                 data={salesChart}
                 width={chartWidth}
@@ -277,16 +306,34 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
           {financeChart ? (
             <View style={styles.chartCard}>
               <Text style={styles.chartTitle}>💰 Moliya (ming so'm)</Text>
-              <Text style={styles.chartSubtitle}>Kirim vs Chiqim (6 oy)</Text>
+              <Text style={styles.chartSubtitle}>Kirim vs Chiqim</Text>
+              <View style={styles.periodRow}>
+                {([["daily", "Kunlik"], ["monthly", "Oylik"], ["yearly", "Yillik"]] as const).map(([key, label]) => (
+                  <TouchableOpacity
+                    key={key}
+                    style={[styles.periodBtn, finPeriod === key && styles.periodBtnActive]}
+                    onPress={() => applyFinancePeriod(key)}
+                  >
+                    <Text style={[styles.periodBtnText, finPeriod === key && styles.periodBtnTextActive]}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={styles.legendRow}>
+                <View style={[styles.legendDot, { backgroundColor: "#22c55e" }]} />
+                <Text style={styles.legendText}>Kirim</Text>
+                <View style={[styles.legendDot, { backgroundColor: "#ef4444" }]} />
+                <Text style={styles.legendText}>Chiqim</Text>
+              </View>
               <BarChart
                 data={{
                   labels: financeChart.labels,
                   datasets: [
-                    { data: financeChart.income.map((v: number) => v || 0) },
+                    { data: financeChart.income.map((v: number) => v || 0), color: (o: number = 1) => `rgba(34, 197, 94, ${o})` },
+                    { data: financeChart.expense.map((v: number) => v || 0), color: (o: number = 1) => `rgba(239, 68, 68, ${o})` },
                   ],
                 }}
                 width={chartWidth}
-                height={180}
+                height={190}
                 yAxisLabel=""
                 yAxisSuffix=""
                 chartConfig={{
@@ -297,7 +344,7 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
                   color: (opacity = 1) => `rgba(34, 197, 94, ${opacity})`,
                   labelColor: () => colors.textMuted,
                   propsForBackgroundLines: { stroke: "#f5f5f4" },
-                  barPercentage: 0.6,
+                  barPercentage: 0.5,
                 }}
                 style={{ borderRadius: 12, marginTop: 8 }}
               />
@@ -374,6 +421,14 @@ const styles = StyleSheet.create({
   chartCard: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: spacing.lg, marginBottom: spacing.md, ...shadows.sm },
   chartTitle: { fontSize: 14, fontWeight: "700", color: colors.text },
   chartSubtitle: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
+  periodRow: { flexDirection: "row", marginTop: 10, backgroundColor: "#f5f5f4", borderRadius: 8, padding: 3, alignSelf: "flex-start" },
+  periodBtn: { paddingHorizontal: 14, paddingVertical: 5, borderRadius: 6 },
+  periodBtnActive: { backgroundColor: "#fff" },
+  periodBtnText: { fontSize: 12, color: colors.textMuted, fontWeight: "600" },
+  periodBtnTextActive: { color: colors.text },
+  legendRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
+  legendDot: { width: 10, height: 10, borderRadius: 5, marginRight: 4 },
+  legendText: { fontSize: 12, color: colors.textMuted, marginRight: 14 },
   sectionTitle: { fontSize: 16, fontWeight: "700", color: colors.text, marginBottom: spacing.lg },
   menuGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   menuItem: {
