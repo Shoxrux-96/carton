@@ -240,32 +240,41 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
         )}
       </Animated.View>
 
-      {/* Charts — admin */}
-      {isAdminRole && salesChart && (
+      {/* Charts — available for all users (fallback message if no data) */}
+      {(
+        salesChart || financeChart
+      ) ? (
         <View style={styles.chartSection}>
-          <View style={styles.chartCard}>
-            <Text style={styles.chartTitle}>📈 Ishlab chiqarish trendi (ming so'm)</Text>
-            <Text style={styles.chartSubtitle}>Oxirgi 7 kun</Text>
-            <LineChart
-              data={salesChart}
-              width={chartWidth}
-              height={180}
-              chartConfig={{
-                backgroundColor: "#fff",
-                backgroundGradientFrom: "#fff",
-                backgroundGradientTo: "#fff",
-                decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(249, 115, 22, ${opacity})`,
-                labelColor: () => colors.textMuted,
-                propsForDots: { r: "4", strokeWidth: "2", stroke: "#f97316" },
-                propsForBackgroundLines: { stroke: "#f5f5f4" },
-              }}
-              bezier
-              style={{ borderRadius: 12, marginTop: 8 }}
-            />
-          </View>
+          {salesChart ? (
+            <View style={styles.chartCard}>
+              <Text style={styles.chartTitle}>📈 Ishlab chiqarish trendi (ming so'm)</Text>
+              <Text style={styles.chartSubtitle}>Oxirgi 7 kun</Text>
+              <LineChart
+                data={salesChart}
+                width={chartWidth}
+                height={180}
+                chartConfig={{
+                  backgroundColor: "#fff",
+                  backgroundGradientFrom: "#fff",
+                  backgroundGradientTo: "#fff",
+                  decimalPlaces: 0,
+                  color: (opacity = 1) => `rgba(249, 115, 22, ${opacity})`,
+                  labelColor: () => colors.textMuted,
+                  propsForDots: { r: "4", strokeWidth: "2", stroke: "#f97316" },
+                  propsForBackgroundLines: { stroke: "#f5f5f4" },
+                }}
+                bezier
+                style={{ borderRadius: 12, marginTop: 8 }}
+              />
+            </View>
+          ) : (
+            <View style={styles.chartCard}>
+              <Text style={styles.chartTitle}>📈 Ishlab chiqarish trendi</Text>
+              <Text style={styles.chartSubtitle}>Ma'lumotlar mavjud emas</Text>
+            </View>
+          )}
 
-          {financeChart && (
+          {financeChart ? (
             <View style={styles.chartCard}>
               <Text style={styles.chartTitle}>💰 Moliya (ming so'm)</Text>
               <Text style={styles.chartSubtitle}>Kirim vs Chiqim (6 oy)</Text>
@@ -293,7 +302,19 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
                 style={{ borderRadius: 12, marginTop: 8 }}
               />
             </View>
+          ) : (
+            <View style={styles.chartCard}>
+              <Text style={styles.chartTitle}>💰 Moliya</Text>
+              <Text style={styles.chartSubtitle}>Ma'lumotlar mavjud emas</Text>
+            </View>
           )}
+        </View>
+      ) : (
+        <View style={styles.chartSection}>
+          <View style={styles.chartCard}>
+            <Text style={styles.chartTitle}>Ko'rsatkichlar</Text>
+            <Text style={styles.chartSubtitle}>Hech qanday diagramma ma'lumotlari mavjud emas</Text>
+          </View>
         </View>
       )}
 
