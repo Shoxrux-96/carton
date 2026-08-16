@@ -1,6 +1,20 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 
-const API_BASE = "http://10.0.2.2:3003/api";
+// Try to detect the dev server host from Expo manifest (works for LAN mode and physical devices).
+// Fallback to Android emulator loopback `10.0.2.2` when manifest info is not available.
+let host = "10.0.2.2";
+try {
+  const manifest: any = (Constants as any).manifest || (Constants as any).expoConfig || {};
+  const debuggerHost = manifest.debuggerHost || manifest.hostUri || manifest.packagerOpts?.host || null;
+  if (debuggerHost) {
+    host = String(debuggerHost).split(":" )[0];
+  }
+} catch (e) {
+  // ignore and use default
+}
+
+const API_BASE = `http://${host}:3003/api`;
 
 export { API_BASE };
 
