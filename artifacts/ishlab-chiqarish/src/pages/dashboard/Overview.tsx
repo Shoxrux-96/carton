@@ -22,7 +22,9 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
+import { format, subMonths } from "date-fns";
+
+const MONTHS_UZ = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"];
 
 export default function Overview() {
   const { t } = useLang();
@@ -92,40 +94,48 @@ export default function Overview() {
       .slice(0, 5);
   }, [ordersData]);
 
+  const lastSixMonths = useMemo(() => {
+    const now = new Date();
+    const points: { y: number; m: number; ym: string }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = subMonths(new Date(now.getFullYear(), now.getMonth(), 1), i);
+      points.push({
+        y: d.getFullYear(),
+        m: d.getMonth(),
+        ym: format(d, "yyyy-MM"),
+      });
+    }
+    return points;
+  }, []);
+
   const saleChartData = useMemo(() => {
-    const days = eachDayOfInterval({
-      start: subDays(new Date(), 6),
-      end: new Date(),
-    });
     const sales = Array.isArray(salesData) ? salesData : [];
     const production = Array.isArray(productionTx) ? productionTx : [];
 
-    return days.map((day) => {
-      const dayStr = format(day, "yyyy-MM-dd");
-      const daySales = sales
-        .filter((s: any) => s.soldAt?.startsWith(dayStr))
+    return lastSixMonths.map(({ y, m, ym }) => {
+      const monthSales = sales
+        .filter((s: any) => s.soldAt?.startsWith(ym))
         .reduce((sum: number, s: any) => sum + (s.totalSum || 0), 0);
-      const dayProd = production
-        .filter((p: any) => p.date?.startsWith(dayStr))
+      const monthProd = production
+        .filter((p: any) => p.date?.startsWith(ym))
         .reduce((sum: number, p: any) => sum + (p.totalSum || 0), 0);
       return {
-        date: format(day, "dd.MM"),
-        sotuv: Math.round(daySales / 1000),
-        ishlab_chiqarish: Math.round(dayProd / 1000),
+        date: `${MONTHS_UZ[m]} ${y}`,
+        sotuv: Math.round(monthSales / 1000),
+        ishlab_chiqarish: Math.round(monthProd / 1000),
       };
     });
-  }, [salesData, productionTx]);
+  }, [salesData, productionTx, lastSixMonths]);
 
   const financeChartData = useMemo(() => {
-    const months = ["Yan", "Fev", "Mar", "Apr", "May", "Iyun", "Iyul", "Avg", "Sen", "Okt", "Noy", "Dek"];
     const tx = Array.isArray(financeData) ? financeData : [];
-    const monthlyData = months.map((name, idx) => {
+    return lastSixMonths.map(({ y, m, ym }) => {
       const monthTx = tx.filter((t: any) => {
         const d = new Date(t.date);
-        return d.getMonth() === idx;
+        return d.getFullYear() === y && d.getMonth() === m;
       });
       return {
-        name,
+        name: `${MONTHS_UZ[m]} ${y}`,
         kirim: monthTx
           .filter((t: any) => t.type === "income")
           .reduce((s: number, t: any) => s + (t.amount || 0), 0),
@@ -134,8 +144,7 @@ export default function Overview() {
           .reduce((s: number, t: any) => s + (t.amount || 0), 0),
       };
     });
-    return monthlyData;
-  }, [financeData]);
+  }, [financeData, lastSixMonths]);
 
   const chartConfig1: ChartConfig = {
     sotuv: { label: t('sale_label'), color: "#10b981" },
