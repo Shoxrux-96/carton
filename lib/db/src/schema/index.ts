@@ -86,15 +86,20 @@ export type Client = typeof clientsTable.$inferSelect;
 
 export const ordersTable = pgTable("orders", {
   id: serial("id").primaryKey(),
-  clientId: integer("client_id").notNull().references(() => clientsTable.id),
-  productId: integer("product_id").notNull().references(() => productsTable.id),
-  quantity: integer("quantity").notNull(),
+  clientId: integer("client_id").references(() => clientsTable.id),
+  productId: integer("product_id").references(() => productsTable.id),
+  quantity: integer("quantity").notNull().default(0),
   totalSum: numeric("total_sum", { precision: 14, scale: 2 }).notNull().default("0"),
   status: text("status").notNull().default("pending"),
   deliveryStatus: text("delivery_status").notNull().default("pending"),
   notes: text("notes"),
   orderDate: timestamp("order_date").notNull().defaultNow(),
   deliveryDate: timestamp("delivery_date"),
+  orderType: text("order_type"),
+  orderCode: text("order_code"),
+  supplier: text("supplier"),
+  materialName: text("material_name"),
+  items: text("items"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -6,71 +6,93 @@ import { paramInt } from "../lib/params.js";
 
 const router = Router();
 
-const orderWithJoins = db
-  .select({
-    id: ordersTable.id,
-    clientId: ordersTable.clientId,
-    clientName: clientsTable.name,
-    clientPhone: clientsTable.phone,
-    productId: ordersTable.productId,
-    productName: productsTable.name,
-    quantity: ordersTable.quantity,
-    totalSum: ordersTable.totalSum,
-    status: ordersTable.status,
-    deliveryStatus: ordersTable.deliveryStatus,
-    notes: ordersTable.notes,
-    orderDate: ordersTable.orderDate,
-    deliveryDate: ordersTable.deliveryDate,
-    createdAt: ordersTable.createdAt,
-  })
-  .from(ordersTable)
-  .leftJoin(clientsTable, eq(ordersTable.clientId, clientsTable.id))
-  .leftJoin(productsTable, eq(ordersTable.productId, productsTable.id));
+const mapOrder = (o: any) => ({
+  ...o,
+  totalSum: parseFloat(o.totalSum),
+  items: o.items ? JSON.parse(o.items) : [],
+});
 
 router.get("/", authMiddleware, async (_req, res) => {
-  const orders = await orderWithJoins.orderBy(desc(ordersTable.createdAt));
-  res.json(orders.map(o => ({ ...o, totalSum: parseFloat(o.totalSum) })));
+  const orders = await db.select().from(ordersTable).orderBy(desc(ordersTable.createdAt));
+  res.json(orders.map(mapOrder));
 });
 
 router.get("/:id", authMiddleware, async (req, res) => {
   const id = paramInt(req.params.id);
-  const [order] = await orderWithJoins.where(eq(ordersTable.id, id));
+  const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, id));
   if (!order) {
     res.status(404).json({ error: "Topilmadi" });
     return;
   }
-  res.json({ ...order, totalSum: parseFloat(order.totalSum) });
+  res.json(mapOrder(order));
 });
 
 router.post("/", authMiddleware, async (req, res) => {
-  const { clientId, productId, quantity, totalSum, notes, orderDate, deliveryDate } = req.body;
+  const {
+    clientId, productId, quantity, totalSum, notes, orderDate, deliveryDate,
+    orderType, orderCode, supplier, materialName, items, status,
+    price,
+  } = req.body;
 
-  if (!clientId || !productId || !quantity) {
-    res.status(400).json({ error: "Client, product va quantity talab qilinadi" });
-    return;
+  const isPurchase = orderType === "purchase";
+
+  if (isPurchase) {
+    if (!supplier) {
+      res.status(400).json({ error: "Yetkazib beruvchi nomi talab qilinadi" });
+      return;
+    }
+    const computedQty = quantity || (Array.isArray(items) ? items.reduce((s: number, i: any) => s + (i.quantity || 0), 0) : 0);
+    const computedSum = totalSum || (Array.isArray(items) ? items.reduce((s: number, i: any) => s + (i.quantity || 0) * (i.price || 0), 0) : 0);
+
+    const [order] = await db.insert(ordersTable).values({
+      clientId: clientId || null,
+      productId: productId || null,
+      quantity: computedQty,
+      totalSum: computedSum.toString(),
+      notes: notes || null,
+      orderDate: orderDate ? new Date(orderDate) : new Date(),
+      deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
+      orderType: "purchase",
+      orderCode: orderCode || null,
+      supplier: supplier,
+      materialName: materialName || null,
+      items: items ? JSON.stringify(items) : null,
+      status: status || "pending",
+    }).returning();
+
+    res.status(201).json(mapOrder(order));
+  } else {
+    if (!clientId || !productId || !quantity) {
+      res.status(400).json({ error: "Client, product va quantity talab qilinadi" });
+      return;
+    }
+
+    const [order] = await db.insert(ordersTable).values({
+      clientId,
+      productId,
+      quantity,
+      totalSum: totalSum?.toString() || "0",
+      notes: notes || null,
+      orderDate: orderDate ? new Date(orderDate) : new Date(),
+      deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
+      orderType: "delivery",
+    }).returning();
+
+    const [full] = await db.select().from(ordersTable).where(eq(ordersTable.id, order.id));
+    res.status(201).json(mapOrder(full));
   }
-
-  const [order] = await db.insert(ordersTable).values({
-    clientId,
-    productId,
-    quantity,
-    totalSum: totalSum?.toString() || "0",
-    notes: notes || null,
-    orderDate: orderDate ? new Date(orderDate) : new Date(),
-    deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
-  }).returning();
-
-  const [full] = await orderWithJoins.where(eq(ordersTable.id, order.id));
-  res.status(201).json({ ...full, totalSum: parseFloat(full.totalSum) });
 });
 
 router.put("/:id", authMiddleware, async (req, res) => {
   const id = paramInt(req.params.id);
-  const { productId, quantity, totalSum, status, deliveryStatus, notes, orderDate, deliveryDate } = req.body;
+  const { productId, quantity, totalSum, status, deliveryStatus, notes, orderDate, deliveryDate, supplier, materialName, items } = req.body;
 
-  // Yetkazilgan buyurtmani o'zgartirib bo'lmaydi
   const [existing] = await db.select().from(ordersTable).where(eq(ordersTable.id, id)).limit(1);
-  if (existing?.deliveryStatus === "delivered" && deliveryStatus && deliveryStatus !== "delivered") {
+  if (!existing) {
+    res.status(404).json({ error: "Topilmadi" });
+    return;
+  }
+  if (existing.deliveryStatus === "delivered" && deliveryStatus && deliveryStatus !== "delivered") {
     res.status(400).json({ error: "Yetkazilgan buyurtmani o'zgartirib bo'lmaydi" });
     return;
   }
@@ -84,56 +106,52 @@ router.put("/:id", authMiddleware, async (req, res) => {
   if (notes !== undefined) updates.notes = notes;
   if (orderDate !== undefined) updates.orderDate = new Date(orderDate);
   if (deliveryDate !== undefined) updates.deliveryDate = deliveryDate ? new Date(deliveryDate) : null;
+  if (supplier !== undefined) updates.supplier = supplier;
+  if (materialName !== undefined) updates.materialName = materialName;
+  if (items !== undefined) updates.items = Array.isArray(items) ? JSON.stringify(items) : items;
 
   await db.update(ordersTable).set(updates).where(eq(ordersTable.id, id));
 
   // Auto-create sale when delivery is completed
-  if (deliveryStatus === "delivered") {
-    const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, id));
-    if (order && order.productId) {
-      try {
-        await db.insert(salesTable).values({
-          productId: order.productId,
-          warehouseId: 1,
-          quantity: order.quantity,
-          soldAt: new Date(),
-        });
-        const invItems = await db.select().from(inventoryTable)
-          .where(and(eq(inventoryTable.warehouseId, 1), eq(inventoryTable.productId, order.productId)))
-          .limit(1);
-        if (invItems.length > 0 && invItems[0].quantity >= order.quantity) {
-          await db.update(inventoryTable)
-            .set({ quantity: invItems[0].quantity - order.quantity, updatedAt: new Date() })
-            .where(and(eq(inventoryTable.warehouseId, 1), eq(inventoryTable.productId, order.productId)));
-        }
-      } catch (e) {
-        console.error("[Orders] Auto-sale error:", e);
+  if (deliveryStatus === "delivered" && existing.productId) {
+    try {
+      await db.insert(salesTable).values({
+        productId: existing.productId,
+        warehouseId: 1,
+        quantity: existing.quantity,
+        soldAt: new Date(),
+      });
+      const invItems = await db.select().from(inventoryTable)
+        .where(and(eq(inventoryTable.warehouseId, 1), eq(inventoryTable.productId, existing.productId)))
+        .limit(1);
+      if (invItems.length > 0 && invItems[0].quantity >= existing.quantity) {
+        await db.update(inventoryTable)
+          .set({ quantity: invItems[0].quantity - existing.quantity, updatedAt: new Date() })
+          .where(and(eq(inventoryTable.warehouseId, 1), eq(inventoryTable.productId, existing.productId)));
       }
+    } catch (e) {
+      console.error("[Orders] Auto-sale error:", e);
     }
 
-    // Auto-create finance income record
-    const [deliveredOrder] = await db.select().from(ordersTable).where(eq(ordersTable.id, id));
-    if (deliveredOrder) {
-      try {
-        const product = await db.select().from(productsTable).where(eq(productsTable.id, deliveredOrder.productId)).limit(1);
-        const amount = parseFloat(deliveredOrder.totalSum) || (deliveredOrder.quantity * (product[0] ? parseFloat(product[0].price) : 0));
-        if (amount > 0) {
-          await db.insert(transactionsTable).values({
-            type: "income",
-            category: "Sotuv",
-            amount: amount.toString(),
-            description: `Buyurtma #${id} yetkazildi — ${product[0]?.name || ""} x ${deliveredOrder.quantity}`,
-            date: new Date().toISOString().split("T")[0],
-          });
-        }
-      } catch (e) {
-        console.error("[Orders] Auto-finance error:", e);
+    try {
+      const product = await db.select().from(productsTable).where(eq(productsTable.id, existing.productId)).limit(1);
+      const amount = parseFloat(existing.totalSum) || (existing.quantity * (product[0] ? parseFloat(product[0].price) : 0));
+      if (amount > 0) {
+        await db.insert(transactionsTable).values({
+          type: "income",
+          category: "Sotuv",
+          amount: amount.toString(),
+          description: `Buyurtma #${id} yetkazildi — ${product[0]?.name || ""} x ${existing.quantity}`,
+          date: new Date().toISOString().split("T")[0],
+        });
       }
+    } catch (e) {
+      console.error("[Orders] Auto-finance error:", e);
     }
   }
 
-  const [full] = await orderWithJoins.where(eq(ordersTable.id, id));
-  res.json({ ...full, totalSum: parseFloat(full.totalSum) });
+  const [full] = await db.select().from(ordersTable).where(eq(ordersTable.id, id));
+  res.json(mapOrder(full));
 });
 
 router.delete("/:id", authMiddleware, async (req, res) => {
