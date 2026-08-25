@@ -10,6 +10,12 @@ import { colors, radius, shadows, spacing } from "../theme";
 const { width } = Dimensions.get("window");
 const formatSum = (n: number) => n.toLocaleString("uz-UZ") + " so'm";
 
+const MATERIALS = [
+  "Kraxmal", "Koustik Soda", "Qog'oz B2", "Qog'oz B3", "Qog'oz K0",
+  "Qog'oz K1", "Oq qog'oz", "Bo'yoq", "Qo'lqop", "Machalka",
+  "Elektr", "Gaz", "Oziq ovqat", "Boshqa",
+];
+
 const deliveryStatusConfig: Record<string, { label: string; bg: string; text: string }> = {
   pending: { label: "Kutilmoqda", bg: "#fef3c7", text: "#d97706" },
   confirmed: { label: "Tasdiqlangan", bg: "#dbeafe", text: "#2563eb" },
@@ -378,7 +384,17 @@ export default function OrdersScreen({ navigation }: any) {
                         ))}
                       </ScrollView>
                     ) : (
-                      <TextInput style={styles.itemInput} value={item.name} onChangeText={v => updateItem(idx, "name", v)} placeholder="Material nomi" placeholderTextColor={colors.textMuted} />
+                      <View>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 6 }}>
+                          {MATERIALS.map(mat => (
+                            <TouchableOpacity key={mat} style={[styles.prodChip, item.name === mat && styles.prodChipActive]}
+                              onPress={() => updateItem(idx, "name", item.name === mat ? "" : mat)}>
+                              <Text style={[styles.prodChipText, item.name === mat && { color: "#fff" }]}>{mat}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+                        <TextInput style={styles.itemInput} value={item.name} onChangeText={v => updateItem(idx, "name", v)} placeholder="Material nomi (yoki yuqoridagi tugmalar)" placeholderTextColor={colors.textMuted} />
+                      </View>
                     )}
                     <View style={styles.itemInputRow}>
                       <TextInput style={[styles.itemInput, { flex: 1 }]} value={String(item.quantity)} onChangeText={v => updateItem(idx, "quantity", Math.max(1, Number(v) || 0))} placeholder="Soni" keyboardType="numeric" placeholderTextColor={colors.textMuted} />

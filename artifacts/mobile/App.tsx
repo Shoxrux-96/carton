@@ -24,6 +24,7 @@ import EmployeesScreen from "./src/screens/EmployeesScreen";
 import FaceAttendanceScreen from "./src/screens/FaceAttendanceScreen";
 import FaceRegisterScreen from "./src/screens/FaceRegisterScreen";
 import SalesScreen from "./src/screens/SalesScreen";
+import TasksScreen from "./src/screens/TasksScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -57,7 +58,7 @@ function AdminProduction() {
   return (<Stack.Navigator screenOptions={hdrOpts}><Stack.Screen name="ProdMain" component={ProductionScreen} options={{ title: "🏭 Ishlab chiqarish" }} /><Stack.Screen name="Products" component={ProductsScreen} options={{ title: "📦 Mahsulotlar" }} /><Stack.Screen name="Stock" component={StockViewScreen} options={{ title: "📦 Ombor" }} /></Stack.Navigator>);
 }
 function AdminHR() {
-  return (<Stack.Navigator screenOptions={hdrOpts}><Stack.Screen name="Employees" component={EmployeesScreen} options={{ title: "👥 Hodimlar" }} /><Stack.Screen name="Attendance" component={AttendanceScreen} options={{ title: "✅ Davomat" }} /><Stack.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} /><Stack.Screen name="FaceAttendance" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} /><Stack.Screen name="FaceRegister" component={FaceRegisterScreen} options={{ title: "📸 Yuz ro'yxati" }} /></Stack.Navigator>);
+  return (<Stack.Navigator screenOptions={hdrOpts}><Stack.Screen name="Employees" component={EmployeesScreen} options={{ title: "👥 Hodimlar" }} /><Stack.Screen name="Attendance" component={AttendanceScreen} options={{ title: "✅ Davomat" }} /><Stack.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} /><Stack.Screen name="Tasks" component={TasksScreen} options={{ title: "📋 Topshiriqlar" }} /><Stack.Screen name="FaceAttendance" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} /><Stack.Screen name="FaceRegister" component={FaceRegisterScreen} options={{ title: "📸 Yuz ro'yxati" }} /></Stack.Navigator>);
 }
 function AdminFinance() {
   return (<Stack.Navigator screenOptions={hdrOpts}><Stack.Screen name="Fin" component={FinanceScreen} options={{ title: "💰 Moliya" }} /></Stack.Navigator>);

@@ -4,6 +4,11 @@ import { useFocusEffect } from "@react-navigation/native";
 import { apiFetch } from "../api";
 import { colors, radius, shadows, spacing } from "../theme";
 
+const PRODUCTS_MATERIALS = [
+  "Kraxmal", "Koustik Soda", "Qog'oz B2", "Qog'oz B3",
+  "Qog'oz K0", "Qog'oz K1", "Oq qog'oz", "Bo'yoq",
+];
+
 const PRODUCT_STATUSES = [
   { key: "published", label: "Chop etilgan", emoji: "✅", bg: "#dcfce7", text: "#16a34a" },
   { key: "hidden", label: "Yashirin", emoji: "🙈", bg: "#f3f4f6", text: "#6b7280" },
@@ -26,7 +31,9 @@ export default function ProductsScreen() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [material, setMaterial] = useState("");
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
+  const [customMaterial, setCustomMaterial] = useState("");
+  const [color, setColor] = useState("");
   const [length, setLength] = useState("");
   const [width, setWidth] = useState("");
   const [height, setHeight] = useState("");
@@ -56,8 +63,9 @@ export default function ProductsScreen() {
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
   const resetForm = () => {
-    setName(""); setDescription(""); setPrice(""); setMaterial("");
-    setLength(""); setWidth(""); setHeight(""); setStatus("hidden"); setEditing(null);
+    setName(""); setDescription(""); setPrice(""); setSelectedMaterials([]);
+    setCustomMaterial(""); setColor(""); setLength(""); setWidth("");
+    setHeight(""); setStatus("hidden"); setEditing(null);
   };
 
   const openAdd = () => { resetForm(); setShowModal(true); };
@@ -66,7 +74,15 @@ export default function ProductsScreen() {
     setName(p.name || "");
     setDescription(p.description || "");
     setPrice(String(p.price || ""));
-    setMaterial(p.material || "");
+    // Parse materials from JSON string or fallback to material field
+    let mats: string[] = [];
+    if (p.materials) {
+      try { mats = typeof p.materials === "string" ? JSON.parse(p.materials) : p.materials; } catch { mats = []; }
+    }
+    if (mats.length === 0 && p.material) mats = [p.material];
+    setSelectedMaterials(mats);
+    setCustomMaterial("");
+    setColor(p.color || "");
     setLength(String(p.length || ""));
     setWidth(String(p.width || ""));
     setHeight(String(p.height || ""));
@@ -79,11 +95,16 @@ export default function ProductsScreen() {
     if (!price) { Alert.alert("Xatolik", "Narxi kiritilishi shart"); return; }
     setSaving(true);
     try {
+      const allMaterials = [...selectedMaterials];
+      if (customMaterial.trim() && !allMaterials.includes(customMaterial.trim())) {
+        allMaterials.push(customMaterial.trim());
+      }
       const body: any = {
         name: name.trim(),
         description,
         price: Number(price),
-        material,
+        materials: allMaterials,
+        color,
         status,
       };
       if (length) body.length = Number(length);
@@ -229,8 +250,32 @@ export default function ProductsScreen() {
             <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder="Qisqacha" placeholderTextColor={colors.textMuted} />
             <Text style={styles.label}>Narxi (so'm) *</Text>
             <TextInput style={styles.input} value={price} onChangeText={setPrice} placeholder="0" keyboardType="numeric" placeholderTextColor={colors.textMuted} />
-            <Text style={styles.label}>Material</Text>
-            <TextInput style={styles.input} value={material} onChangeText={setMaterial} placeholder="Karton, gofrokarton..." placeholderTextColor={colors.textMuted} />
+            <Text style={styles.label}>Materiallar</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+              {PRODUCTS_MATERIALS.map(mat => {
+                const active = selectedMaterials.includes(mat);
+                return (
+                  <TouchableOpacity key={mat} style={[styles.chip, active && styles.chipActive]}
+                    onPress={() => setSelectedMaterials(active ? selectedMaterials.filter(m => m !== mat) : [...selectedMaterials, mat])}>
+                    <Text style={[styles.chipText, active && { color: "#fff" }]}>{mat}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+              <TouchableOpacity style={[styles.chip, customMaterial ? styles.chipActive : null]}
+                onPress={() => setCustomMaterial(customMaterial ? "" : " ")}>
+                <Text style={[styles.chipText, customMaterial && { color: "#fff" }]}>Boshqa</Text>
+              </TouchableOpacity>
+            </ScrollView>
+            {customMaterial !== "" && (
+              <TextInput style={[styles.input, { marginBottom: 8 }]} value={customMaterial === " " ? "" : customMaterial}
+                onChangeText={v => setCustomMaterial(v || " ")} placeholder="Boshqa material nomi..." placeholderTextColor={colors.textMuted} />
+            )}
+
+            <Text style={styles.label}>Rang</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <TextInput style={[styles.input, { flex: 1 }]} value={color} onChangeText={setColor} placeholder="#000000" placeholderTextColor={colors.textMuted} />
+              {color ? <View style={[styles.colorPreview, { backgroundColor: color }]} /> : null}
+            </View>
             <View style={{ flexDirection: "row", gap: 8 }}>
               <View style={{ flex: 1 }}><Text style={styles.label}>Uzunlik</Text><TextInput style={styles.input} value={length} onChangeText={setLength} keyboardType="numeric" placeholder="sm" placeholderTextColor={colors.textMuted} /></View>
               <View style={{ flex: 1 }}><Text style={styles.label}>Kenglik</Text><TextInput style={styles.input} value={width} onChangeText={setWidth} keyboardType="numeric" placeholder="sm" placeholderTextColor={colors.textMuted} /></View>
@@ -295,4 +340,8 @@ const styles = StyleSheet.create({
   cancelText: { fontSize: 15, fontWeight: "600", color: colors.textSecondary },
   saveBtn: { flex: 1, height: 50, backgroundColor: colors.primary, borderRadius: radius.lg, justifyContent: "center", alignItems: "center", ...shadows.sm },
   saveText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, backgroundColor: colors.surfaceAlt, marginRight: 6, borderWidth: 1.5, borderColor: colors.border },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { fontSize: 12, fontWeight: "600", color: colors.text },
+  colorPreview: { width: 36, height: 36, borderRadius: radius.md, borderWidth: 2, borderColor: colors.border },
 });

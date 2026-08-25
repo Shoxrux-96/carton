@@ -9,7 +9,13 @@ import { colors, radius, shadows, spacing } from "../theme";
 
 const formatSum = (n: number) => n.toLocaleString("uz-UZ") + " so'm";
 
-const categories = ["Sotuv", "Maosh", "Material", "Transport", "Kommunal", "Boshqa"];
+const MATERIALS = [
+  "Kraxmal", "Koustik Soda", "Qog'oz B2", "Qog'oz B3", "Qog'oz K0",
+  "Qog'oz K1", "Oq qog'oz", "Bo'yoq", "Qo'lqop", "Machalka",
+  "Elektr", "Gaz", "Oziq ovqat", "Boshqa",
+];
+
+const categories = [...MATERIALS];
 const months = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"];
 
 export default function FinanceScreen() {
