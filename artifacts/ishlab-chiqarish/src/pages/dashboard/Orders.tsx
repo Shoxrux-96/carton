@@ -623,14 +623,23 @@ export default function Orders() {
       }
     } catch {}
 
-    // Only PUT to API if it's a real server order (small ID), not a locally-saved one (Date.now() ID)
+    // Only PUT to API if it's a real server order
     if (id < 1000000000) {
       try {
-        await customFetch(`/api/orders/${id}`, {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`/api/orders/${id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json", ...authOpts.headers },
+          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({ [field]: value }),
         });
+        if (!res.ok) {
+          // Order was deleted from server, remove from local cache
+          if (ordersCache.current) {
+            ordersCache.current = ordersCache.current.filter((o: any) => o.id !== id);
+          }
+          queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+          return;
+        }
       } catch {
         // API failed
       }
