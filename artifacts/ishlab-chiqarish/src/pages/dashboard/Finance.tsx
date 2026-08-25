@@ -644,7 +644,6 @@ export default function Finance() {
               {MATERIALS.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
-              <option value="Boshqa">Boshqa</option>
             </select>
           </div>
 

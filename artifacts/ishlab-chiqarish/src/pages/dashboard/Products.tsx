@@ -24,8 +24,10 @@ export const MATERIALS = [
   "Bo'yoq",
   "Qo'lqop",
   "Machalka",
-  "Elektr va Gaz",
+  "Elektr",
+  "Gaz",
   "Oziq ovqat",
+  "Boshqa",
 ];
 
 const schema = z.object({
