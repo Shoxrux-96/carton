@@ -291,23 +291,28 @@ export default function Finance() {
     setIsLoading(true);
     try {
       const payload = { ...data, date: data.date || format(new Date(), "yyyy-MM-dd") };
+      let apiFailed = false;
       try {
         await customFetch("/api/finance", {
           method: "POST",
           headers: { "Content-Type": "application/json", ...authOpts.headers },
           body: JSON.stringify(payload),
         });
-      } catch {}
+      } catch {
+        apiFailed = true;
+      }
 
-      // Always save locally
-      const record: FinanceRecord = {
-        id: Date.now(),
-        ...data,
-        date: payload.date,
-        category: data.category || (data.type === "income" ? "Kirim" : "Chiqim"),
-        description: data.description || "",
-      };
-      persistManual([record, ...manualRecords]);
+      // Only save locally if API failed
+      if (apiFailed) {
+        const record: FinanceRecord = {
+          id: Date.now(),
+          ...data,
+          date: payload.date,
+          category: data.category || (data.type === "income" ? "Kirim" : "Chiqim"),
+          description: data.description || "",
+        };
+        persistManual([record, ...manualRecords]);
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/finance"] });
       setIsAddOpen(false);
       reset();
