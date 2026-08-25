@@ -608,8 +608,10 @@ export default function Orders() {
   };
 
   const updateStatus = async (id: number, field: string, value: string) => {
-    // Update local state
-    setAllOrders(prev => prev.map((o: any) => o.id === id ? { ...o, [field]: value } : o));
+    // Update ordersCache
+    if (ordersCache.current) {
+      ordersCache.current = ordersCache.current.map((o: any) => o.id === id ? { ...o, [field]: value } : o);
+    }
 
     // Update localStorage
     try {
