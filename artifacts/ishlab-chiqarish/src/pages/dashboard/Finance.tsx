@@ -16,16 +16,6 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { useLang } from "@/lib/i18n";
 import { MATERIALS } from "./Products";
 
-const FINANCE_CATEGORIES = [
-  "Sotuv",
-  "Maosh",
-  ...MATERIALS,
-  "Transport",
-  "Kommunal",
-  "Xarid",
-  "Boshqa",
-];
-
 const formatSum = (n: number) => n.toLocaleString("uz-UZ") + " so'm";
 
 const schema = z.object({
@@ -69,7 +59,6 @@ export default function Finance() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("");
   const { t } = useLang();
 
   // API data
@@ -650,26 +639,13 @@ export default function Finance() {
 
           <div>
             <label className="text-sm font-semibold block mb-1.5">{t('category')}</label>
-            <div className="flex flex-wrap gap-2">
-              {FINANCE_CATEGORIES.map(cat => (
-                <button
-                  key={`fin-cat-${cat}`}
-                  type="button"
-                  onClick={() => {
-                    const next = selectedCategory === cat ? "" : cat;
-                    setSelectedCategory(next);
-                    setValue("category", next);
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
-                    selectedCategory === cat
-                      ? "bg-amber-500 text-white border-amber-500 shadow-sm"
-                      : "bg-muted/30 text-muted-foreground border-border hover:border-amber-300 hover:text-amber-700"
-                  }`}
-                >
-                  {cat}
-                </button>
+            <select {...register("category")} className="flex h-12 w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm">
+              <option value="">{t('select_product')}</option>
+              {MATERIALS.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
               ))}
-            </div>
+              <option value="Boshqa">Boshqa</option>
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
