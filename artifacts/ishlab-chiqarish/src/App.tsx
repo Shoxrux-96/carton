@@ -15,6 +15,7 @@ import Delivery from "./pages/dashboard/Delivery";
 import Employees from "./pages/dashboard/Employees";
 import Attendance from "./pages/dashboard/Attendance";
 import Finance from "./pages/dashboard/Finance";
+import Tasks from "./pages/dashboard/Tasks";
 import NotFound from "./pages/not-found";
 import ProductView3D from "./pages/ProductView3D";
 import Catalog from "./pages/Catalog";
@@ -57,6 +58,7 @@ function Router() {
       <Route path="/dashboard/employees" component={Employees} />
       <Route path="/dashboard/attendance" component={Attendance} />
       <Route path="/dashboard/finance" component={Finance} />
+      <Route path="/dashboard/tasks" component={Tasks} />
       <Route path="/dashboard/profile" component={Profile} />
       
       <Route path="/product/:id/3d" component={ProductView3D} />

@@ -166,3 +166,17 @@ export const socialLinksTable = pgTable("social_links", {
 });
 
 export type SocialLink = typeof socialLinksTable.$inferSelect;
+
+export const tasksTable = pgTable("tasks", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  assigneeId: integer("assignee_id").references(() => employeesTable.id),
+  productId: integer("product_id").references(() => productsTable.id),
+  materialName: text("material_name"),
+  status: text("status").notNull().default("pending"),
+  date: date("date").notNull().defaultNow(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Task = typeof tasksTable.$inferSelect;

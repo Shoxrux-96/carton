@@ -125,6 +125,7 @@ export function Sidebar() {
       children: [
         { href: "/dashboard/employees", label: t("employees"), icon: Briefcase },
         { href: "/dashboard/attendance", label: t("attendance"), icon: ClipboardCheck },
+        { href: "/dashboard/tasks", label: t("tasks"), icon: ClipboardCheck },
       ],
     },
   ];

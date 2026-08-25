@@ -4,7 +4,7 @@ const uz: Record<string, string> = {
   // General
   language: "Til", uzbek: "O'zbekcha", russian: "Ruscha",
   dashboard: "Boshqaruv Paneli", orders: "Buyurtmalar", production: "Ishlab chiqarish",
-  finance: "Moliya", employees: "Hodimlar", attendance: "Davomat",
+  finance: "Moliya", employees: "Hodimlar", attendance: "Davomat", tasks: "Topshiriqlar",
   products: "Mahsulotlar", warehouse: "Ombor", clients: "Mijozlar",
   leads: "Leadlar", sales: "Sotish", delivery: "Yetkazish",
   profile: "Profil", save: "Saqlash", cancel: "Bekor qilish",
@@ -609,7 +609,7 @@ const ru: Record<string, string> = {
   // General
   language: "Язык", uzbek: "Узбекский", russian: "Русский",
   dashboard: "Панель управления", orders: "Заказы", production: "Производство",
-  finance: "Финансы", employees: "Сотрудники", attendance: "Посещаемость",
+  finance: "Финансы", employees: "Сотрудники", attendance: "Посещаемость", tasks: "Задания",
   products: "Продукция", warehouse: "Склад", clients: "Клиенты",
   leads: "Лиды", sales: "Продажи", delivery: "Доставка",
   profile: "Профиль", save: "Сохранить", cancel: "Отмена",

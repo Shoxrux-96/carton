@@ -17,6 +17,7 @@ import publicRouter from "./public.js";
 import socialLinksRouter from "./social-links.js";
 import settingsRouter from "./settings.js";
 import clientLogRouter from "./client-log.js";
+import tasksRouter from "./tasks.js";
 
 const router: IRouter = Router();
 
@@ -40,5 +41,6 @@ router.use("/public", publicRouter);
 router.use("/social-links", socialLinksRouter);
 router.use("/settings", settingsRouter);
 router.use("/client-log", clientLogRouter);
+router.use("/tasks", tasksRouter);
 
 export default router;
