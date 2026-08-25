@@ -31,6 +31,7 @@ const formatSum = (n: number) => n.toLocaleString("uz-UZ") + " so'm";
 const schema = z.object({
   type: z.enum(["income", "expense"]),
   category: z.string().optional(),
+  quantity: z.coerce.number().min(0).optional(),
   amount: z.coerce.number().min(1, "Summa majburiy"),
   description: z.string().optional(),
   date: z.string().optional(),
@@ -68,6 +69,7 @@ export default function Finance() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("");
   const { t } = useLang();
 
   // API data
@@ -291,9 +293,9 @@ export default function Finance() {
     };
   }, [allRecords]);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { type: "income", date: format(new Date(), "yyyy-MM-dd") },
+    defaultValues: { type: "income", category: "", quantity: 0, amount: 0, description: "", date: format(new Date(), "yyyy-MM-dd") },
   });
 
   const onSubmit = async (data: FormValues) => {
@@ -645,25 +647,47 @@ export default function Finance() {
               </label>
             </div>
           </div>
+
+          <div>
+            <label className="text-sm font-semibold block mb-1.5">{t('category')}</label>
+            <div className="flex flex-wrap gap-2">
+              {FINANCE_CATEGORIES.map(cat => (
+                <button
+                  key={`fin-cat-${cat}`}
+                  type="button"
+                  onClick={() => {
+                    const next = selectedCategory === cat ? "" : cat;
+                    setSelectedCategory(next);
+                    setValue("category", next);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                    selectedCategory === cat
+                      ? "bg-amber-500 text-white border-amber-500 shadow-sm"
+                      : "bg-muted/30 text-muted-foreground border-border hover:border-amber-300 hover:text-amber-700"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-semibold block mb-1.5">{t('category')}</label>
-              <select {...register("category")} className="flex h-12 w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm">
-                <option value="">{t('select_product')}</option>
-                {FINANCE_CATEGORIES.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+              <label className="text-sm font-semibold block mb-1.5">{t('quantity')}</label>
+              <Input type="number" {...register("quantity")} placeholder="0" />
             </div>
             <div>
               <label className="text-sm font-semibold block mb-1.5">{t('amount_label')}</label>
               <Input type="number" {...register("amount")} error={errors.amount?.message} placeholder="0" />
             </div>
           </div>
+
           <div>
             <label className="text-sm font-semibold block mb-1.5">{t('description_label')}</label>
             <Input {...register("description")} placeholder={t('short_info')} />
           </div>
+
           <div className="pt-4 flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>{t('cancel')}</Button>
             <Button type="submit" isLoading={isLoading}>{t('save')}</Button>

@@ -50,6 +50,7 @@ interface OrderItem {
   name: string;
   quantity: number;
   price: number;
+  notes?: string;
   productId?: number;
   clientId?: number;
 }
@@ -307,6 +308,12 @@ function OrderItemsEditor({
                     )}
                   </div>
                 </div>
+                <input
+                  value={item.notes || ""}
+                  onChange={e => updateItem(idx, "notes", e.target.value)}
+                  placeholder="Izoh (ixtiyoriy)"
+                  className="w-full h-9 rounded-lg border-2 border-border bg-background px-3 text-sm"
+                />
               </>
             ) : (
               <div className="flex items-start gap-2">
@@ -729,7 +736,7 @@ export default function Orders() {
         price: purchaseItems[0]?.price || 0,
         notes,
         orderCode: editing ? editing.orderCode || generateOrderCode() : generateOrderCode(),
-        items: purchaseItems.map(item => ({ name: item.name.trim(), quantity: item.quantity, price: item.price })),
+        items: purchaseItems.map(item => ({ name: item.name.trim(), quantity: item.quantity, price: item.price, notes: item.notes || "" })),
         totalSum,
       };
 
