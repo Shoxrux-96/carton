@@ -28,6 +28,7 @@ export const productsTable = pgTable("products", {
   material: text("material"),
   color: text("color"),
   clientLogo: text("client_logo"),
+  category: text("category"),
   isPublished: boolean("is_published").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

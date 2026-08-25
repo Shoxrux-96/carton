@@ -13,6 +13,21 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLang } from "@/lib/i18n";
 
+const CATEGORIES = [
+  "Kraxmal",
+  "Koustik Soda",
+  "Qog'oz B2",
+  "Qog'oz B3",
+  "Qog'oz K0",
+  "Qog'oz K1",
+  "Oq qog'oz",
+  "Bo'yoq",
+  "Qo'lqop",
+  "Machalka",
+  "Elektr va Gaz",
+  "Oziq ovqat",
+];
+
 const schema = z.object({
   name: z.string().min(1, "Nomi kiritilishi shart"),
   description: z.string().optional(),
@@ -24,6 +39,8 @@ const schema = z.object({
   material: z.string().optional(),
   color: z.string().optional(),
   clientLogo: z.string().optional(),
+  category: z.string().optional(),
+  categoryCustom: z.string().optional(),
   status: z.enum(["published", "hidden"]).default("hidden"),
 });
 
@@ -52,10 +69,11 @@ export default function Products() {
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", description: "", price: 0, image: "", length: undefined, width: undefined, height: undefined, material: "", color: "", clientLogo: "", status: "hidden" },
+    defaultValues: { name: "", description: "", price: 0, image: "", length: undefined, width: undefined, height: undefined, material: "", color: "", clientLogo: "", category: "", categoryCustom: "", status: "hidden" },
   });
 
   const currentStatus = watch("status");
+  const currentCategory = watch("category");
 
   const stockMap = new Map<number, number>();
   if (Array.isArray(inventory)) {
@@ -101,6 +119,17 @@ export default function Products() {
     setValue("material", product.material || "");
     setValue("color", product.color || "");
     setValue("clientLogo", product.clientLogo || "");
+    const cat = product.category || "";
+    if (CATEGORIES.includes(cat)) {
+      setValue("category", cat);
+      setValue("categoryCustom", "");
+    } else if (cat) {
+      setValue("category", "Oziq ovqat");
+      setValue("categoryCustom", cat);
+    } else {
+      setValue("category", "");
+      setValue("categoryCustom", "");
+    }
     setValue("status", product.status === "published" || product.isPublished ? "published" : "hidden");
     setIsAddOpen(true);
   };
@@ -108,14 +137,16 @@ export default function Products() {
   const openAdd = () => {
     setEditingProduct(null);
     setImagePreview(null);
-    reset({ name: "", description: "", price: 0, image: "", length: undefined, width: undefined, height: undefined, material: "", color: "", clientLogo: "", status: "hidden" });
+    reset({ name: "", description: "", price: 0, image: "", length: undefined, width: undefined, height: undefined, material: "", color: "", clientLogo: "", category: "", categoryCustom: "", status: "hidden" });
     setIsAddOpen(true);
   };
 
   const onSubmit = async (data: FormValues) => {
     setIsLoadingSubmit(true);
     try {
-      const payload = { ...data };
+      const finalCategory = data.category === "Oziq ovqat" && data.categoryCustom ? data.categoryCustom : data.category;
+      const payload = { ...data, category: finalCategory || undefined };
+      delete (payload as any).categoryCustom;
       if (!payload.image) payload.image = undefined;
       if (editingProduct) {
         await customFetch(`/api/products/${editingProduct.id}`, {
@@ -234,7 +265,14 @@ export default function Products() {
                   </div>
                 </div>
                 <div className="p-5">
-                  <h3 className="font-bold text-lg text-foreground mb-1">{product.name}</h3>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-lg text-foreground">{product.name}</h3>
+                    {product.category && (
+                      <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-700 text-xs font-semibold">
+                        {product.category}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground mb-3 line-clamp-2 min-h-[2.5rem]">
                     {product.description || t('no_info')}
                   </p>
@@ -297,6 +335,33 @@ export default function Products() {
           <div>
             <label className="text-sm font-semibold block mb-1.5 text-foreground">{t('description_input')}</label>
             <Input {...register("description")} error={errors.description?.message} placeholder="Qisqacha ma'lumot" className="h-12" />
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold block mb-1.5 text-foreground">Kategoriya</label>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setValue("category", currentCategory === cat ? "" : cat)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                    currentCategory === cat
+                      ? "bg-amber-500 text-white border-amber-500 shadow-sm"
+                      : "bg-muted/30 text-muted-foreground border-border hover:border-amber-300 hover:text-amber-700"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            {currentCategory === "Oziq ovqat" && (
+              <Input
+                {...register("categoryCustom", { required: currentCategory === "Oziq ovqat" ? "Oziq ovqat nomini kiriting" : false })}
+                placeholder="Oziq ovqat nomi (masalan: Non, Lagmon...)"
+                className="h-12 mt-2"
+              />
+            )}
           </div>
 
           <div>

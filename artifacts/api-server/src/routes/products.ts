@@ -18,6 +18,7 @@ const mapProduct = (p: any) => ({
   material: p.material,
   color: p.color,
   clientLogo: p.clientLogo,
+  category: p.category,
   isPublished: p.isPublished,
   status: p.isPublished ? "published" : "hidden",
   createdAt: p.createdAt,
@@ -49,7 +50,7 @@ router.get("/:id", async (req, res) => {
 });
 
 router.post("/", authMiddleware, async (req, res) => {
-  const { name, description, price, image, length, width, height, material, color, clientLogo, status, isPublished } = req.body;
+  const { name, description, price, image, length, width, height, material, color, clientLogo, category, status, isPublished } = req.body;
 
   if (!name || price === undefined) {
     res.status(400).json({ error: "Nomi va narxi talab qilinadi" });
@@ -69,6 +70,7 @@ router.post("/", authMiddleware, async (req, res) => {
     material: material || null,
     color: color || null,
     clientLogo: clientLogo || null,
+    category: category || null,
     isPublished: published,
   }).returning();
 
@@ -77,7 +79,7 @@ router.post("/", authMiddleware, async (req, res) => {
 
 router.put("/:id", authMiddleware, async (req, res) => {
   const id = paramInt(req.params.id);
-  const { name, description, price, image, length, width, height, material, color, clientLogo, isPublished, status } = req.body;
+  const { name, description, price, image, length, width, height, material, color, clientLogo, category, isPublished, status } = req.body;
 
   const updates: Record<string, any> = {};
   if (name !== undefined) updates.name = name;
@@ -90,6 +92,7 @@ router.put("/:id", authMiddleware, async (req, res) => {
   if (material !== undefined) updates.material = material;
   if (color !== undefined) updates.color = color;
   if (clientLogo !== undefined) updates.clientLogo = clientLogo;
+  if (category !== undefined) updates.category = category;
   applyStatus(updates, { status, isPublished });
 
   if (Object.keys(updates).length === 0) {
