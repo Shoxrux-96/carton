@@ -81,6 +81,7 @@ export default function Products() {
   });
 
   const currentStatus = watch("status");
+  const currentColor = watch("color");
 
   const stockMap = new Map<number, number>();
   if (Array.isArray(inventory)) {
@@ -462,10 +463,20 @@ export default function Products() {
             <div className="flex items-center gap-3">
               <input
                 type="color"
-                {...register("color")}
+                value={currentColor || "#000000"}
+                onChange={e => setValue("color", e.target.value)}
                 className="w-12 h-12 rounded-xl border-2 border-border cursor-pointer"
               />
-              <Input {...register("color")} error={errors.color?.message} placeholder="#000000" className="h-12 flex-1" />
+              <Input
+                value={currentColor || ""}
+                onChange={e => setValue("color", e.target.value)}
+                error={errors.color?.message}
+                placeholder="#000000"
+                className="h-12 flex-1"
+              />
+              {currentColor && (
+                <div className="w-12 h-12 rounded-xl border-2 border-border" style={{ backgroundColor: currentColor }} />
+              )}
             </div>
           </div>
 
