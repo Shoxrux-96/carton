@@ -13,7 +13,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLang } from "@/lib/i18n";
 
-const CATEGORIES = [
+export const MATERIALS = [
   "Kraxmal",
   "Koustik Soda",
   "Qog'oz B2",
@@ -39,8 +39,8 @@ const schema = z.object({
   material: z.string().optional(),
   color: z.string().optional(),
   clientLogo: z.string().optional(),
-  category: z.string().optional(),
-  categoryCustom: z.string().optional(),
+  materials: z.array(z.string()).optional(),
+  oziqOvqat: z.string().optional(),
   status: z.enum(["published", "hidden"]).default("hidden"),
 });
 
@@ -66,14 +66,15 @@ export default function Products() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [isLoadingSubmit, setIsLoadingSubmit] = useState(false);
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
+  const [showOziqOvqat, setShowOziqOvqat] = useState(false);
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", description: "", price: 0, image: "", length: undefined, width: undefined, height: undefined, material: "", color: "", clientLogo: "", category: "", categoryCustom: "", status: "hidden" },
+    defaultValues: { name: "", description: "", price: 0, image: "", length: undefined, width: undefined, height: undefined, material: "", color: "", clientLogo: "", materials: [], oziqOvqat: "", status: "hidden" },
   });
 
   const currentStatus = watch("status");
-  const currentCategory = watch("category");
 
   const stockMap = new Map<number, number>();
   if (Array.isArray(inventory)) {
@@ -106,6 +107,14 @@ export default function Products() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const toggleMaterial = (mat: string) => {
+    setSelectedMaterials(prev => {
+      const next = prev.includes(mat) ? prev.filter(m => m !== mat) : [...prev, mat];
+      setShowOziqOvqat(next.includes("Oziq ovqat"));
+      return next;
+    });
+  };
+
   const openEdit = (product: any) => {
     setEditingProduct(product);
     setImagePreview(product.image || null);
@@ -119,17 +128,10 @@ export default function Products() {
     setValue("material", product.material || "");
     setValue("color", product.color || "");
     setValue("clientLogo", product.clientLogo || "");
-    const cat = product.category || "";
-    if (CATEGORIES.includes(cat)) {
-      setValue("category", cat);
-      setValue("categoryCustom", "");
-    } else if (cat) {
-      setValue("category", "Oziq ovqat");
-      setValue("categoryCustom", cat);
-    } else {
-      setValue("category", "");
-      setValue("categoryCustom", "");
-    }
+    const mats = Array.isArray(product.materials) ? product.materials : [];
+    setSelectedMaterials(mats);
+    setShowOziqOvqat(mats.includes("Oziq ovqat"));
+    setValue("oziqOvqat", product.oziqOvqat || "");
     setValue("status", product.status === "published" || product.isPublished ? "published" : "hidden");
     setIsAddOpen(true);
   };
@@ -137,16 +139,20 @@ export default function Products() {
   const openAdd = () => {
     setEditingProduct(null);
     setImagePreview(null);
-    reset({ name: "", description: "", price: 0, image: "", length: undefined, width: undefined, height: undefined, material: "", color: "", clientLogo: "", category: "", categoryCustom: "", status: "hidden" });
+    setSelectedMaterials([]);
+    setShowOziqOvqat(false);
+    reset({ name: "", description: "", price: 0, image: "", length: undefined, width: undefined, height: undefined, material: "", color: "", clientLogo: "", materials: [], oziqOvqat: "", status: "hidden" });
     setIsAddOpen(true);
   };
 
   const onSubmit = async (data: FormValues) => {
     setIsLoadingSubmit(true);
     try {
-      const finalCategory = data.category === "Oziq ovqat" && data.categoryCustom ? data.categoryCustom : data.category;
-      const payload = { ...data, category: finalCategory || undefined };
-      delete (payload as any).categoryCustom;
+      const finalMaterials = selectedMaterials.includes("Oziq ovqat") && data.oziqOvqat
+        ? [...selectedMaterials.filter(m => m !== "Oziq ovqat"), data.oziqOvqat]
+        : selectedMaterials;
+      const payload = { ...data, materials: finalMaterials };
+      delete (payload as any).oziqOvqat;
       if (!payload.image) payload.image = undefined;
       if (editingProduct) {
         await customFetch(`/api/products/${editingProduct.id}`, {
@@ -228,6 +234,7 @@ export default function Products() {
           products.map((product: any) => {
             const stock = stockMap.get(product.id) || 0;
             const stockColor = stock === 0 ? "text-red-500" : stock < 50 ? "text-amber-500" : "text-green-500";
+            const mats = Array.isArray(product.materials) ? product.materials : [];
             return (
               <div
                 key={product.id}
@@ -265,17 +272,18 @@ export default function Products() {
                   </div>
                 </div>
                 <div className="p-5">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-bold text-lg text-foreground">{product.name}</h3>
-                    {product.category && (
-                      <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-700 text-xs font-semibold">
-                        {product.category}
-                      </span>
-                    )}
-                  </div>
+                  <h3 className="font-bold text-lg text-foreground mb-1">{product.name}</h3>
                   <p className="text-sm text-muted-foreground mb-3 line-clamp-2 min-h-[2.5rem]">
                     {product.description || t('no_info')}
                   </p>
+
+                  {mats.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {mats.map((m: string) => (
+                        <span key={m} className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 text-xs font-medium">{m}</span>
+                      ))}
+                    </div>
+                  )}
 
                   {(product.length || product.width || product.height || product.material) && (
                     <div className="flex flex-wrap gap-2 mb-3">
@@ -309,14 +317,14 @@ export default function Products() {
                       onClick={() => setProductStatus(product, "published")}
                       className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${(product.status === "published" || product.isPublished) ? "bg-green-100 text-green-700 border-green-300" : "bg-muted text-muted-foreground border-border hover:border-green-300"}`}
                     >
-                      ✅ {t('published')}
+                      {t('published')}
                     </button>
                     <button
                       type="button"
                       onClick={() => setProductStatus(product, "hidden")}
                       className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${!(product.status === "published" || product.isPublished) ? "bg-gray-200 text-gray-700 border-gray-400" : "bg-muted text-muted-foreground border-border hover:border-gray-400"}`}
                     >
-                      🙈 {t('hidden')}
+                      {t('hidden')}
                     </button>
                   </div>
                 </div>
@@ -338,27 +346,27 @@ export default function Products() {
           </div>
 
           <div>
-            <label className="text-sm font-semibold block mb-1.5 text-foreground">Kategoriya</label>
+            <label className="text-sm font-semibold block mb-1.5 text-foreground">Materiallar</label>
             <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map((cat) => (
+              {MATERIALS.map((mat) => (
                 <button
-                  key={cat}
+                  key={mat}
                   type="button"
-                  onClick={() => setValue("category", currentCategory === cat ? "" : cat)}
+                  onClick={() => toggleMaterial(mat)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
-                    currentCategory === cat
-                      ? "bg-amber-500 text-white border-amber-500 shadow-sm"
-                      : "bg-muted/30 text-muted-foreground border-border hover:border-amber-300 hover:text-amber-700"
+                    selectedMaterials.includes(mat)
+                      ? "bg-blue-500 text-white border-blue-500 shadow-sm"
+                      : "bg-muted/30 text-muted-foreground border-border hover:border-blue-300 hover:text-blue-700"
                   }`}
                 >
-                  {cat}
+                  {mat}
                 </button>
               ))}
             </div>
-            {currentCategory === "Oziq ovqat" && (
+            {showOziqOvqat && (
               <Input
-                {...register("categoryCustom", { required: currentCategory === "Oziq ovqat" ? "Oziq ovqat nomini kiriting" : false })}
-                placeholder="Oziq ovqat nomi (masalan: Non, Lagmon...)"
+                {...register("oziqOvqat", { required: showOziqOvqat ? "Oziq ovqat nomini kiriting" : false })}
+                placeholder="Oziq ovqat nomi (masalan: Non, Lag'mon...)"
                 className="h-12 mt-2"
               />
             )}
@@ -442,14 +450,14 @@ export default function Products() {
                 onClick={() => setValue("status", "published")}
                 className={`h-12 rounded-xl border text-sm font-semibold transition-colors ${currentStatus === "published" ? "bg-green-100 text-green-700 border-green-300" : "bg-muted/30 text-muted-foreground border-border hover:border-green-300"}`}
               >
-                ✅ {t('published')}
+                {t('published')}
               </button>
               <button
                 type="button"
                 onClick={() => setValue("status", "hidden")}
                 className={`h-12 rounded-xl border text-sm font-semibold transition-colors ${currentStatus === "hidden" ? "bg-gray-200 text-gray-700 border-gray-400" : "bg-muted/30 text-muted-foreground border-border hover:border-gray-400"}`}
               >
-                🙈 {t('hidden')}
+                {t('hidden')}
               </button>
             </div>
           </div>

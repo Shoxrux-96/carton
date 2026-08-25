@@ -25,6 +25,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useLang } from "@/lib/i18n";
+import { MATERIALS } from "./Products";
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -255,67 +256,113 @@ function OrderItemsEditor({
 
       <div className="space-y-2">
         {items.map((item, idx) => (
-          <div key={item.id ?? item.productId ?? `${item.name ?? "item"}-${idx}`} className="flex items-start gap-2 p-3 rounded-xl border-2 border-border bg-muted/20">
-            <div className="flex-1 grid grid-cols-12 gap-2">
-              {orderType === "delivery" ? (
-                <div className="col-span-3 flex flex-col gap-1">
-                  <select
-                    value={products.find((p: any) => p.name === item.name)?.id || ""}
-                    onChange={e => selectProduct(idx, Number(e.target.value))}
-                    className="h-9 rounded-lg border-2 border-border bg-background px-3 text-sm"
-                  >
-                    <option value="">{t('select_product_option')}</option>
-                    {products.map((p: any) => {
-                      const stock = stockMap[p.id] || 0;
-                      return (
-                        <option key={p.id} value={p.id}>
-                          {p.name} ({stock} dona)
-                        </option>
-                      );
-                    })}
-                  </select>
-                  {item.productId && item.quantity > (stockMap[item.productId] || 0) && (
-                    <span className="text-[10px] text-destructive font-medium">
-                      {t('insufficient_stock')}
-                    </span>
-                  )}
+          <div key={item.id ?? item.productId ?? `${item.name ?? "item"}-${idx}`} className={`p-3 rounded-xl border-2 border-border bg-muted/20 ${orderType === "purchase" ? "space-y-2" : ""}`}>
+            {orderType === "purchase" ? (
+              <>
+                <div className="flex flex-wrap gap-1.5">
+                  {MATERIALS.map(mat => (
+                    <button
+                      key={`purchase-mat-${idx}-${mat}`}
+                      type="button"
+                      onClick={() => updateItem(idx, "name", item.name === mat ? "" : mat)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                        item.name === mat
+                          ? "bg-amber-500 text-white border-amber-500"
+                          : "bg-muted text-muted-foreground border-border hover:border-amber-300"
+                      }`}
+                    >
+                      {mat}
+                    </button>
+                  ))}
                 </div>
-              ) : (
                 <input
                   value={item.name}
                   onChange={e => updateItem(idx, "name", e.target.value)}
-                  placeholder={t('material_name_label')}
-                  className="col-span-3 h-9 rounded-lg border-2 border-border bg-background px-3 text-sm"
+                  placeholder="Maxsulot nomi (yoki yuqoridagi tugmalardan birini bosing)"
+                  className="w-full h-9 rounded-lg border-2 border-border bg-background px-3 text-sm"
                 />
-              )}
-              {orderType === "delivery" && item.productId && item.quantity > (stockMap[item.productId] || 0) && (
-                <span className="col-span-3 text-xs text-destructive font-medium text-center">
-                  {t('insufficient_stock')} ({stockMap[item.productId] || 0} dona)
-                </span>
-              )}
-              <input
-                type="number"
-                value={item.quantity}
-                onChange={e => updateItem(idx, "quantity", Math.max(1, Number(e.target.value)))}
-                placeholder="Soni"
-                className="col-span-3 h-9 rounded-lg border-2 border-border bg-background px-3 text-sm text-center"
-              />
-              <input
-                type="number"
-                value={item.price}
-                onChange={e => updateItem(idx, "price", Math.max(0, Number(e.target.value)))}
-                placeholder="Narxi"
-                className="col-span-3 h-9 rounded-lg border-2 border-border bg-background px-3 text-sm text-center"
-              />
-              <div className="col-span-3 flex items-center justify-center gap-1">
-                <span className="text-sm font-semibold font-mono">{formatSum(item.quantity * item.price)}</span>
-                {items.length > 1 && (
-                  <button type="button" onClick={() => removeItem(idx)} className="p-1.5 rounded-lg hover:bg-destructive/10 text-destructive transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
+                <div className="grid grid-cols-12 gap-2 items-center">
+                  <input
+                    type="number"
+                    value={item.quantity}
+                    onChange={e => updateItem(idx, "quantity", Math.max(1, Number(e.target.value)))}
+                    placeholder="Soni"
+                    className="col-span-3 h-9 rounded-lg border-2 border-border bg-background px-3 text-sm text-center"
+                  />
+                  <input
+                    type="number"
+                    value={item.price}
+                    onChange={e => updateItem(idx, "price", Math.max(0, Number(e.target.value)))}
+                    placeholder="Narxi"
+                    className="col-span-3 h-9 rounded-lg border-2 border-border bg-background px-3 text-sm text-center"
+                  />
+                  <div className="col-span-3 flex items-center justify-center">
+                    <span className="text-sm font-semibold font-mono">{formatSum(item.quantity * item.price)}</span>
+                  </div>
+                  <div className="col-span-3 flex items-center justify-center">
+                    {items.length > 1 && (
+                      <button type="button" onClick={() => removeItem(idx)} className="p-1.5 rounded-lg hover:bg-destructive/10 text-destructive transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-start gap-2">
+                <div className="flex-1 grid grid-cols-12 gap-2">
+                  <div className="col-span-3 flex flex-col gap-1">
+                    <select
+                      value={products.find((p: any) => p.name === item.name)?.id || ""}
+                      onChange={e => selectProduct(idx, Number(e.target.value))}
+                      className="h-9 rounded-lg border-2 border-border bg-background px-3 text-sm"
+                    >
+                      <option value="">{t('select_product_option')}</option>
+                      {products.map((p: any) => {
+                        const stock = stockMap[p.id] || 0;
+                        return (
+                          <option key={p.id} value={p.id}>
+                            {p.name} ({stock} dona)
+                          </option>
+                        );
+                      })}
+                    </select>
+                    {item.productId && item.quantity > (stockMap[item.productId] || 0) && (
+                      <span className="text-[10px] text-destructive font-medium">
+                        {t('insufficient_stock')}
+                      </span>
+                    )}
+                  </div>
+                  {item.productId && item.quantity > (stockMap[item.productId] || 0) && (
+                    <span className="col-span-3 text-xs text-destructive font-medium text-center">
+                      {t('insufficient_stock')} ({stockMap[item.productId] || 0} dona)
+                    </span>
+                  )}
+                  <input
+                    type="number"
+                    value={item.quantity}
+                    onChange={e => updateItem(idx, "quantity", Math.max(1, Number(e.target.value)))}
+                    placeholder="Soni"
+                    className="col-span-3 h-9 rounded-lg border-2 border-border bg-background px-3 text-sm text-center"
+                  />
+                  <input
+                    type="number"
+                    value={item.price}
+                    onChange={e => updateItem(idx, "price", Math.max(0, Number(e.target.value)))}
+                    placeholder="Narxi"
+                    className="col-span-3 h-9 rounded-lg border-2 border-border bg-background px-3 text-sm text-center"
+                  />
+                  <div className="col-span-3 flex items-center justify-center gap-1">
+                    <span className="text-sm font-semibold font-mono">{formatSum(item.quantity * item.price)}</span>
+                    {items.length > 1 && (
+                      <button type="button" onClick={() => removeItem(idx)} className="p-1.5 rounded-lg hover:bg-destructive/10 text-destructive transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         ))}
       </div>

@@ -14,6 +14,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { exportToExcel, type ExcelColumn } from "@/lib/export-to-excel";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { useLang } from "@/lib/i18n";
+import { MATERIALS } from "./Products";
+
+const FINANCE_CATEGORIES = [
+  "Sotuv",
+  "Maosh",
+  ...MATERIALS,
+  "Transport",
+  "Kommunal",
+  "Xarid",
+  "Boshqa",
+];
 
 const formatSum = (n: number) => n.toLocaleString("uz-UZ") + " so'm";
 
@@ -639,12 +650,9 @@ export default function Finance() {
               <label className="text-sm font-semibold block mb-1.5">{t('category')}</label>
               <select {...register("category")} className="flex h-12 w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm">
                 <option value="">{t('select_product')}</option>
-                <option value="Sotuv">{t('category_sale')}</option>
-                <option value="Maosh">{t('category_salary')}</option>
-                <option value="Material">Material</option>
-                <option value="Transport">Transport</option>
-                <option value="Kommunal">Kommunal</option>
-                <option value="Boshqa">Boshqa</option>
+                {FINANCE_CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
               </select>
             </div>
             <div>
