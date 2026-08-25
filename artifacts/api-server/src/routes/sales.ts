@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, salesTable, inventoryTable, productsTable, warehousesTable, transactionsTable } from "@workspace/db";
+import { db, salesTable, inventoryTable, productsTable, warehousesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
 
@@ -62,22 +62,6 @@ router.post("/", authMiddleware, async (req, res) => {
 
   const product = await db.select().from(productsTable).where(eq(productsTable.id, productId)).limit(1);
   const warehouse = await db.select().from(warehousesTable).where(eq(warehousesTable.id, warehouseId)).limit(1);
-
-  // Avtomatik moliyaga kirim yozish
-  try {
-    const amount = (product[0]?.price || 0) * quantity;
-    if (amount > 0) {
-      await db.insert(transactionsTable).values({
-        type: "income",
-        category: "Sotuv",
-        amount: amount.toString(),
-        description: `Sotuv: ${product[0]?.name || ""} x${quantity} (${warehouse[0]?.name || ""})`,
-        date: new Date().toISOString().split("T")[0],
-      });
-    }
-  } catch (e) {
-    console.error("[Sales] Auto-finance error:", e);
-  }
 
   res.status(201).json({
     id: record.id,
