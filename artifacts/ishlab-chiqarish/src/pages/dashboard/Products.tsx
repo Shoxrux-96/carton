@@ -305,12 +305,11 @@ export default function Products() {
                     </div>
                   )}
 
-                  {(product.length || product.width || product.height || product.material) && (
+                  {(product.length || product.width || product.height) && (
                     <div className="flex flex-wrap gap-2 mb-3">
                       {product.length && <DimensionBadge label="Uzunlik" value={`${product.length} sm`} />}
                       {product.width && <DimensionBadge label="Kenglik" value={`${product.width} sm`} />}
                       {product.height && <DimensionBadge label="Balandlik" value={`${product.height} sm`} />}
-                      {product.material && <DimensionBadge label="Material" value={product.material} />}
                       {product.color && (
                         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted text-xs font-medium text-muted-foreground">
                           <span className="w-3 h-3 rounded-full border" style={{ backgroundColor: product.color }} />
@@ -457,11 +456,6 @@ export default function Products() {
               <Input type="number" step="0.1" {...register("height")} error={errors.height?.message} placeholder="0" className="h-12" />
             </div>
           </div>
-
-          <div>
-            <label className="text-sm font-semibold block mb-1.5 text-foreground">{t('material_label')}</label>
-              <Input {...register("material")} error={errors.material?.message} placeholder="Karton, gofrokarton..." className="h-12" />
-            </div>
 
           <div>
             <label className="text-sm font-semibold block mb-1.5 text-foreground">{t('color_label')}</label>
