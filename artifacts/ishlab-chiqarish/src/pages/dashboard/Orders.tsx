@@ -608,65 +608,10 @@ export default function Orders() {
   };
 
   const updateStatus = async (id: number, field: string, value: string) => {
-    if (field === "deliveryStatus" && value === "delivered") {
-      let order: any = null;
-      try {
-        const all = JSON.parse(localStorage.getItem("carton_orders") || "[]");
-        order = all.find((o: any) => o.id === id);
-      } catch {}
-      if (!order) {
-        try {
-          const queryData = queryClient.getQueryData(["/api/orders"]);
-          if (Array.isArray(queryData)) order = queryData.find((o: any) => o.id === id);
-        } catch {}
-      }
-      if (order) {
-        const items = Array.isArray(order.items) ? order.items : [];
-        const sales = JSON.parse(localStorage.getItem("carton_sales") || "[]");
-        const existingKeys = new Set(sales.map((s: any) => s.sourceKey).filter(Boolean));
-        if (items.length > 0) {
-          for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            const sourceKey = `order_${id}_${item.productId || i}`;
-            if (existingKeys.has(sourceKey)) continue;
-            sales.push({
-              id: sourceKey,
-              sourceKey,
-              productName: item.name || "Noma'lum",
-              warehouseName: "Yetkazib berish",
-              quantity: item.quantity || 0,
-              totalSum: item.price ? item.quantity * item.price : 0,
-              soldAt: new Date().toISOString(),
-              source: "order",
-              orderCode: order.orderCode,
-              clientName: order.clientName,
-              clientPhone: order.clientPhone,
-            });
-          }
-        } else if (order.productId) {
-          const sourceKey = `order_${id}`;
-          if (!existingKeys.has(sourceKey)) {
-            sales.push({
-              id: sourceKey,
-              sourceKey,
-              productName: order.productName || "Noma'lum",
-              warehouseName: "Yetkazib berish",
-              quantity: order.quantity || 0,
-              totalSum: order.totalSum || 0,
-              soldAt: new Date().toISOString(),
-              source: "order",
-              orderCode: order.orderCode,
-              clientName: order.clientName,
-              clientPhone: order.clientPhone,
-            });
-          }
-        }
-        localStorage.setItem("carton_sales", JSON.stringify(sales));
-      }
-    }
+    // Update local state
+    setAllOrders(prev => prev.map((o: any) => o.id === id ? { ...o, [field]: value } : o));
 
-    // Always update localStorage regardless of API success/failure
-    // so mergeOrders doesn't overwrite the new status with stale local data
+    // Update localStorage
     try {
       const stored = JSON.parse(localStorage.getItem("carton_orders") || "[]");
       const localOrder = stored.find((o: any) => o.id === id);
@@ -676,14 +621,17 @@ export default function Orders() {
       }
     } catch {}
 
-    try {
-      await customFetch(`/api/orders/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", ...authOpts.headers },
-        body: JSON.stringify({ [field]: value }),
-      });
-    } catch {
-      // API failed, but we already saved to localStorage above
+    // Only PUT to API if it's a real server order (small ID), not a locally-saved one (Date.now() ID)
+    if (id < 1000000000) {
+      try {
+        await customFetch(`/api/orders/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", ...authOpts.headers },
+          body: JSON.stringify({ [field]: value }),
+        });
+      } catch {
+        // API failed
+      }
     }
     queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
   };
