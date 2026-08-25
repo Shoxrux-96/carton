@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, employeesTable, usersTable } from "@workspace/db";
+import { db, employeesTable, usersTable, transactionsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
 import { paramInt } from "../lib/params.js";
@@ -149,6 +149,34 @@ router.put("/:id", authMiddleware, upload.single("photo"), async (req, res) => {
 router.patch("/:id", authMiddleware, upload.single("photo"), async (req, res) => {
   const id = paramInt(req.params.id);
   await updateEmployeeRecord(req, res, id);
+});
+
+// Maosh to'lov — avtomatik moliyaga chiqim yozish
+router.post("/:id/pay-salary", authMiddleware, async (req, res) => {
+  const id = paramInt(req.params.id);
+  const { amount, month, description } = req.body;
+
+  const [emp] = await db.select().from(employeesTable).where(eq(employeesTable.id, id));
+  if (!emp) { res.status(404).json({ error: "Hodim topilmadi" }); return; }
+
+  const payAmount = amount || parseFloat(emp.salary || "0");
+  if (payAmount <= 0) { res.status(400).json({ error: "To'lov summasi 0 dan katta bo'lishi kerak" }); return; }
+
+  const payDate = new Date().toISOString().split("T")[0];
+  const payDesc = description || `Maosh — ${emp.name}${month ? ` (${month})` : ""}`;
+
+  try {
+    const [tx] = await db.insert(transactionsTable).values({
+      type: "expense",
+      category: "Maosh",
+      amount: payAmount.toString(),
+      description: payDesc,
+      date: payDate,
+    }).returning();
+    res.status(201).json({ ...tx, amount: parseFloat(tx.amount), employeeName: emp.name });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 router.delete("/:id", authMiddleware, async (req, res) => {

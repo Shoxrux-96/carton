@@ -150,6 +150,24 @@ router.put("/:id", authMiddleware, async (req, res) => {
     }
   }
 
+  // Xarid buyurtmasi qabul qilinganda avtomatik chiqim yozish
+  if (status === "received" && existing.orderType === "purchase") {
+    try {
+      const amount = parseFloat(existing.totalSum) || 0;
+      if (amount > 0) {
+        await db.insert(transactionsTable).values({
+          type: "expense",
+          category: "Xarid",
+          amount: amount.toString(),
+          description: `Xarid #${id} — ${existing.supplier || ""} — ${existing.materialName || ""}`,
+          date: new Date().toISOString().split("T")[0],
+        });
+      }
+    } catch (e) {
+      console.error("[Orders] Auto-finance purchase error:", e);
+    }
+  }
+
   const [full] = await db.select().from(ordersTable).where(eq(ordersTable.id, id));
   res.json(mapOrder(full));
 });
