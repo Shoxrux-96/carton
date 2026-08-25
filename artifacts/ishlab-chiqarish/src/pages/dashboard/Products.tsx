@@ -13,7 +13,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLang } from "@/lib/i18n";
 
-export const MATERIALS = [
+export const PRODUCTS_MATERIALS = [
   "Kraxmal",
   "Koustik Soda",
   "Qog'oz B2",
@@ -22,6 +22,10 @@ export const MATERIALS = [
   "Qog'oz K1",
   "Oq qog'oz",
   "Bo'yoq",
+];
+
+export const MATERIALS = [
+  ...PRODUCTS_MATERIALS,
   "Qo'lqop",
   "Machalka",
   "Elektr",
@@ -42,7 +46,7 @@ const schema = z.object({
   color: z.string().optional(),
   clientLogo: z.string().optional(),
   materials: z.array(z.string()).optional(),
-  oziqOvqat: z.string().optional(),
+  boshqaMaterial: z.string().optional(),
   status: z.enum(["published", "hidden"]).default("hidden"),
 });
 
@@ -69,11 +73,11 @@ export default function Products() {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [isLoadingSubmit, setIsLoadingSubmit] = useState(false);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
-  const [showOziqOvqat, setShowOziqOvqat] = useState(false);
+  const [showBoshqa, setShowBoshqa] = useState(false);
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", description: "", price: 0, image: "", length: undefined, width: undefined, height: undefined, material: "", color: "", clientLogo: "", materials: [], oziqOvqat: "", status: "hidden" },
+    defaultValues: { name: "", description: "", price: 0, image: "", length: undefined, width: undefined, height: undefined, material: "", color: "", clientLogo: "", materials: [], boshqaMaterial: "", status: "hidden" },
   });
 
   const currentStatus = watch("status");
@@ -112,9 +116,23 @@ export default function Products() {
   const toggleMaterial = (mat: string) => {
     setSelectedMaterials(prev => {
       const next = prev.includes(mat) ? prev.filter(m => m !== mat) : [...prev, mat];
-      setShowOziqOvqat(next.includes("Oziq ovqat"));
+      setShowBoshqa(next.includes("Boshqa"));
       return next;
     });
+  };
+
+  const addMaterialSelect = (value: string) => {
+    if (value && !selectedMaterials.includes(value)) {
+      const next = [...selectedMaterials, value];
+      setSelectedMaterials(next);
+      setShowBoshqa(next.includes("Boshqa"));
+    }
+  };
+
+  const removeMaterial = (mat: string) => {
+    const next = selectedMaterials.filter(m => m !== mat);
+    setSelectedMaterials(next);
+    setShowBoshqa(next.includes("Boshqa"));
   };
 
   const openEdit = (product: any) => {
@@ -132,8 +150,8 @@ export default function Products() {
     setValue("clientLogo", product.clientLogo || "");
     const mats = Array.isArray(product.materials) ? product.materials : [];
     setSelectedMaterials(mats);
-    setShowOziqOvqat(mats.includes("Oziq ovqat"));
-    setValue("oziqOvqat", product.oziqOvqat || "");
+    setShowBoshqa(mats.some(m => !MATERIALS.includes(m)));
+    setValue("boshqaMaterial", "");
     setValue("status", product.status === "published" || product.isPublished ? "published" : "hidden");
     setIsAddOpen(true);
   };
@@ -142,19 +160,19 @@ export default function Products() {
     setEditingProduct(null);
     setImagePreview(null);
     setSelectedMaterials([]);
-    setShowOziqOvqat(false);
-    reset({ name: "", description: "", price: 0, image: "", length: undefined, width: undefined, height: undefined, material: "", color: "", clientLogo: "", materials: [], oziqOvqat: "", status: "hidden" });
+    setShowBoshqa(false);
+    reset({ name: "", description: "", price: 0, image: "", length: undefined, width: undefined, height: undefined, material: "", color: "", clientLogo: "", materials: [], boshqaMaterial: "", status: "hidden" });
     setIsAddOpen(true);
   };
 
   const onSubmit = async (data: FormValues) => {
     setIsLoadingSubmit(true);
     try {
-      const finalMaterials = selectedMaterials.includes("Oziq ovqat") && data.oziqOvqat
-        ? [...selectedMaterials.filter(m => m !== "Oziq ovqat"), data.oziqOvqat]
-        : selectedMaterials;
+      const finalMaterials = selectedMaterials.includes("Boshqa") && data.boshqaMaterial
+        ? [...selectedMaterials.filter(m => m !== "Boshqa"), data.boshqaMaterial]
+        : selectedMaterials.filter(m => m !== "Boshqa");
       const payload = { ...data, materials: finalMaterials };
-      delete (payload as any).oziqOvqat;
+      delete (payload as any).boshqaMaterial;
       if (!payload.image) payload.image = undefined;
       if (editingProduct) {
         await customFetch(`/api/products/${editingProduct.id}`, {
@@ -349,26 +367,32 @@ export default function Products() {
 
           <div>
             <label className="text-sm font-semibold block mb-1.5 text-foreground">Materiallar</label>
-            <div className="flex flex-wrap gap-2">
-              {MATERIALS.map((mat) => (
-                <button
-                  key={mat}
-                  type="button"
-                  onClick={() => toggleMaterial(mat)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
-                    selectedMaterials.includes(mat)
-                      ? "bg-blue-500 text-white border-blue-500 shadow-sm"
-                      : "bg-muted/30 text-muted-foreground border-border hover:border-blue-300 hover:text-blue-700"
-                  }`}
-                >
-                  {mat}
-                </button>
+            <select
+              onChange={e => { addMaterialSelect(e.target.value); e.target.value = ""; }}
+              className="flex h-12 w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm"
+            >
+              <option value="">Material tanlang...</option>
+              {PRODUCTS_MATERIALS.map(mat => (
+                <option key={mat} value={mat}>{mat}</option>
               ))}
-            </div>
-            {showOziqOvqat && (
+              <option value="Boshqa">Boshqa</option>
+            </select>
+            {selectedMaterials.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {selectedMaterials.map(mat => (
+                  <span key={mat} className="flex items-center gap-1 px-3 py-1 rounded-lg bg-blue-100 text-blue-700 text-sm font-medium">
+                    {mat}
+                    <button type="button" onClick={() => removeMaterial(mat)} className="ml-1 hover:text-blue-900">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {showBoshqa && (
               <Input
-                {...register("oziqOvqat", { required: showOziqOvqat ? "Oziq ovqat nomini kiriting" : false })}
-                placeholder="Oziq ovqat nomi (masalan: Non, Lag'mon...)"
+                {...register("boshqaMaterial", { required: showBoshqa ? "Boshqa material nomini kiriting" : false })}
+                placeholder="Material nomini kiriting..."
                 className="h-12 mt-2"
               />
             )}
