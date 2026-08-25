@@ -459,7 +459,14 @@ export default function Products() {
 
           <div>
             <label className="text-sm font-semibold block mb-1.5 text-foreground">{t('color_label')}</label>
-            <Input {...register("color")} error={errors.color?.message} placeholder="Oq, jigarrang..." className="h-12" />
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                {...register("color")}
+                className="w-12 h-12 rounded-xl border-2 border-border cursor-pointer"
+              />
+              <Input {...register("color")} error={errors.color?.message} placeholder="#000000" className="h-12 flex-1" />
+            </div>
           </div>
 
           <div>
