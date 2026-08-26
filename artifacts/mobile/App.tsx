@@ -25,6 +25,8 @@ import FaceAttendanceScreen from "./src/screens/FaceAttendanceScreen";
 import FaceRegisterScreen from "./src/screens/FaceRegisterScreen";
 import SalesScreen from "./src/screens/SalesScreen";
 import TasksScreen from "./src/screens/TasksScreen";
+import AdminTasksScreen from "./src/screens/AdminTasksScreen";
+import EmployeeTasksScreen from "./src/screens/EmployeeTasksScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -65,7 +67,7 @@ function AdminProduction() {
   return (<Stack.Navigator screenOptions={hdrOpts}><Stack.Screen name="ProdMain" component={ProductionScreen} options={{ title: "🏭 Ishlab chiqarish" }} /><Stack.Screen name="Products" component={ProductsScreen} options={{ title: "📦 Mahsulotlar" }} /><Stack.Screen name="Stock" component={StockViewScreen} options={{ title: "📦 Ombor" }} /></Stack.Navigator>);
 }
 function AdminHR() {
-  return (<Stack.Navigator screenOptions={hdrOpts}><Stack.Screen name="Employees" component={EmployeesScreen} options={{ title: "👥 Hodimlar" }} /><Stack.Screen name="Attendance" component={AttendanceScreen} options={{ title: "✅ Davomat" }} /><Stack.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} /><Stack.Screen name="Tasks" component={TasksScreen} options={{ title: "📋 Topshiriqlar" }} /><Stack.Screen name="FaceAttendance" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} /><Stack.Screen name="FaceRegister" component={FaceRegisterScreen} options={{ title: "📸 Yuz ro'yxati" }} /></Stack.Navigator>);
+  return (<Stack.Navigator screenOptions={hdrOpts}><Stack.Screen name="Employees" component={EmployeesScreen} options={{ title: "👥 Hodimlar" }} /><Stack.Screen name="Attendance" component={AttendanceScreen} options={{ title: "✅ Davomat" }} /><Stack.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} /><Stack.Screen name="Tasks" component={AdminTasksScreen} options={{ title: "📋 Topshiriqlar" }} /><Stack.Screen name="FaceAttendance" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} /><Stack.Screen name="FaceRegister" component={FaceRegisterScreen} options={{ title: "📸 Yuz ro'yxati" }} /></Stack.Navigator>);
 }
 function AdminFinance() {
   return (<Stack.Navigator screenOptions={hdrOpts}><Stack.Screen name="Fin" component={FinanceScreen} options={{ title: "💰 Moliya" }} /></Stack.Navigator>);
@@ -108,9 +110,17 @@ function ManagerAttendance() {
     </Stack.Navigator>
   );
 }
+function ManagerTasksStack() {
+  return (
+    <Stack.Navigator screenOptions={hdrOpts}>
+      <Stack.Screen name="MyTasks" component={EmployeeTasksScreen} options={{ title: "📋 Topshiriqlarim" }} />
+    </Stack.Navigator>
+  );
+}
 function ManagerTabs({ onLogout }: { onLogout: () => void }) {
   return (<Tab.Navigator screenOptions={{ headerShown: false, tabBarStyle: tabStyle, tabBarLabelStyle: { fontSize: 10, fontWeight: "700", marginTop: -2 }, tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: "#94a3b8" }}>
     <Tab.Screen name="Bosh sahifa" options={{ tabBarIcon: ({ focused }) => <TI emoji="🏠" focused={focused} /> }}>{() => <ManagerHome onLogout={onLogout} />}</Tab.Screen>
+    <Tab.Screen name="Topshiriqlar" component={ManagerTasksStack} options={{ tabBarIcon: ({ focused }) => <TI emoji="📋" focused={focused} /> }} />
     <Tab.Screen name="Davomat" component={ManagerAttendance} options={{ tabBarIcon: ({ focused }) => <TI emoji="✅" focused={focused} /> }} />
     <Tab.Screen name="Ishlab chiq." component={ManagerProduction} options={{ tabBarIcon: ({ focused }) => <TI emoji="🏭" focused={focused} /> }} />
     <Tab.Screen name="Profil" options={{ tabBarIcon: ({ focused }) => <TI emoji="👤" focused={focused} /> }}>{() => <Stack.Navigator screenOptions={hdrOpts}><Stack.Screen name="Prof" options={{ title: "Profil", headerLeft: ({ navigation }: any) => <HeaderLogo /> }}>{({ navigation }) => <ProfileScreen navigation={navigation} onLogout={onLogout} />}</Stack.Screen></Stack.Navigator>}</Tab.Screen>
@@ -140,6 +150,14 @@ function EmployeeDavomatStack() {
   );
 }
 
+function EmployeeTasksStack() {
+  return (
+    <Stack.Navigator screenOptions={hdrOpts}>
+      <Stack.Screen name="MyTasks" component={EmployeeTasksScreen} options={{ title: "📋 Topshiriqlarim" }} />
+    </Stack.Navigator>
+  );
+}
+
 function EmployeeReportStack() {
   return (
     <Stack.Navigator screenOptions={hdrOpts}>
@@ -163,6 +181,7 @@ function EmployeeTabs({ onLogout }: { onLogout: () => void }) {
     <Tab.Screen name="Bosh sahifa" options={{ tabBarIcon: ({ focused }) => <TI emoji="🏠" focused={focused} /> }}>
       {() => <EmployeeHomeStack onLogout={onLogout} />}
     </Tab.Screen>
+    <Tab.Screen name="Topshiriqlar" component={EmployeeTasksStack} options={{ tabBarIcon: ({ focused }) => <TI emoji="📋" focused={focused} /> }} />
     <Tab.Screen name="Davomat" component={EmployeeDavomatStack} options={{ tabBarIcon: ({ focused }) => <TI emoji="🤳" focused={focused} /> }} />
     <Tab.Screen name="Hisobot" component={EmployeeReportStack} options={{ tabBarIcon: ({ focused }) => <TI emoji="📊" focused={focused} /> }} />
     <Tab.Screen name="Profil" options={{ tabBarIcon: ({ focused }) => <TI emoji="👤" focused={focused} /> }}>
