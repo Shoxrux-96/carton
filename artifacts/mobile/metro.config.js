@@ -1,9 +1,22 @@
 const { getDefaultConfig } = require('@expo/metro-config');
+const path = require('path');
 
-const config = getDefaultConfig(__dirname);
+const projectRoot = __dirname;
+const monorepoRoot = path.resolve(projectRoot, '../..');
 
-// Ensure react-native-web resolution for web platform
-config.resolver.platforms = ['web', 'android', 'ios'];
+const config = getDefaultConfig(projectRoot);
+
+config.resolver.platforms = ['android', 'ios'];
 config.resolver.resolverMainFields = ['react-native', 'browser', 'main'];
+
+config.watchFolders = [monorepoRoot];
+config.resolver.nodeModulesPaths = [
+  path.resolve(projectRoot, 'node_modules'),
+  path.resolve(monorepoRoot, 'node_modules'),
+];
+
+config.server = {
+  port: 8082,
+};
 
 module.exports = config;

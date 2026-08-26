@@ -1,7 +1,7 @@
 import React from "react";
 import { Image, ImageStyle, StyleProp } from "react-native";
 
-const LOGO = require("../../assets/logo-circle.png");
+const LOGO = require("../../assets/logo.png");
 
 interface Props {
   size?: number;

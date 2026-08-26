@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { ActivityIndicator, View, StatusBar, Text, ErrorUtils } from "react-native";
+import { ActivityIndicator, View, StatusBar, Text, ErrorUtils, Image } from "react-native";
 import { getToken, getUserRole, logClientError } from "./src/api";
 import { colors } from "./src/theme";
 import { I18nProvider } from "./src/i18n";
@@ -28,7 +28,9 @@ import TasksScreen from "./src/screens/TasksScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-const hdrOpts = { headerStyle: { backgroundColor: colors.primary }, headerTintColor: "#fff", headerTitleStyle: { fontWeight: "700" as const }, animation: "slide_from_right" as const };
+const LOGO_IMG = require("./assets/logo.png");
+const HeaderLogo = () => <Image source={LOGO_IMG} style={{ width: 28, height: 28, borderRadius: 6, marginRight: 8 }} resizeMode="contain" />;
+const hdrOpts = { headerStyle: { backgroundColor: colors.primary }, headerTintColor: "#fff", headerTitleStyle: { fontWeight: "700" as const }, animation: "slide_from_right" as const, headerLeft: () => <HeaderLogo /> };
 
 function TI({ emoji, focused }: { emoji: string; focused: boolean }) {
   return (<View style={{ alignItems: "center", paddingTop: 4 }}><View style={{ width: focused ? 42 : 34, height: focused ? 42 : 34, borderRadius: focused ? 13 : 11, backgroundColor: focused ? colors.primary + "15" : "transparent", justifyContent: "center", alignItems: "center" }}><Text style={{ fontSize: focused ? 21 : 18 }}>{emoji}</Text></View></View>);
