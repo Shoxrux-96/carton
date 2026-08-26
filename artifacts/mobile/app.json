@@ -21,8 +21,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#f59e0b",
-        "foregroundImage": "./assets/logo-adaptive.png"
+        "backgroundColor": "#f97316",
+        "foregroundImage": "./assets/logo.png"
       },
       "package": "uz.shovotcarton.erp",
       "permissions": [

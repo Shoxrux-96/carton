@@ -121,7 +121,7 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
         <Text style={styles.cardTitle}>Shaxsiy ma'lumotlar</Text>
 
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Telefon</Text>
+          <Text style={styles.fieldLabel}>📱 Telefon</Text>
           {editing ? (
             <TextInput style={styles.fieldInput} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
           ) : (
@@ -142,7 +142,7 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
         {editing && (
           <>
             <View style={styles.field}>
-              <Text style={styles.fieldLabel}>Joriy parol</Text>
+              <Text style={styles.fieldLabel}>🔑 Joriy parol</Text>
               <TextInput style={styles.fieldInput} value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry placeholder="Joriy parol" placeholderTextColor={colors.textMuted} />
             </View>
             <View style={styles.field}>

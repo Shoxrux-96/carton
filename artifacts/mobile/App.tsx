@@ -289,7 +289,8 @@ export default function App() {
             error?.stack || (error instanceof Error ? error.message : String(error)),
           );
         } catch {}
-        if (base) base(error, isFatal);
+        // Do NOT call base(error, isFatal) — it crashes the app on fatal errors
+        // and causes auto-logout. Non-fatal errors are logged but silently swallowed.
       });
     } catch {}
   }, []);

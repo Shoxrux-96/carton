@@ -102,7 +102,7 @@ export default function CreateProductionScreen() {
         />
 
         <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={saving}>
-          <Text style={styles.submitText}>{saving ? "Saqlanmoqda..." : "Kiritish"}</Text>
+          <Text style={styles.submitText}>{saving ? "Saqlanmoqda..." : "📥 Kiritish"}</Text>
         </TouchableOpacity>
       </View>
 

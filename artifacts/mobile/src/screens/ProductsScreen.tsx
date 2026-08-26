@@ -222,7 +222,7 @@ export default function ProductsScreen() {
         <View style={styles.modalOverlay}>
           <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{editing ? "Tahrirlash" : "Yangi mahsulot"}</Text>
+              <Text style={styles.modalTitle}>{editing ? "✏️ Tahrirlash" : "Yangi mahsulot"}</Text>
               <TouchableOpacity onPress={() => { setShowModal(false); resetForm(); }}><Text style={styles.modalClose}>✕</Text></TouchableOpacity>
             </View>
 

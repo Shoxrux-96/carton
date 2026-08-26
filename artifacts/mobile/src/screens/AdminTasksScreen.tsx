@@ -268,7 +268,7 @@ export default function AdminTasksScreen() {
           <View style={styles.modalContent}>
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{editing ? "Tahrirlash" : "Yangi topshiriq"}</Text>
+                <Text style={styles.modalTitle}>{editing ? "✏️ Tahrirlash" : "Yangi topshiriq"}</Text>
                 <TouchableOpacity onPress={() => setShowModal(false)} style={styles.modalCloseBtn}>
                   <Text style={styles.modalClose}>✕</Text>
                 </TouchableOpacity>

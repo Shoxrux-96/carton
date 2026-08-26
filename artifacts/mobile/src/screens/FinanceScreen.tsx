@@ -262,7 +262,7 @@ export default function FinanceScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Yangi moliyaviy yozuv</Text>
+              <Text style={styles.modalTitle}>💰 Yangi moliyaviy yozuv</Text>
               <TouchableOpacity onPress={() => setShowModal(false)}>
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>

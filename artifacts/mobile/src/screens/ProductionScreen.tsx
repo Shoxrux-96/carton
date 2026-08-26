@@ -204,7 +204,7 @@ export default function ProductionScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Ishlab chiqarish + Omborga kirim</Text>
+              <Text style={styles.modalTitle}>🏭 Ishlab chiqarish + Omborga kirim</Text>
               <TouchableOpacity onPress={() => setShowModal(false)}>
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
@@ -272,7 +272,7 @@ export default function ProductionScreen() {
                 <Text style={styles.cancelText}>Bekor qilish</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.saveBtn} onPress={handleSubmit} disabled={saving}>
-                <Text style={styles.saveText}>{saving ? "Saqlanmoqda..." : "Kiritish"}</Text>
+                <Text style={styles.saveText}>{saving ? "Saqlanmoqda..." : "📥 Kiritish"}</Text>
               </TouchableOpacity>
             </View>
           </View>
