@@ -6,6 +6,8 @@ import Constants from "expo-constants";
 // physical devices work without extra config.
 const envBase = process.env.EXPO_PUBLIC_API_URL;
 
+const VPS_API = "http://169.58.178.55:3003/api";
+
 let host = "10.0.2.2";
 try {
   if (!envBase) {
@@ -19,7 +21,7 @@ try {
   // ignore and use default
 }
 
-const API_BASE = envBase || `http://${host}:3003/api`;
+const API_BASE = envBase || VPS_API;
 
 export { API_BASE };
 
