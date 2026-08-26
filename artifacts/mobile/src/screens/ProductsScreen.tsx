@@ -222,7 +222,7 @@ export default function ProductsScreen() {
         <View style={styles.modalOverlay}>
           <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{editing ? "✏️ Tahrirlash" : "➕ Yangi mahsulot"}</Text>
+              <Text style={styles.modalTitle}>{editing ? "Tahrirlash" : "Yangi mahsulot"}</Text>
               <TouchableOpacity onPress={() => { setShowModal(false); resetForm(); }}><Text style={styles.modalClose}>✕</Text></TouchableOpacity>
             </View>
 
@@ -283,7 +283,7 @@ export default function ProductsScreen() {
             </View>
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => { setShowModal(false); resetForm(); }}><Text style={styles.cancelText}>Bekor</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}><Text style={styles.saveText}>{saving ? "⏳..." : "✅ Saqlash"}</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}><Text style={styles.saveText}>{saving ? "Saqlanmoqda..." : "Saqlash"}</Text></TouchableOpacity>
             </View>
           </ScrollView>
         </View>

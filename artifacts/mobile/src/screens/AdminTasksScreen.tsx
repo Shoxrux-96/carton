@@ -103,7 +103,7 @@ export default function AdminTasksScreen() {
       } else {
         await apiFetch("/tasks", { method: "POST", body: JSON.stringify(payload) });
       }
-      Alert.alert("Muvaffaqiyat", editing ? "Yangilandi ✅" : "Qo'shildi ✅");
+      Alert.alert("Muvaffaqiyat", editing ? "Yangilandi" : "Qo'shildi");
       setShowModal(false); resetForm(); await load();
     } catch (e: any) { Alert.alert("Xatolik", e.message); }
     finally { setSaving(false); }
@@ -268,7 +268,7 @@ export default function AdminTasksScreen() {
           <View style={styles.modalContent}>
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{editing ? "✏️ Tahrirlash" : "📋 Yangi topshiriq"}</Text>
+                <Text style={styles.modalTitle}>{editing ? "Tahrirlash" : "Yangi topshiriq"}</Text>
                 <TouchableOpacity onPress={() => setShowModal(false)} style={styles.modalCloseBtn}>
                   <Text style={styles.modalClose}>✕</Text>
                 </TouchableOpacity>
@@ -280,7 +280,7 @@ export default function AdminTasksScreen() {
               <Text style={styles.fieldLabel}>Izoh</Text>
               <TextInput style={[styles.fieldInput, styles.textArea]} value={description} onChangeText={setDescription} placeholder="Batafsil yozing..." multiline numberOfLines={4} placeholderTextColor={colors.textMuted} />
 
-              <Text style={styles.fieldLabel}>👤 Mas'ul (hodim)</Text>
+              <Text style={styles.fieldLabel}>Mas'ul (hodim)</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
                 <TouchableOpacity style={[styles.chip, !assigneeId && styles.chipActive]} onPress={() => setAssigneeId(null)}>
                   <Text style={[styles.chipText, !assigneeId && { color: "#fff" }]}>Tanlanmagan</Text>
@@ -292,7 +292,7 @@ export default function AdminTasksScreen() {
                 ))}
               </ScrollView>
 
-              <Text style={styles.fieldLabel}>📦 Mahsulot (ixtiyoriy)</Text>
+              <Text style={styles.fieldLabel}>Mahsulot (ixtiyoriy)</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
                 <TouchableOpacity style={[styles.chip, !productId && styles.chipActive]} onPress={() => setProductId(null)}>
                   <Text style={[styles.chipText, !productId && { color: "#fff" }]}>Tanlanmagan</Text>
@@ -304,7 +304,7 @@ export default function AdminTasksScreen() {
                 ))}
               </ScrollView>
 
-              <Text style={styles.fieldLabel}>🧱 Material (ixtiyoriy)</Text>
+              <Text style={styles.fieldLabel}>Material (ixtiyoriy)</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
                 <TouchableOpacity style={[styles.chip, !selectedMaterial && styles.chipActive]} onPress={() => { setSelectedMaterial(""); setCustomMaterial(""); }}>
                   <Text style={[styles.chipText, !selectedMaterial && { color: "#fff" }]}>Yo'q</Text>
@@ -323,7 +323,7 @@ export default function AdminTasksScreen() {
               )}
 
               <View style={styles.fieldHint}>
-                <Text style={styles.fieldHintText}>📅 Sana: avtomatik (bugun)</Text>
+                <Text style={styles.fieldHintText}>Sana: avtomatik (bugun)</Text>
               </View>
 
               <View style={styles.modalActions}>
@@ -331,7 +331,7 @@ export default function AdminTasksScreen() {
                   <Text style={styles.cancelText}>Bekor qilish</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-                  <Text style={styles.saveText}>{saving ? "⏳..." : editing ? "💾 Yangilash" : "✅ Qo'shish"}</Text>
+                  <Text style={styles.saveText}>{saving ? "Saqlanmoqda..." : editing ? "Yangilash" : "Saqlash"}</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>

@@ -85,7 +85,7 @@ export default function FinanceScreen() {
         method: "POST",
         body: JSON.stringify({ type: formType, amount: Number(amount), category: category || (formType === "income" ? "Kirim" : "Chiqim"), description, date: today }),
       });
-      Alert.alert("Muvaffaqiyat", "Yozuv qo'shildi ✅");
+      Alert.alert("Muvaffaqiyat", "Yozuv qo'shildi");
       setShowModal(false); resetForm(); await load();
     } catch (e: any) { Alert.alert("Xatolik", e.message); }
     finally { setSaving(false); }
@@ -245,7 +245,7 @@ export default function FinanceScreen() {
 
             {periodFilter === "year" && (
               <TouchableOpacity style={styles.doneBtn} onPress={() => setShowDatePicker(false)}>
-                <Text style={styles.doneBtnText}>✅ Tanlash</Text>
+                <Text style={styles.doneBtnText}>Tanlash</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -262,7 +262,7 @@ export default function FinanceScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>💰 Yangi moliyaviy yozuv</Text>
+              <Text style={styles.modalTitle}>Yangi moliyaviy yozuv</Text>
               <TouchableOpacity onPress={() => setShowModal(false)}>
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
@@ -303,7 +303,7 @@ export default function FinanceScreen() {
                 <Text style={styles.cancelText}>Bekor qilish</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-                <Text style={styles.saveText}>{saving ? "⏳..." : "✅ Saqlash"}</Text>
+                <Text style={styles.saveText}>{saving ? "Saqlanmoqda..." : "Saqlash"}</Text>
               </TouchableOpacity>
             </View>
           </View>

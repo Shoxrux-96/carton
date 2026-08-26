@@ -57,7 +57,7 @@ export default function EmployeesScreen({ navigation }: any) {
       const body = { name: name.trim(), phone, position, salary: Number(salary) || 0, hireDate, notes };
       if (editing) {
         await apiFetch(`/employees/${editing.id}`, { method: "PUT", body: JSON.stringify(body) });
-        Alert.alert("Muvaffaqiyat", "Hodim yangilandi ✅");
+        Alert.alert("Muvaffaqiyat", "Hodim yangilandi");
       } else {
         // 1. Hodimni yaratish
         await apiFetch("/employees", { method: "POST", body: JSON.stringify(body) });
@@ -67,7 +67,7 @@ export default function EmployeesScreen({ navigation }: any) {
         try {
           await apiFetch("/auth/register", { method: "POST", body: JSON.stringify({ phone: cleanPhone, password: loginPassword, role }) });
         } catch {}
-        Alert.alert("Muvaffaqiyat", `Hodim qo'shildi ✅\n\nLogin: ${cleanPhone}\nParol: ${loginPassword}\nRol: ${role}`);
+        Alert.alert("Muvaffaqiyat", `Hodim qo'shildi\n\nLogin: ${cleanPhone}\nParol: ${loginPassword}\nRol: ${role}`);
       }
       setShowModal(false); resetForm(); await load();
     } catch (e: any) { Alert.alert("Xatolik", e.message); }
@@ -214,7 +214,7 @@ export default function EmployeesScreen({ navigation }: any) {
         <View style={styles.modalOverlay}>
           <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{editing ? "✏️ Hodimni tahrirlash" : "➕ Yangi hodim"}</Text>
+              <Text style={styles.modalTitle}>{editing ? "Hodimni tahrirlash" : "Yangi hodim"}</Text>
               <TouchableOpacity onPress={() => { setShowModal(false); resetForm(); }}>
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
@@ -251,7 +251,7 @@ export default function EmployeesScreen({ navigation }: any) {
 
             {!editing && (
               <View style={styles.loginSection}>
-                <Text style={styles.loginTitle}>🔑 Mobil ilova uchun login</Text>
+                <Text style={styles.loginTitle}>Mobil ilova uchun login</Text>
                 <Text style={styles.loginHint}>Telefon raqam = login, parolni o'zgartiring</Text>
                 <Text style={styles.fieldLabel}>Parol</Text>
                 <TextInput style={styles.fieldInput} value={loginPassword} onChangeText={setLoginPassword} placeholder="Kamida 8 belgi" placeholderTextColor={colors.textMuted} />
@@ -263,7 +263,7 @@ export default function EmployeesScreen({ navigation }: any) {
                 <Text style={styles.cancelText}>Bekor qilish</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-                <Text style={styles.saveText}>{saving ? "⏳..." : "✅ Saqlash"}</Text>
+                <Text style={styles.saveText}>{saving ? "Saqlanmoqda..." : "Saqlash"}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

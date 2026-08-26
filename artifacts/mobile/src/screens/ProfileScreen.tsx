@@ -121,7 +121,7 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
         <Text style={styles.cardTitle}>Shaxsiy ma'lumotlar</Text>
 
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>📱 Telefon</Text>
+          <Text style={styles.fieldLabel}>Telefon</Text>
           {editing ? (
             <TextInput style={styles.fieldInput} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
           ) : (
@@ -130,23 +130,23 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>🏷️ Rol</Text>
+          <Text style={styles.fieldLabel}>Rol</Text>
           <Text style={styles.fieldValue}>{roleLabel(user?.role)}</Text>
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>💼 Lavozim</Text>
+          <Text style={styles.fieldLabel}>Lavozim</Text>
           <Text style={styles.fieldValue}>{user?.position || "—"}</Text>
         </View>
 
         {editing && (
           <>
             <View style={styles.field}>
-              <Text style={styles.fieldLabel}>🔑 Joriy parol</Text>
+              <Text style={styles.fieldLabel}>Joriy parol</Text>
               <TextInput style={styles.fieldInput} value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry placeholder="Joriy parol" placeholderTextColor={colors.textMuted} />
             </View>
             <View style={styles.field}>
-              <Text style={styles.fieldLabel}>🔐 Yangi parol</Text>
+              <Text style={styles.fieldLabel}>Yangi parol</Text>
               <TextInput style={styles.fieldInput} value={newPassword} onChangeText={setNewPassword} secureTextEntry placeholder="Yangi parol" placeholderTextColor={colors.textMuted} />
             </View>
           </>
@@ -157,7 +157,7 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
       {editing ? (
         <View style={styles.actions}>
           <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>💾 Saqlash</Text>}
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>Saqlash</Text>}
           </TouchableOpacity>
           <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditing(false)}>
             <Text style={styles.cancelBtnText}>Bekor qilish</Text>
@@ -171,7 +171,7 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
 
       {/* Language */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>🌐 {t("language")}</Text>
+        <Text style={styles.cardTitle}>{t("language")}</Text>
         <View style={{ flexDirection: "row", gap: 10 }}>
           <TouchableOpacity style={[styles.langBtn, lang === "uz" && styles.langBtnActive]} onPress={() => setLang("uz")}>
             <Text style={[styles.langBtnText, lang === "uz" && { color: "#fff" }]}>🇺🇿 {t("uzbek")}</Text>

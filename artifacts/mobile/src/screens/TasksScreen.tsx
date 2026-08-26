@@ -103,7 +103,7 @@ export default function TasksScreen() {
       } else {
         await apiFetch("/tasks", { method: "POST", body: JSON.stringify(payload) });
       }
-      Alert.alert("Muvaffaqiyat", editing ? "Yangilandi ✅" : "Qo'shildi ✅");
+      Alert.alert("Muvaffaqiyat", editing ? "Yangilandi" : "Qo'shildi");
       setShowModal(false); resetForm(); await load();
     } catch (e: any) { Alert.alert("Xatolik", e.message); }
     finally { setSaving(false); }
@@ -234,7 +234,7 @@ export default function TasksScreen() {
           <View style={styles.modalContent}>
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{editing ? "✏️ Tahrirlash" : "📋 Yangi topshiriq"}</Text>
+                <Text style={styles.modalTitle}>{editing ? "Tahrirlash" : "Yangi topshiriq"}</Text>
                 <TouchableOpacity onPress={() => setShowModal(false)}><Text style={styles.modalClose}>✕</Text></TouchableOpacity>
               </View>
 
@@ -301,7 +301,7 @@ export default function TasksScreen() {
                   <Text style={styles.cancelText}>Bekor qilish</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-                  <Text style={styles.saveText}>{saving ? "⏳..." : "✅ Saqlash"}</Text>
+                  <Text style={styles.saveText}>{saving ? "Saqlanmoqda..." : "Saqlash"}</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>

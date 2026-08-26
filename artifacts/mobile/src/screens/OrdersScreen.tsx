@@ -159,7 +159,7 @@ export default function OrdersScreen({ navigation }: any) {
       }
 
       await apiFetch("/orders", { method: "POST", body: JSON.stringify(payload) });
-      Alert.alert("Muvaffaqiyat", "Buyurtma yaratildi ✅");
+      Alert.alert("Muvaffaqiyat", "Buyurtma yaratildi");
       setShowModal(false);
       resetForm();
       await load();
@@ -321,7 +321,7 @@ export default function OrdersScreen({ navigation }: any) {
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>
-                  {orderType === "delivery" ? "🚚 Yangi yetkazish" : "📦 Yangi xarid"}
+                  {orderType === "delivery" ? "Yangi yetkazish" : "Yangi xarid"}
                 </Text>
                 <TouchableOpacity onPress={() => setShowModal(false)}>
                   <Text style={styles.modalClose}>✕</Text>
@@ -427,7 +427,7 @@ export default function OrdersScreen({ navigation }: any) {
                   <Text style={styles.cancelText}>Bekor qilish</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.saveBtn} onPress={submitOrder} disabled={saving}>
-                  <Text style={styles.saveText}>{saving ? "⏳ Saqlanmoqda..." : "✅ Saqlash"}</Text>
+                  <Text style={styles.saveText}>{saving ? "Saqlanmoqda..." : "Saqlash"}</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>

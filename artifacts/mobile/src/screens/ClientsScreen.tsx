@@ -54,7 +54,7 @@ export default function ClientsScreen() {
       } else {
         await apiFetch("/clients", { method: "POST", body: JSON.stringify(body) });
       }
-      Alert.alert("Muvaffaqiyat", editing ? "Mijoz yangilandi ✅" : "Mijoz qo'shildi ✅");
+      Alert.alert("Muvaffaqiyat", editing ? "Mijoz yangilandi" : "Mijoz qo'shildi");
       setShowModal(false); resetForm(); await load();
     } catch (e: any) { Alert.alert("Xatolik", e.message); }
     finally { setSaving(false); }
@@ -125,7 +125,7 @@ export default function ClientsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{editing ? "✏️ Mijozni tahrirlash" : "➕ Yangi mijoz"}</Text>
+              <Text style={styles.modalTitle}>{editing ? "Mijozni tahrirlash" : "Yangi mijoz"}</Text>
               <TouchableOpacity onPress={() => { setShowModal(false); resetForm(); }}>
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
@@ -158,7 +158,7 @@ export default function ClientsScreen() {
                 <Text style={styles.cancelText}>Bekor qilish</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-                <Text style={styles.saveText}>{saving ? "⏳..." : editing ? "💾 Saqlash" : "➕ Qo'shish"}</Text>
+                <Text style={styles.saveText}>{saving ? "Saqlanmoqda..." : editing ? "Saqlash" : "Qo'shish"}</Text>
               </TouchableOpacity>
             </View>
           </View>

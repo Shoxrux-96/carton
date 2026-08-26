@@ -131,7 +131,7 @@ export default function FaceRegisterScreen() {
                   <Text style={styles.retakeText}>🔄 Qayta olish</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.submitBtn} onPress={submitFace} disabled={loading}>
-                  {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>✅ Saqlash</Text>}
+                  {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>Saqlash</Text>}
                 </TouchableOpacity>
               </View>
             </View>

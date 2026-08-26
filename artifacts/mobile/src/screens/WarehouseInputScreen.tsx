@@ -44,7 +44,7 @@ export default function WarehouseInputScreen() {
       setSelectedWarehouse(wh.id);
       setNewWarehouseName("");
       setShowNewWarehouse(false);
-      Alert.alert("Muvaffaqiyat", "Ombor yaratildi ✅");
+      Alert.alert("Muvaffaqiyat", "Ombor yaratildi");
     } catch (e: any) { Alert.alert("Xatolik", e.message); }
   };
 
@@ -67,7 +67,7 @@ export default function WarehouseInputScreen() {
         method: "POST",
         body: JSON.stringify(body),
       });
-      Alert.alert("Muvaffaqiyat", "Omborga kirim qo'shildi ✅");
+      Alert.alert("Muvaffaqiyat", "Omborga kirim qo'shildi");
       setSelectedProduct(0);
       setQuantity("");
       await load();
@@ -154,7 +154,7 @@ export default function WarehouseInputScreen() {
         />
 
         <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={saving}>
-          <Text style={styles.submitText}>{saving ? "Saqlanmoqda..." : "✅ Omborga kiritish"}</Text>
+          <Text style={styles.submitText}>{saving ? "Saqlanmoqda..." : "Omborga kiritish"}</Text>
         </TouchableOpacity>
       </View>
 
