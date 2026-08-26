@@ -6,6 +6,11 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "icon": "./assets/logo.png",
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f97316"
+    },
     "plugins": [
       "expo-camera",
       "expo-image-picker",
@@ -22,7 +27,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#f97316",
-        "foregroundImage": "./assets/logo.png"
+        "foregroundImage": "./assets/logo-adaptive.png"
       },
       "package": "uz.shovotcarton.erp",
       "permissions": [

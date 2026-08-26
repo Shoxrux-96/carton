@@ -56,8 +56,9 @@ export default function LoginScreen({ onLogin }: Props) {
       });
       await setToken(data.token);
       await setUser(data.user);
-      await syncUserProfile();
       onLogin();
+      // Profile sync — non-blocking, runs after main screen loads
+      syncUserProfile().catch(() => {});
     } catch (e: any) {
       Alert.alert("Xatolik", e.message || "Server bilan bog'lanishda muammo");
     } finally {

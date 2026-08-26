@@ -281,7 +281,10 @@ export default function App() {
       const base = ErrorUtils && typeof ErrorUtils.getGlobalHandler === "function"
         ? ErrorUtils.getGlobalHandler()
         : null;
+      let handling = false;
       ErrorUtils.setGlobalHandler((error: any, isFatal?: boolean) => {
+        if (handling) return; // prevent infinite loop
+        handling = true;
         try {
           logClientError(
             isFatal ? "mobile:uncaught-fatal" : "mobile:uncaught",
@@ -289,8 +292,10 @@ export default function App() {
             error?.stack || (error instanceof Error ? error.message : String(error)),
           );
         } catch {}
-        // Do NOT call base(error, isFatal) — it crashes the app on fatal errors
-        // and causes auto-logout. Non-fatal errors are logged but silently swallowed.
+        try {
+          if (base) base(error, isFatal);
+        } catch {}
+        setTimeout(() => { handling = false; }, 1000);
       });
     } catch {}
   }, []);
