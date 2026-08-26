@@ -6,7 +6,7 @@ import Constants from "expo-constants";
 // physical devices work without extra config.
 const envBase = process.env.EXPO_PUBLIC_API_URL;
 
-const VPS_API = "http://169.58.178.55:3003/api";
+const VPS_API = "https://shovotcarton.uz/api";
 
 let host = "10.0.2.2";
 try {
