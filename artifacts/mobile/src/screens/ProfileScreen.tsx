@@ -219,6 +219,7 @@ const styles = StyleSheet.create({
   avatarLogoWrap: {
     width: 120, height: 120, borderRadius: 60,
     backgroundColor: "#fff", justifyContent: "center", alignItems: "center",
+    overflow: "hidden",
   },
   name: { fontSize: 24, fontWeight: "800", color: colors.text, textAlign: "center" },
   rolePill: {

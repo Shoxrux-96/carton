@@ -388,10 +388,11 @@ const styles = StyleSheet.create({
   },
   avatarLargeText: { fontSize: 32, fontWeight: "800", color: "#fff" },
   logoAvatar: {
-    width: 80, height: 80, borderRadius: 24,
+    width: 80, height: 80, borderRadius: 40,
     backgroundColor: "#fff", justifyContent: "center",
     alignItems: "center", marginBottom: spacing.md,
     borderWidth: 3, borderColor: "rgba(255,255,255,0.4)",
+    overflow: "hidden",
   },
   avatarImage: { width: 80, height: 80, borderRadius: 24, borderWidth: 3, borderColor: "rgba(255,255,255,0.4)", marginBottom: spacing.md },
   fullName: { fontSize: 22, fontWeight: "800", color: "#fff", letterSpacing: -0.3, textAlign: "center" },

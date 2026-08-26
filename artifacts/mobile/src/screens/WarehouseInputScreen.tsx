@@ -6,17 +6,26 @@ import { colors, radius, shadows, spacing } from "../theme";
 
 export default function WarehouseInputScreen() {
   const [products, setProducts] = useState<any[]>([]);
+  const [warehouses, setWarehouses] = useState<any[]>([]);
   const [inventory, setInventory] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<number>(0);
+  const [selectedWarehouse, setSelectedWarehouse] = useState<number>(0);
   const [quantity, setQuantity] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [saving, setSaving] = useState(false);
+  const [newWarehouseName, setNewWarehouseName] = useState("");
+  const [showNewWarehouse, setShowNewWarehouse] = useState(false);
 
   const load = async () => {
     try {
-      const [prods, inv] = await Promise.all([apiFetch("/products"), apiFetch("/inventory")]);
+      const [prods, whs, inv] = await Promise.all([
+        apiFetch("/products"),
+        apiFetch("/warehouses"),
+        apiFetch("/inventory"),
+      ]);
       setProducts(Array.isArray(prods) ? prods : []);
+      setWarehouses(Array.isArray(whs) ? whs : []);
       setInventory(Array.isArray(inv) ? inv : []);
     } catch {}
   };
@@ -24,13 +33,39 @@ export default function WarehouseInputScreen() {
   useFocusEffect(useCallback(() => { load(); }, []));
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
+  const handleCreateWarehouse = async () => {
+    if (!newWarehouseName.trim()) { Alert.alert("Xatolik", "Ombor nomini kiriting"); return; }
+    try {
+      const wh = await apiFetch("/warehouses", {
+        method: "POST",
+        body: JSON.stringify({ name: newWarehouseName.trim() }),
+      });
+      setWarehouses([...warehouses, wh]);
+      setSelectedWarehouse(wh.id);
+      setNewWarehouseName("");
+      setShowNewWarehouse(false);
+      Alert.alert("Muvaffaqiyat", "Ombor yaratildi ✅");
+    } catch (e: any) { Alert.alert("Xatolik", e.message); }
+  };
+
   const handleSubmit = async () => {
     if (!selectedProduct || !quantity) { Alert.alert("Xatolik", "Mahsulot va miqdor tanlang"); return; }
+    if (!selectedWarehouse && warehouses.length === 0) {
+      Alert.alert("Xatolik", "Avval ombor yarating");
+      return;
+    }
     setSaving(true);
     try {
+      const body: any = {
+        productId: selectedProduct,
+        quantity: Number(quantity),
+        productionDate: new Date(date).toISOString(),
+      };
+      if (selectedWarehouse) body.warehouseId = selectedWarehouse;
+
       await apiFetch("/production", {
         method: "POST",
-        body: JSON.stringify({ productId: selectedProduct, quantity: Number(quantity), productionDate: new Date(date).toISOString() }),
+        body: JSON.stringify(body),
       });
       Alert.alert("Muvaffaqiyat", "Omborga kirim qo'shildi ✅");
       setSelectedProduct(0);
@@ -60,6 +95,41 @@ export default function WarehouseInputScreen() {
       <View style={styles.formCard}>
         <Text style={styles.formTitle}>📥 Omborga kirim qo'shish</Text>
 
+        {/* Warehouse selection */}
+        <Text style={styles.label}>Ombor</Text>
+        <View style={styles.pickerWrap}>
+          {warehouses.map(w => (
+            <TouchableOpacity
+              key={w.id}
+              style={[styles.productChip, selectedWarehouse === w.id && styles.productChipActive]}
+              onPress={() => setSelectedWarehouse(w.id)}
+            >
+              <Text style={[styles.productChipText, selectedWarehouse === w.id && { color: "#fff" }]}>📍 {w.name}</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            style={[styles.productChip, { borderColor: colors.success }]}
+            onPress={() => setShowNewWarehouse(!showNewWarehouse)}
+          >
+            <Text style={[styles.productChipText, { color: colors.success }]}>+ Yangi</Text>
+          </TouchableOpacity>
+        </View>
+        {showNewWarehouse && (
+          <View style={{ flexDirection: "row", gap: 8, marginBottom: spacing.lg }}>
+            <TextInput
+              style={[styles.input, { flex: 1, marginBottom: 0 }]}
+              placeholder="Ombor nomi"
+              value={newWarehouseName}
+              onChangeText={setNewWarehouseName}
+              placeholderTextColor={colors.textMuted}
+            />
+            <TouchableOpacity style={styles.addWarehouseBtn} onPress={handleCreateWarehouse}>
+              <Text style={styles.addWarehouseText}>Qo'shish</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Product selection */}
         <Text style={styles.label}>Mahsulot</Text>
         <View style={styles.pickerWrap}>
           {products.map(p => (
@@ -96,6 +166,7 @@ export default function WarehouseInputScreen() {
             <Text style={styles.invName}>{item.productName || "—"}</Text>
             <Text style={[styles.invQty, item.quantity < 10 && { color: colors.danger }]}>{item.quantity} dona</Text>
           </View>
+          <Text style={styles.invWarehouse}>📍 {item.warehouseName || "Ombor"}</Text>
           {item.price ? <Text style={styles.invPrice}>💰 {item.price.toLocaleString()} so'm/dona</Text> : null}
         </View>
       ))}
@@ -124,5 +195,8 @@ const styles = StyleSheet.create({
   invRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   invName: { fontSize: 14, fontWeight: "600", color: colors.text },
   invQty: { fontSize: 16, fontWeight: "800", color: colors.primary },
+  invWarehouse: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
   invPrice: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
+  addWarehouseBtn: { height: 50, backgroundColor: colors.success, borderRadius: radius.md, paddingHorizontal: 16, justifyContent: "center", alignItems: "center" },
+  addWarehouseText: { color: "#fff", fontSize: 14, fontWeight: "700" },
 });
