@@ -36,6 +36,7 @@ const adminMenu = [
   { title: "Ishlab chiqarish", tab: "Ishlab chiq.", screen: "ProdMain", icon: "🏭", desc: "Ishlab chiqarish", color: "#ea580c", bg: "#fff7ed" },
   { title: "Ombor", tab: "Ishlab chiq.", screen: "Stock", icon: "📦", desc: "Ombor qoldiqlari", color: "#64748b", bg: "#f1f5f9" },
   { title: "Hodimlar", tab: "HR", screen: "Employees", icon: "👥", desc: "Hodimlar boshqaruvi", color: "#059669", bg: "#ecfdf5" },
+  { title: "Topshiriqlar", tab: "HR", screen: "Tasks", icon: "📋", desc: "Topshiriqlar boshqaruvi", color: "#ea580c", bg: "#fff7ed" },
   { title: "Davomat", tab: "HR", screen: "Attendance", icon: "✅", desc: "Kunlik davomat", color: "#16a34a", bg: "#dcfce7" },
   { title: "Yuz ro'yxati", tab: "HR", screen: "FaceRegister", icon: "📸", desc: "Yuzni ro'yxatga olish", color: "#db2777", bg: "#fdf2f8" },
   { title: "Moliya", tab: "Moliya", screen: "Fin", icon: "💰", desc: "Kirim va chiqimlar", color: "#ca8a04", bg: "#fef9c3" },

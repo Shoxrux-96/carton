@@ -32,11 +32,16 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const LOGO_IMG = require("./assets/logo.png");
 const HeaderLogo = () => <View style={{ width: 32, height: 32, borderRadius: 16, overflow: "hidden", marginRight: 8, backgroundColor: "#fff" }}><Image source={LOGO_IMG} style={{ width: 32, height: 32 }} resizeMode="contain" /></View>;
-const BackIcon = ({ navigation }: { navigation: any }) => (
-  <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 8, padding: 4 }}>
-    <Text style={{ color: "#fff", fontSize: 22 }}>←</Text>
-  </TouchableOpacity>
-);
+const BackIcon = ({ navigation }: { navigation: any }) => {
+  const state = navigation.getState();
+  const isRoot = state && state.index === 0;
+  if (isRoot) return null;
+  return (
+    <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 8, padding: 4 }}>
+      <Text style={{ color: "#fff", fontSize: 22 }}>←</Text>
+    </TouchableOpacity>
+  );
+};
 const hdrOpts = { headerStyle: { backgroundColor: colors.primary }, headerTintColor: "#fff", headerTitleStyle: { fontWeight: "700" as const }, animation: "slide_from_right" as const, headerLeft: ({ navigation }: any) => <BackIcon navigation={navigation} /> };
 
 function TI({ emoji, focused }: { emoji: string; focused: boolean }) {
