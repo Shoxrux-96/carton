@@ -653,19 +653,31 @@ export default function Orders() {
         method: "DELETE",
         headers: authOpts.headers,
       });
-    } catch {
-      try {
-        const deleted = JSON.parse(localStorage.getItem("carton_deleted_orders") || "[]");
-        if (!deleted.includes(id)) deleted.push(id);
-        localStorage.setItem("carton_deleted_orders", JSON.stringify(deleted));
-      } catch {}
-    }
+    } catch {}
+    // localStorage'dan ham o'chirish
+    try {
+      const deleted = JSON.parse(localStorage.getItem("carton_deleted_orders") || "[]");
+      if (!deleted.includes(id)) deleted.push(id);
+      localStorage.setItem("carton_deleted_orders", JSON.stringify(deleted));
+      const localOrders = JSON.parse(localStorage.getItem("carton_orders") || "[]");
+      const filtered = localOrders.filter((o: any) => o.id !== id);
+      localStorage.setItem("carton_orders", JSON.stringify(filtered));
+    } catch {}
     queryClient.setQueryData(["/api/orders"], (old: any) => {
       if (!Array.isArray(old)) return old;
       const filtered = old.filter((o: any) => o.id !== id);
       ordersCache.current = filtered;
       return filtered;
     });
+    queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+  };
+
+  const clearAllLocalOrders = () => {
+    localStorage.removeItem("carton_orders");
+    localStorage.removeItem("carton_deleted_orders");
+    localStorage.removeItem("carton_inventory");
+    localStorage.removeItem("carton_sales");
+    ordersCache.current = null;
     queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
   };
 
@@ -926,6 +938,13 @@ export default function Orders() {
           <div className="flex gap-2">
             <Button variant="outline" onClick={exportOrders} className="rounded-xl px-4 h-12">
               <FileDown className="mr-2 h-5 w-5" /> Excel
+            </Button>
+            <Button variant="outline" onClick={() => {
+              if (confirm("Barcha mahalliy buyurtma ma'lumotlarini o'chirmoqchimisiz? Bu amal ortga qaytarib bo'lmaydi.")) {
+                clearAllLocalOrders();
+              }
+            }} className="rounded-xl px-4 h-12 text-destructive border-destructive/30 hover:bg-destructive/10">
+              <Trash2 className="mr-2 h-5 w-5" /> Tozalash
             </Button>
             <Button onClick={openAdd} className="rounded-xl px-6 h-12 shadow-lg shadow-primary/20">
               <Plus className="mr-2 h-5 w-5" /> {t('new_order_btn')}
