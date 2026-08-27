@@ -41,7 +41,7 @@ router.get("/", authMiddleware, async (_req, res) => {
   const [pendingOrders] = await db
     .select({ count: count() })
     .from(ordersTable)
-    .where(sql`${ordersTable.status} != 'completed' AND ${ordersTable.status} != 'cancelled'`);
+    .where(sql`${ordersTable.deliveryStatus} != 'delivered'`);
 
   const [totalOrders] = await db
     .select({ count: count() })

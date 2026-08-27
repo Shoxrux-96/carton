@@ -16,26 +16,11 @@ const MATERIALS = [
   "Elektr", "Gaz", "Oziq ovqat", "Boshqa",
 ];
 
-const deliveryStatusConfig: Record<string, { label: string; bg: string; text: string }> = {
-  pending: { label: "Kutilmoqda", bg: "#fef3c7", text: "#d97706" },
-  confirmed: { label: "Tasdiqlangan", bg: "#dbeafe", text: "#2563eb" },
-  production: { label: "Ishlab chiqarishda", bg: "#f3e8ff", text: "#7c3aed" },
-  completed: { label: "Bajarilgan", bg: "#dcfce7", text: "#16a34a" },
-  cancelled: { label: "Bekor", bg: "#fee2e2", text: "#dc2626" },
-};
-
 const deliveryProgressConfig: Record<string, { label: string; bg: string; text: string }> = {
   pending: { label: "Kutilmoqda", bg: "#f3f4f6", text: "#6b7280" },
   shipped: { label: "Yuborilgan", bg: "#dbeafe", text: "#2563eb" },
   in_transit: { label: "Yo'lda", bg: "#fef3c7", text: "#d97706" },
   delivered: { label: "Yetkazilgan", bg: "#dcfce7", text: "#16a34a" },
-};
-
-const purchaseStatusConfig: Record<string, { label: string; bg: string; text: string }> = {
-  pending: { label: "Kutilmoqda", bg: "#fef3c7", text: "#d97706" },
-  ordered: { label: "Buyurtma qilingan", bg: "#dbeafe", text: "#2563eb" },
-  received: { label: "Qabul qilingan", bg: "#dcfce7", text: "#16a34a" },
-  cancelled: { label: "Bekor", bg: "#fee2e2", text: "#dc2626" },
 };
 
 type OrderType = "delivery" | "purchase";
@@ -92,9 +77,9 @@ export default function OrdersScreen({ navigation }: any) {
       .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [orders, orderType]);
 
-  const pendingCount = orders.filter(o => o.status === "pending").length;
-  const activeCount = orders.filter(o => o.status === "confirmed" || o.status === "in_progress" || o.status === "production").length;
-  const completedCount = orders.filter(o => o.status === "completed").length;
+  const pendingCount = orders.filter(o => o.deliveryStatus === "pending").length;
+  const activeCount = orders.filter(o => o.deliveryStatus === "shipped" || o.deliveryStatus === "in_transit").length;
+  const completedCount = orders.filter(o => o.deliveryStatus === "delivered").length;
   const totalSum = filtered.reduce((s, o) => s + (o.totalSum || 0), 0);
 
   const updateStatus = async (id: number, field: string, value: string) => {
@@ -245,7 +230,6 @@ export default function OrdersScreen({ navigation }: any) {
                   <Text style={styles.orderClient}>🏪 {order.supplier || "Noma'lum"}</Text>
                 )}
               </View>
-              {renderStatusBadge(order.status, orderType === "delivery" ? deliveryStatusConfig : purchaseStatusConfig)}
             </View>
 
             {/* Items */}
@@ -279,16 +263,6 @@ export default function OrdersScreen({ navigation }: any) {
 
             {/* Actions */}
             <View style={styles.actionRow}>
-              {order.status === "pending" && (
-                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: "#dbeafe" }]} onPress={() => updateStatus(order.id, "status", orderType === "delivery" ? "confirmed" : "ordered")}>
-                  <Text style={[styles.actionText, { color: "#2563eb" }]}>▶️ Boshlash</Text>
-                </TouchableOpacity>
-              )}
-              {(order.status === "confirmed" || order.status === "production" || order.status === "ordered") && (
-                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: "#dcfce7" }]} onPress={() => updateStatus(order.id, "status", "completed")}>
-                  <Text style={[styles.actionText, { color: "#16a34a" }]}>✅ Yakunlash</Text>
-                </TouchableOpacity>
-              )}
               {orderType === "delivery" && order.deliveryStatus !== "delivered" && (
                 <TouchableOpacity style={[styles.actionBtn, { backgroundColor: "#fef3c7" }]} onPress={() => {
                   const next = order.deliveryStatus === "pending" ? "shipped" : order.deliveryStatus === "shipped" ? "in_transit" : "delivered";

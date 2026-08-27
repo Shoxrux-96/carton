@@ -95,9 +95,6 @@ export default function MobileOrders() {
                 <span className="font-mono text-[11px] text-muted-foreground">
                   #{order.orderCode || order.id}
                 </span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${statusColors[order.status] || "bg-gray-100"}`}>
-                  {statusLabels[order.status] || order.status}
-                </span>
               </div>
               <p className="font-semibold text-sm">{order.clientName || t("client")}</p>
               <div className="flex flex-wrap items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">

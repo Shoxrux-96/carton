@@ -900,7 +900,6 @@ export default function Orders() {
         { header: "Soni", key: "totalItems", accessor: (r: any) => r.totalItems || 0 },
         { header: "Jami summa", key: "totalSum", accessor: (r: any) => r.totalSum || 0 },
         { header: "Vaqt", key: "createdAt", accessor: (r: any) => format(new Date(r.createdAt), "dd.MM.yyyy HH:mm") },
-        { header: "Holat", key: "status" },
       ];
       exportToExcel(filteredOrders, cols, "xarid-buyurtmalari");
     } else {
@@ -911,7 +910,6 @@ export default function Orders() {
         { header: "Soni", key: "totalItems", accessor: (r: any) => r.totalItems || 0 },
         { header: "Jami summa", key: "totalSum", accessor: (r: any) => r.totalSum || 0 },
         { header: "Vaqt", key: "createdAt", accessor: (r: any) => format(new Date(r.createdAt), "dd.MM.yyyy HH:mm") },
-        { header: "Holat", key: "status" },
         { header: "Yetkazish", key: "deliveryStatus" },
       ];
       exportToExcel(filteredOrders, cols, "yetkazib-berish");
@@ -991,15 +989,14 @@ export default function Orders() {
                   <th className="px-3 py-3 font-semibold whitespace-nowrap">{t('materials_label')}</th>
                   <th className="px-3 py-3 font-semibold whitespace-nowrap text-right">{t('count_label')}</th>
                   <th className="px-3 py-3 font-semibold whitespace-nowrap text-right">{t('total_sum')}</th>
-                  <th className="px-3 py-3 font-semibold whitespace-nowrap">{t('time')}</th>
-                  <th className="px-3 py-3 font-semibold whitespace-nowrap">{t('status')}</th>
-                  <th className="px-3 py-3 font-semibold whitespace-nowrap text-right">{t('action')}</th>
+                   <th className="px-3 py-3 font-semibold whitespace-nowrap">{t('time')}</th>
+                   <th className="px-3 py-3 font-semibold whitespace-nowrap text-right">{t('action')}</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-16">
+                    <td colSpan={7} className="text-center py-16">
                       <Package className="w-12 h-12 mx-auto text-muted-foreground mb-3 opacity-20" />
                       <p className="text-lg font-medium">{t('no_purchase_orders')}</p>
                       <p className="text-muted-foreground mt-1">{t('purchase_orders_empty_desc')}</p>
@@ -1018,18 +1015,6 @@ export default function Orders() {
                         <td className="px-3 py-3 text-right font-mono whitespace-nowrap">{totalItems} ta</td>
                         <td className="px-3 py-3 text-right font-mono font-semibold whitespace-nowrap">{formatSum(order.totalSum)}</td>
                         <td className="px-3 py-3 text-muted-foreground text-xs whitespace-nowrap">{format(new Date(order.createdAt), 'dd.MM HH:mm')}</td>
-                        <td className="px-3 py-3">
-                          <select
-                            value={order.status}
-                            onChange={e => updateStatus(order.id, "status", e.target.value)}
-                            disabled={order.status === "cancelled"}
-                            className={`px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${purchaseStatusConfig[order.status]?.color || "bg-gray-100"}`}
-                          >
-                            {Object.entries(purchaseStatusConfig).map(([k, v]) => (
-                              <option key={k} value={k}>{v.label}</option>
-                            ))}
-                          </select>
-                        </td>
                         <td className="px-3 py-3 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Button variant="ghost" size="sm" onClick={() => openEdit(order)}>
@@ -1124,15 +1109,14 @@ export default function Orders() {
               <th className="px-3 py-3 font-semibold whitespace-nowrap text-right">{t('total_sum')}</th>
               <th className="px-3 py-3 font-semibold whitespace-nowrap">{t('location_label')}</th>
               <th className="px-3 py-3 font-semibold whitespace-nowrap">{t('time')}</th>
-              <th className="px-3 py-3 font-semibold whitespace-nowrap">{t('status')}</th>
-              <th className="px-3 py-3 font-semibold whitespace-nowrap">{t('delivery')}</th>
-              <th className="px-3 py-3 font-semibold whitespace-nowrap text-right">{t('action')}</th>
+               <th className="px-3 py-3 font-semibold whitespace-nowrap">{t('delivery')}</th>
+               <th className="px-3 py-3 font-semibold whitespace-nowrap text-right">{t('action')}</th>
             </tr>
           </thead>
           <tbody>
             {paginatedOrders.length === 0 ? (
               <tr>
-                <td colSpan={10} className="text-center py-16">
+                <td colSpan={9} className="text-center py-16">
                   <ShoppingCart className="w-12 h-12 mx-auto text-muted-foreground mb-3 opacity-20" />
                   <p className="text-lg font-medium">{t('no_delivery_orders')}</p>
                   <p className="text-muted-foreground mt-1">{t('delivery_orders_empty_desc')}</p>
@@ -1167,18 +1151,6 @@ export default function Orders() {
                       )}
                     </td>
                     <td className="px-3 py-3 text-muted-foreground text-xs whitespace-nowrap">{format(new Date(order.createdAt), 'dd.MM HH:mm')}</td>
-                    <td className="px-3 py-3">
-                      <select
-                        value={order.status}
-                        onChange={e => updateStatus(order.id, "status", e.target.value)}
-                        disabled={order.status === "completed" || order.status === "cancelled"}
-                        className={`px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${deliveryStatusConfig[order.status]?.color || "bg-gray-100"}`}
-                      >
-                        {Object.entries(deliveryStatusConfig).map(([k, v]) => (
-                          <option key={k} value={k}>{v.label}</option>
-                        ))}
-                      </select>
-                    </td>
                     <td className="px-3 py-3">
                       <select
                         value={order.deliveryStatus}

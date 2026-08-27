@@ -30,7 +30,7 @@ router.get("/:id", authMiddleware, async (req, res) => {
 router.post("/", authMiddleware, async (req, res) => {
   const {
     clientId, productId, quantity, totalSum, notes, orderDate, deliveryDate,
-    orderType, orderCode, supplier, materialName, items, status,
+    orderType, orderCode, supplier, materialName, items,
     price,
   } = req.body;
 
@@ -57,7 +57,6 @@ router.post("/", authMiddleware, async (req, res) => {
       supplier: supplier,
       materialName: materialName || null,
       items: items ? JSON.stringify(items) : null,
-      status: status || "pending",
     }).returning();
 
     res.status(201).json(mapOrder(order));
@@ -85,7 +84,7 @@ router.post("/", authMiddleware, async (req, res) => {
 
 router.put("/:id", authMiddleware, async (req, res) => {
   const id = paramInt(req.params.id);
-  const { productId, quantity, totalSum, status, deliveryStatus, notes, orderDate, deliveryDate, supplier, materialName, items } = req.body;
+  const { productId, quantity, totalSum, deliveryStatus, notes, orderDate, deliveryDate, supplier, materialName, items } = req.body;
 
   const [existing] = await db.select().from(ordersTable).where(eq(ordersTable.id, id)).limit(1);
   if (!existing) {
@@ -101,7 +100,6 @@ router.put("/:id", authMiddleware, async (req, res) => {
   if (productId !== undefined) updates.productId = productId;
   if (quantity !== undefined) updates.quantity = quantity;
   if (totalSum !== undefined) updates.totalSum = totalSum.toString();
-  if (status !== undefined) updates.status = status;
   if (deliveryStatus !== undefined) updates.deliveryStatus = deliveryStatus;
   if (notes !== undefined) updates.notes = notes;
   if (orderDate !== undefined) updates.orderDate = new Date(orderDate);
@@ -147,24 +145,6 @@ router.put("/:id", authMiddleware, async (req, res) => {
       }
     } catch (e) {
       console.error("[Orders] Auto-finance error:", e);
-    }
-  }
-
-  // Xarid buyurtmasi qabul qilinganda avtomatik chiqim yozish
-  if (status === "received" && existing.orderType === "purchase") {
-    try {
-      const amount = parseFloat(existing.totalSum) || 0;
-      if (amount > 0) {
-        await db.insert(transactionsTable).values({
-          type: "expense",
-          category: "Xarid",
-          amount: amount.toString(),
-          description: `Xarid #${id} — ${existing.supplier || ""} — ${existing.materialName || ""}`,
-          date: new Date().toISOString().split("T")[0],
-        });
-      }
-    } catch (e) {
-      console.error("[Orders] Auto-finance purchase error:", e);
     }
   }
 
