@@ -4,7 +4,7 @@ import {
   TouchableOpacity, Modal, Alert,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { apiFetch, getUser } from "../api";
+import { apiFetch } from "../api";
 import { colors, radius, shadows, spacing } from "../theme";
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; icon: string }> = {
@@ -24,19 +24,11 @@ export default function EmployeeTasksScreen() {
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "in_progress" | "completed">("all");
   const [timeFilter, setTimeFilter] = useState<"all" | "daily" | "weekly" | "monthly">("all");
   const [showDetail, setShowDetail] = useState<any>(null);
-  const [userId, setUserId] = useState<number | null>(null);
 
   const load = async () => {
     try {
-      const user = await getUser();
-      setUserId(user?.id ?? null);
-      const allTasks = await apiFetch("/tasks");
-      const list = Array.isArray(allTasks) ? allTasks : [];
-      if (user?.id) {
-        setTasks(list.filter((t: any) => t.assigneeId === user.id));
-      } else {
-        setTasks(list);
-      }
+      const allTasks = await apiFetch("/tasks/mine");
+      setTasks(Array.isArray(allTasks) ? allTasks : []);
     } catch {}
   };
 

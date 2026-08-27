@@ -41,6 +41,35 @@ router.get("/", authMiddleware, async (_req, res) => {
   res.json(tasks);
 });
 
+// Hodimning o'z topshiriqlari (phone orqali)
+router.get("/mine", authMiddleware, async (req, res) => {
+  try {
+    const phone = (req as any).user.phone || "";
+    const normalizedPhone = phone.replace(/\D/g, "");
+
+    const employees = await db.select({ id: employeesTable.id, phone: employeesTable.phone, loginPhone: employeesTable.loginPhone }).from(employeesTable);
+    const employee = employees.find(e => {
+      const ep = (e.phone || "").replace(/\D/g, "");
+      const elp = (e.loginPhone || "").replace(/\D/g, "");
+      return ep === normalizedPhone || elp === normalizedPhone;
+    });
+
+    if (!employee) {
+      res.json([]);
+      return;
+    }
+
+    await cleanupOldTasks();
+    const tasks = await taskQuery()
+      .where(eq(tasksTable.assigneeId, employee.id))
+      .orderBy(desc(tasksTable.createdAt));
+    res.json(tasks);
+  } catch (e) {
+    console.error("[Tasks /mine] error:", e);
+    res.json([]);
+  }
+});
+
 router.get("/:id", authMiddleware, async (req, res) => {
   const id = paramInt(req.params.id);
   const [task] = await taskQuery().where(eq(tasksTable.id, id));
