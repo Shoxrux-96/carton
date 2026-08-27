@@ -14,6 +14,7 @@ router.get("/", authMiddleware, async (_req, res) => {
       warehouseId: salesTable.warehouseId,
       warehouseName: warehousesTable.name,
       quantity: salesTable.quantity,
+      price: productsTable.price,
       soldAt: salesTable.soldAt,
     })
     .from(salesTable)
@@ -21,7 +22,12 @@ router.get("/", authMiddleware, async (_req, res) => {
     .leftJoin(warehousesTable, eq(salesTable.warehouseId, warehousesTable.id))
     .orderBy(salesTable.soldAt);
 
-  res.json(records);
+  res.json(records.map(r => ({
+    ...r,
+    price: r.price ? parseFloat(String(r.price)) : 0,
+    totalAmount: r.price ? parseFloat(String(r.price)) * r.quantity : 0,
+    date: r.soldAt,
+  })));
 });
 
 router.post("/", authMiddleware, async (req, res) => {

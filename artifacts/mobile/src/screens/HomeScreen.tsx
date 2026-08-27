@@ -42,24 +42,29 @@ const employeeMenu: any[] = [
   { title: "Face ID Davomat", tab: "Davomat", screen: "FaceAtt", icon: "🤳", desc: "Yuz orqali belgilash", color: "#f97316", bg: "#fff7ed" },
 ];
 
-function LineChart({ labels, data }: { labels: string[]; data: number[] }) {
+function LineChart({ labels, data, unit }: { labels: string[]; data: number[]; unit?: string }) {
   const chartW = width - 80;
-  const chartH = 140;
-  const maxVal = Math.max(...data, 1);
+  const chartH = 160;
+  const maxVal = Math.max(...data);
   const minVal = 0;
   const range = maxVal - minVal || 1;
-  const pad2 = (n: number) => String(n).padStart(2, "0");
 
   const points = data.map((v, i) => ({
     x: (i / Math.max(data.length - 1, 1)) * chartW,
-    y: chartH - ((v - minVal) / range) * (chartH - 20),
+    y: chartH - 30 - ((v - minVal) / range) * (chartH - 50),
   }));
+
+  const formatVal = (v: number) => {
+    if (v >= 1000000) return (v / 1000000).toFixed(1) + "M";
+    if (v >= 1000) return (v / 1000).toFixed(0) + "K";
+    return String(v);
+  };
 
   return (
     <View style={{ marginTop: 8 }}>
       <View style={{ height: chartH, position: "relative" }}>
         {[0, 0.25, 0.5, 0.75, 1].map((pct) => (
-          <View key={pct} style={{ position: "absolute", top: chartH - 20 - pct * (chartH - 20), left: 0, right: 0, height: 1, backgroundColor: "#e5e7eb" }} />
+          <View key={pct} style={{ position: "absolute", top: chartH - 30 - pct * (chartH - 50), left: 0, right: 0, height: 1, backgroundColor: "#e5e7eb" }} />
         ))}
         {points.map((pt, i) => {
           if (i === 0) return null;
@@ -86,20 +91,35 @@ function LineChart({ labels, data }: { labels: string[]; data: number[] }) {
           );
         })}
         {points.map((pt, i) => (
-          <View
-            key={`dot-${i}`}
-            style={{
-              position: "absolute",
-              left: pt.x - 5,
-              top: pt.y - 5,
-              width: 10,
-              height: 10,
-              borderRadius: 5,
-              backgroundColor: "#f97316",
-              borderWidth: 2,
-              borderColor: "#fff",
-            }}
-          />
+          <View key={`dot-group-${i}`} style={{ position: "absolute" }}>
+            <View
+              style={{
+                position: "absolute",
+                left: pt.x - 5,
+                top: pt.y - 5,
+                width: 10,
+                height: 10,
+                borderRadius: 5,
+                backgroundColor: "#f97316",
+                borderWidth: 2,
+                borderColor: "#fff",
+              }}
+            />
+            {data[i] > 0 && (
+              <Text style={{
+                position: "absolute",
+                left: pt.x - 20,
+                top: pt.y - 20,
+                width: 40,
+                textAlign: "center",
+                fontSize: 8,
+                fontWeight: "700",
+                color: "#f97316",
+              }}>
+                {formatVal(data[i])}
+              </Text>
+            )}
+          </View>
         ))}
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6, paddingHorizontal: 2 }}>
@@ -108,10 +128,8 @@ function LineChart({ labels, data }: { labels: string[]; data: number[] }) {
         ))}
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 4, paddingHorizontal: 2 }}>
-        {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
-          const val = Math.round(minVal + pct * range);
-          return <Text key={pct} style={{ fontSize: 8, color: colors.textMuted }}>{val}</Text>;
-        })}
+        <Text style={{ fontSize: 8, color: colors.textMuted }}>{formatVal(maxVal)}</Text>
+        <Text style={{ fontSize: 8, color: colors.textMuted }}>0</Text>
       </View>
     </View>
   );
@@ -299,8 +317,9 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
           {salesChart && salesChart.data.some((v) => v > 0) ? (
             <LineChart labels={salesChart.labels} data={salesChart.data} />
           ) : (
-            <View style={{ height: 80, justifyContent: "center", alignItems: "center" }}>
-              <Text style={{ color: colors.textMuted, fontSize: 12 }}>Ma'lumotlar yuklanmoqda...</Text>
+            <View style={{ height: 100, justifyContent: "center", alignItems: "center" }}>
+              <Text style={{ fontSize: 28, marginBottom: 4 }}>📊</Text>
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>Sotuv ma'lumotlari yo'q</Text>
             </View>
           )}
         </View>
@@ -311,8 +330,9 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
           {productionChart && productionChart.data.some((v) => v > 0) ? (
             <LineChart labels={productionChart.labels} data={productionChart.data} />
           ) : (
-            <View style={{ height: 80, justifyContent: "center", alignItems: "center" }}>
-              <Text style={{ color: colors.textMuted, fontSize: 12 }}>Ma'lumotlar yuklanmoqda...</Text>
+            <View style={{ height: 100, justifyContent: "center", alignItems: "center" }}>
+              <Text style={{ fontSize: 28, marginBottom: 4 }}>🏭</Text>
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>Ishlab chiqarish ma'lumotlari yo'q</Text>
             </View>
           )}
         </View>
