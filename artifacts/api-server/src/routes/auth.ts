@@ -40,11 +40,6 @@ router.post("/login", async (req, res) => {
   // Telefon raqamni tozalash
   phone = normalizePhone(phone);
 
-  if (password.length < 8) {
-    res.status(400).json({ error: "Parol kamida 8 belgidan iborat bo'lishi kerak" });
-    return;
-  }
-
   const users = await db.select().from(usersTable).where(eq(usersTable.phone, phone)).limit(1);
 
   if (users.length === 0 || users[0].password !== password) {

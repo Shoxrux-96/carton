@@ -1,37 +1,49 @@
 import { Router } from "express";
 import { db, tasksTable, employeesTable, productsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, lt } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
 import { paramInt } from "../lib/params.js";
 
 const router = Router();
 
-const taskWithJoins = db
-  .select({
-    id: tasksTable.id,
-    title: tasksTable.title,
-    description: tasksTable.description,
-    assigneeId: tasksTable.assigneeId,
-    assigneeName: employeesTable.name,
-    productId: tasksTable.productId,
-    productName: productsTable.name,
-    materialName: tasksTable.materialName,
-    status: tasksTable.status,
-    date: tasksTable.date,
-    createdAt: tasksTable.createdAt,
-  })
-  .from(tasksTable)
-  .leftJoin(employeesTable, eq(tasksTable.assigneeId, employeesTable.id))
-  .leftJoin(productsTable, eq(tasksTable.productId, productsTable.id));
+async function cleanupOldTasks() {
+  try {
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const cutoff = oneMonthAgo.toISOString();
+    await db.delete(tasksTable).where(lt(tasksTable.createdAt, cutoff));
+  } catch {}
+}
+
+function taskQuery() {
+  return db
+    .select({
+      id: tasksTable.id,
+      title: tasksTable.title,
+      description: tasksTable.description,
+      assigneeId: tasksTable.assigneeId,
+      assigneeName: employeesTable.name,
+      productId: tasksTable.productId,
+      productName: productsTable.name,
+      materialName: tasksTable.materialName,
+      status: tasksTable.status,
+      date: tasksTable.date,
+      createdAt: tasksTable.createdAt,
+    })
+    .from(tasksTable)
+    .leftJoin(employeesTable, eq(tasksTable.assigneeId, employeesTable.id))
+    .leftJoin(productsTable, eq(tasksTable.productId, productsTable.id));
+}
 
 router.get("/", authMiddleware, async (_req, res) => {
-  const tasks = await taskWithJoins.orderBy(desc(tasksTable.createdAt));
+  await cleanupOldTasks();
+  const tasks = await taskQuery().orderBy(desc(tasksTable.createdAt));
   res.json(tasks);
 });
 
 router.get("/:id", authMiddleware, async (req, res) => {
   const id = paramInt(req.params.id);
-  const [task] = await taskWithJoins.where(eq(tasksTable.id, id));
+  const [task] = await taskQuery().where(eq(tasksTable.id, id));
   if (!task) {
     res.status(404).json({ error: "Topshiriq topilmadi" });
     return;
@@ -57,7 +69,7 @@ router.post("/", authMiddleware, async (req, res) => {
     date: date || new Date().toISOString().split("T")[0],
   }).returning();
 
-  const [full] = await taskWithJoins.where(eq(tasksTable.id, task.id));
+  const [full] = await taskQuery().where(eq(tasksTable.id, task.id));
   res.status(201).json(full);
 });
 
@@ -89,7 +101,7 @@ router.put("/:id", authMiddleware, async (req, res) => {
     return;
   }
 
-  const [full] = await taskWithJoins.where(eq(tasksTable.id, task.id));
+  const [full] = await taskQuery().where(eq(tasksTable.id, task.id));
   res.json(full);
 });
 

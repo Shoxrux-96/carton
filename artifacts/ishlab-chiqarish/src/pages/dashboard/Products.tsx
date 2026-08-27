@@ -151,7 +151,7 @@ export default function Products() {
     setValue("clientLogo", product.clientLogo || "");
     const mats = Array.isArray(product.materials) ? product.materials : [];
     setSelectedMaterials(mats);
-    setShowBoshqa(mats.some(m => !MATERIALS.includes(m)));
+    setShowBoshqa(mats.some((m: string) => !MATERIALS.includes(m)));
     setValue("boshqaMaterial", "");
     setValue("status", product.status === "published" || product.isPublished ? "published" : "hidden");
     setIsAddOpen(true);

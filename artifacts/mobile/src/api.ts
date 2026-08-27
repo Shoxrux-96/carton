@@ -40,8 +40,13 @@ export async function clearToken(): Promise<void> {
 }
 
 export async function getUser(): Promise<any | null> {
-  const raw = await AsyncStorage.getItem("user");
-  return raw ? JSON.parse(raw) : null;
+  try {
+    const raw = await AsyncStorage.getItem("user");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    await AsyncStorage.removeItem("user");
+    return null;
+  }
 }
 
 export async function setUser(user: any): Promise<void> {
@@ -85,7 +90,9 @@ export async function apiFetch<T = any>(
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
-  const data = await res.json();
+  const text = await res.text();
+  let data: any;
+  try { data = JSON.parse(text); } catch { data = { error: text || `HTTP ${res.status}` }; }
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
 }
@@ -109,7 +116,9 @@ export async function apiFetchFormData<T = any>(
       headers,
       signal: controller.signal,
     });
-    const data = await res.json();
+    const text = await res.text();
+    let data: any;
+    try { data = JSON.parse(text); } catch { data = { error: text || `HTTP ${res.status}` }; }
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     return data;
   } catch (e: any) {

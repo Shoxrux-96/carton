@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { DashboardLayout, PageHeader } from "@/components/layout/DashboardLayout";
 import { useAuthHeaders } from "@/hooks/use-auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,7 +11,7 @@ import { Plus, Trash2, ClipboardCheck, Pencil, CheckCircle2, Clock, AlertCircle 
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
+import { format, subDays, startOfWeek, startOfMonth, isAfter } from "date-fns";
 import { useLang } from "@/lib/i18n";
 import { PRODUCTS_MATERIALS } from "./Products";
 
@@ -31,6 +31,15 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }>
   completed: { label: "Bajarildi", color: "bg-green-100 text-green-700", icon: CheckCircle2 },
 };
 
+type TimePeriod = "all" | "daily" | "weekly" | "monthly";
+
+const TIME_LABELS: Record<TimePeriod, string> = {
+  all: "Barchasi",
+  daily: "Bugun",
+  weekly: "Bu hafta",
+  monthly: "Bu oy",
+};
+
 export default function Tasks() {
   const queryClient = useQueryClient();
   const authOpts = useAuthHeaders();
@@ -39,7 +48,9 @@ export default function Tasks() {
   const [editing, setEditing] = useState<any>(null);
   const [isLoadingSubmit, setIsLoadingSubmit] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "in_progress" | "completed">("all");
-  const [selectedMaterial, setSelectedMaterial] = useState<string>("");
+  const [timeFilter, setTimeFilter] = useState<TimePeriod>("all");
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
+  const [customMaterial, setCustomMaterial] = useState("");
 
   const { data: tasks, isLoading } = useQuery({
     queryKey: ["/api/tasks"],
@@ -61,18 +72,27 @@ export default function Tasks() {
     defaultValues: { title: "", description: "", assigneeId: undefined, productId: undefined, materialName: "" },
   });
 
-  const currentProductId = watch("productId");
-
   const openAdd = () => {
     setEditing(null);
-    setSelectedMaterial("");
+    setSelectedMaterials([]);
+    setCustomMaterial("");
     reset({ title: "", description: "", assigneeId: undefined, productId: undefined, materialName: "" });
     setIsAddOpen(true);
   };
 
   const openEdit = (task: any) => {
     setEditing(task);
-    setSelectedMaterial(task.materialName || "");
+    const matStr = task.materialName || "";
+    if (matStr) {
+      const mats = matStr.split(",").map((s: string) => s.trim()).filter(Boolean);
+      const known = mats.filter((m: string) => PRODUCTS_MATERIALS.includes(m));
+      const unknown = mats.filter((m: string) => !PRODUCTS_MATERIALS.includes(m));
+      setSelectedMaterials(known);
+      setCustomMaterial(unknown.join(", "));
+    } else {
+      setSelectedMaterials([]);
+      setCustomMaterial("");
+    }
     reset({
       title: task.title,
       description: task.description || "",
@@ -83,12 +103,24 @@ export default function Tasks() {
     setIsAddOpen(true);
   };
 
+  const toggleMaterial = (mat: string) => {
+    setSelectedMaterials(prev =>
+      prev.includes(mat) ? prev.filter(m => m !== mat) : [...prev, mat]
+    );
+  };
+
   const onSubmit = async (data: FormValues) => {
     setIsLoadingSubmit(true);
     try {
+      const allMats = [...selectedMaterials];
+      if (customMaterial.trim()) {
+        customMaterial.split(",").map(s => s.trim()).filter(Boolean).forEach(m => allMats.push(m));
+      }
+      const materialName = allMats.length > 0 ? allMats.join(", ") : null;
+
       const payload = {
         ...data,
-        materialName: selectedMaterial || data.materialName || null,
+        materialName,
         productId: data.productId || null,
         assigneeId: data.assigneeId || null,
       };
@@ -108,7 +140,8 @@ export default function Tasks() {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       setIsAddOpen(false);
       reset();
-      setSelectedMaterial("");
+      setSelectedMaterials([]);
+      setCustomMaterial("");
     } finally {
       setIsLoadingSubmit(false);
     }
@@ -134,9 +167,28 @@ export default function Tasks() {
     } catch {}
   };
 
-  const filteredTasks = Array.isArray(tasks)
-    ? statusFilter === "all" ? tasks : tasks.filter((t: any) => t.status === statusFilter)
-    : [];
+  const filteredTasks = useMemo(() => {
+    if (!Array.isArray(tasks)) return [];
+    let result = statusFilter === "all" ? tasks : tasks.filter((t: any) => t.status === statusFilter);
+
+    if (timeFilter !== "all") {
+      const now = new Date();
+      let cutoff: Date;
+      if (timeFilter === "daily") {
+        cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      } else if (timeFilter === "weekly") {
+        cutoff = startOfWeek(now, { weekStartsOn: 1 });
+      } else {
+        cutoff = startOfMonth(now);
+      }
+      result = result.filter((t: any) => {
+        if (!t.date) return false;
+        return isAfter(new Date(t.date), cutoff) || new Date(t.date).getTime() === cutoff.getTime();
+      });
+    }
+
+    return result;
+  }, [tasks, statusFilter, timeFilter]);
 
   const stats = Array.isArray(tasks) ? {
     total: tasks.length,
@@ -179,21 +231,41 @@ export default function Tasks() {
         </Card>
       </div>
 
-      {/* Filter */}
-      <div className="flex gap-2 mb-6 flex-wrap">
-        {(["all", "pending", "in_progress", "completed"] as const).map(s => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              statusFilter === s
-                ? "bg-primary text-white shadow-md"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
-          >
-            {s === "all" ? "Barchasi" : STATUS_CONFIG[s]?.label}
-          </button>
-        ))}
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        {/* Status filter */}
+        <div className="flex gap-2">
+          {(["all", "pending", "in_progress", "completed"] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                statusFilter === s
+                  ? "bg-primary text-white shadow-md"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {s === "all" ? "Barchasi" : STATUS_CONFIG[s]?.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Time period filter */}
+        <div className="flex gap-2 ml-auto">
+          {(["all", "daily", "weekly", "monthly"] as const).map(p => (
+            <button
+              key={p}
+              onClick={() => setTimeFilter(p)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
+                timeFilter === p
+                  ? "bg-indigo-500 text-white border-indigo-500 shadow-md"
+                  : "bg-white text-gray-600 border-gray-200 hover:bg-indigo-50 hover:border-indigo-300"
+              }`}
+            >
+              {TIME_LABELS[p]}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tasks list */}
@@ -232,21 +304,21 @@ export default function Tasks() {
                     <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                       {task.assigneeName && (
                         <span className="px-2 py-1 rounded-lg bg-blue-50 text-blue-700 font-medium">
-                          👤 {task.assigneeName}
+                          {task.assigneeName}
                         </span>
                       )}
                       {task.productName && (
                         <span className="px-2 py-1 rounded-lg bg-amber-50 text-amber-700 font-medium">
-                          📦 {task.productName}
+                          {task.productName}
                         </span>
                       )}
                       {task.materialName && (
                         <span className="px-2 py-1 rounded-lg bg-purple-50 text-purple-700 font-medium">
-                          🧱 {task.materialName}
+                          {task.materialName}
                         </span>
                       )}
                       <span className="px-2 py-1 rounded-lg bg-muted font-medium">
-                        📅 {task.date ? format(new Date(task.date), "dd.MM.yyyy") : "-"}
+                        {task.date ? format(new Date(task.date), "dd.MM.yyyy") : "-"}
                       </span>
                     </div>
                   </div>
@@ -316,29 +388,44 @@ export default function Tasks() {
           </div>
 
           <div>
-            <label className="text-sm font-semibold block mb-1.5">Material (ixtiyoriy)</label>
-            <select
-              value={selectedMaterial}
-              onChange={e => { setSelectedMaterial(e.target.value); setValue("materialName", e.target.value); }}
-              className="flex h-12 w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm"
-            >
-              <option value="">Tanlang...</option>
-              {PRODUCTS_MATERIALS.map(mat => (
-                <option key={mat} value={mat}>{mat}</option>
-              ))}
-              <option value="Boshqa">Boshqa</option>
-            </select>
-            {selectedMaterial === "Boshqa" && (
-              <Input
-                {...register("materialName")}
-                placeholder="Material nomini kiriting..."
-                className="h-12 mt-2"
-              />
+            <label className="text-sm font-semibold block mb-1.5">Materiallar (bir nechta tanlash mumkin)</label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {PRODUCTS_MATERIALS.map(mat => {
+                const isSelected = selectedMaterials.includes(mat);
+                return (
+                  <button
+                    key={mat}
+                    type="button"
+                    onClick={() => toggleMaterial(mat)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${
+                      isSelected
+                        ? "bg-primary text-white border-primary"
+                        : "bg-muted text-muted-foreground border-border hover:border-primary/50"
+                    }`}
+                  >
+                    {mat}
+                  </button>
+                );
+              })}
+            </div>
+            {selectedMaterials.length > 0 && (
+              <p className="text-xs text-primary font-medium mb-2">{selectedMaterials.length} ta material tanlangan</p>
             )}
           </div>
 
+          <div>
+            <label className="text-sm font-semibold block mb-1.5">Boshqa materiallar (vergul bilan ajrating)</label>
+            <input
+              type="text"
+              value={customMaterial}
+              onChange={e => setCustomMaterial(e.target.value)}
+              placeholder="Masalan: Zanglamas po'lat, Alyuminiy"
+              className="flex h-12 w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm"
+            />
+          </div>
+
           <div className="text-xs text-muted-foreground">
-            📅 Sana: <span className="font-semibold">{format(new Date(), "dd.MM.yyyy")}</span> (avtomatik)
+            Sana: <span className="font-semibold">{format(new Date(), "dd.MM.yyyy")}</span> (avtomatik)
           </div>
 
           <div className="pt-4 flex justify-end gap-3 border-t border-border">

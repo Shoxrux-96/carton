@@ -14,7 +14,7 @@ import { normalizeLoginPhone } from "../lib/phone";
 const { width } = Dimensions.get("window");
 
 interface Props {
-  onLogin: () => void;
+  onLogin: (role?: string) => void;
 }
 
 export default function LoginScreen({ onLogin }: Props) {
@@ -56,8 +56,7 @@ export default function LoginScreen({ onLogin }: Props) {
       });
       await setToken(data.token);
       await setUser(data.user);
-      onLogin();
-      // Profile sync — non-blocking, runs after main screen loads
+      onLogin(data.user?.role);
       syncUserProfile().catch(() => {});
     } catch (e: any) {
       Alert.alert("Xatolik", e.message || "Server bilan bog'lanishda muammo");

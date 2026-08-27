@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from "react";
 import {
   View, Text, ScrollView, StyleSheet, RefreshControl,
-  TouchableOpacity, Alert,
+  TouchableOpacity, Modal, Alert,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { apiFetch, getUser } from "../api";
@@ -18,26 +18,20 @@ const NEXT_STATUS: Record<string, string> = {
   in_progress: "completed",
 };
 
-const NEXT_LABEL: Record<string, string> = {
-  pending: "Boshlash",
-  in_progress: "Yakunlash",
-};
-
 export default function EmployeeTasksScreen() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "in_progress" | "completed">("all");
+  const [timeFilter, setTimeFilter] = useState<"all" | "daily" | "weekly" | "monthly">("all");
+  const [showDetail, setShowDetail] = useState<any>(null);
   const [userId, setUserId] = useState<number | null>(null);
 
   const load = async () => {
     try {
       const user = await getUser();
       setUserId(user?.id ?? null);
-
       const allTasks = await apiFetch("/tasks");
       const list = Array.isArray(allTasks) ? allTasks : [];
-
-      // Faqat o'zimga tayinlangan topshiriqlar
       if (user?.id) {
         setTasks(list.filter((t: any) => t.assigneeId === user.id));
       } else {
@@ -57,9 +51,26 @@ export default function EmployeeTasksScreen() {
   }), [tasks]);
 
   const filtered = useMemo(() => {
-    if (statusFilter === "all") return tasks;
-    return tasks.filter(t => t.status === statusFilter);
-  }, [tasks, statusFilter]);
+    let result = statusFilter === "all" ? tasks : tasks.filter(t => t.status === statusFilter);
+    if (timeFilter !== "all") {
+      const now = new Date();
+      let cutoff: Date;
+      if (timeFilter === "daily") {
+        cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      } else if (timeFilter === "weekly") {
+        const day = now.getDay();
+        const diff = day === 0 ? 6 : day - 1;
+        cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
+      } else {
+        cutoff = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+      result = result.filter(t => {
+        if (!t.date) return false;
+        return new Date(t.date) >= cutoff;
+      });
+    }
+    return result;
+  }, [tasks, statusFilter, timeFilter]);
 
   const updateStatus = async (id: number, newStatus: string) => {
     const label = newStatus === "completed" ? "Bajarildi" : "Jarayonda";
@@ -68,6 +79,7 @@ export default function EmployeeTasksScreen() {
       { text: "Ha", onPress: async () => {
         try {
           await apiFetch(`/tasks/${id}`, { method: "PUT", body: JSON.stringify({ status: newStatus }) });
+          setShowDetail(null);
           await load();
         } catch (e: any) { Alert.alert("Xatolik", e.message); }
       }},
@@ -80,13 +92,11 @@ export default function EmployeeTasksScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         showsVerticalScrollIndicator={false}>
 
-        {/* Header */}
         <View style={styles.headerGradient}>
-          <Text style={styles.headerTitle}>📋 Mening topshiriqlarim</Text>
+          <Text style={styles.headerTitle}>📋 Topshiriqlarim</Text>
           <Text style={styles.headerSub}>{stats.total} ta topshiriq · {stats.pending + stats.inProgress} ta faol</Text>
         </View>
 
-        {/* Stats */}
         <View style={styles.statsRow}>
           {[
             { value: stats.pending, label: "Kutilmoqda", bg: "#fef3c7", color: "#d97706" },
@@ -100,8 +110,7 @@ export default function EmployeeTasksScreen() {
           ))}
         </View>
 
-        {/* Filter */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 6 }}>
           <View style={styles.filterRow}>
             {(["all", "pending", "in_progress", "completed"] as const).map(s => (
               <TouchableOpacity key={s} style={[styles.filterBtn, statusFilter === s && styles.filterActive]} onPress={() => setStatusFilter(s)}>
@@ -113,70 +122,117 @@ export default function EmployeeTasksScreen() {
           </View>
         </ScrollView>
 
-        {/* Tasks */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
+          <View style={styles.filterRow}>
+            {([["all", "Barchasi"], ["daily", "Bugun"], ["weekly", "Bu hafta"], ["monthly", "Bu oy"]] as const).map(([key, label]) => (
+              <TouchableOpacity key={key} style={[styles.filterBtn, timeFilter === key && styles.timeFilterActive]} onPress={() => setTimeFilter(key)}>
+                <Text style={[styles.filterText, timeFilter === key && { color: "#fff" }]}>
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+
         {filtered.length > 0 ? filtered.map(task => {
           const st = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
           const isCompleted = task.status === "completed";
           const next = NEXT_STATUS[task.status];
           return (
-            <View key={task.id} style={[styles.taskCard, isCompleted && { opacity: 0.65 }]}>
-              <View style={styles.taskHeader}>
-                <View style={[styles.statusDot, { backgroundColor: st.bg }]}>
-                  <Text style={{ fontSize: 18 }}>{st.icon}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.taskTitle, isCompleted && styles.taskTitleDone]} numberOfLines={2}>{task.title}</Text>
-                  <View style={[styles.badge, { backgroundColor: st.bg }]}>
-                    <Text style={[styles.badgeText, { color: st.text }]}>{st.label}</Text>
-                  </View>
+            <TouchableOpacity
+              key={task.id}
+              style={[styles.taskRow, isCompleted && { opacity: 0.6 }]}
+              onPress={() => setShowDetail(task)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.taskStatusDot, { backgroundColor: st.bg }]}>
+                <Text style={{ fontSize: 12 }}>{st.icon}</Text>
+              </View>
+              <View style={styles.taskRowContent}>
+                <Text style={[styles.taskRowTitle, isCompleted && { textDecorationLine: "line-through" }]} numberOfLines={1}>
+                  {task.title}
+                </Text>
+                <View style={styles.taskRowMeta}>
+                  {task.materialName && <Text style={styles.taskRowMetaText}>{task.materialName}</Text>}
+                  {task.date && <Text style={styles.taskRowMetaText}>{new Date(task.date).toLocaleDateString("uz")}</Text>}
                 </View>
               </View>
-
-              {task.description ? <Text style={styles.taskDesc} numberOfLines={4}>{task.description}</Text> : null}
-
-              <View style={styles.taskMeta}>
-                {task.productName && (
-                  <View style={styles.metaPill}>
-                    <Text style={styles.metaIcon}>📦</Text>
-                    <Text style={styles.metaText}>{task.productName}</Text>
-                  </View>
-                )}
-                {task.materialName && (
-                  <View style={styles.metaPill}>
-                    <Text style={styles.metaIcon}>🧱</Text>
-                    <Text style={styles.metaText}>{task.materialName}</Text>
-                  </View>
-                )}
-                {task.date && (
-                  <View style={styles.metaPill}>
-                    <Text style={styles.metaIcon}>📅</Text>
-                    <Text style={styles.metaText}>{new Date(task.date).toLocaleDateString("uz")}</Text>
-                  </View>
-                )}
-              </View>
-
               {next && (
                 <TouchableOpacity
-                  style={[styles.actionBtn, { backgroundColor: next === "completed" ? "#dcfce7" : "#dbeafe" }]}
+                  style={[styles.nextBtn, { backgroundColor: next === "completed" ? "#dcfce7" : "#dbeafe" }]}
                   onPress={() => updateStatus(task.id, next)}
                 >
-                  <Text style={[styles.actionText, { color: next === "completed" ? "#16a34a" : "#2563eb" }]}>
-                    {next === "in_progress" ? "▶️ Boshlash" : "✅ Yakunlash"}
+                  <Text style={[styles.nextBtnText, { color: next === "completed" ? "#16a34a" : "#2563eb" }]}>
+                    {next === "in_progress" ? "Boshlash" : "Yakunlash"}
                   </Text>
                 </TouchableOpacity>
               )}
-            </View>
+            </TouchableOpacity>
           );
         }) : (
           <View style={styles.empty}>
-            <View style={styles.emptyIconWrap}>
-              <Text style={{ fontSize: 40 }}>📋</Text>
-            </View>
+            <Text style={{ fontSize: 40, marginBottom: 8 }}>📋</Text>
             <Text style={styles.emptyText}>Topshiriqlar yo'q</Text>
-            <Text style={styles.emptyHint}>Sizga tayinlangan topshiriqlar shu yerda ko'rinadi</Text>
           </View>
         )}
       </ScrollView>
+
+      {/* Detail Modal */}
+      <Modal visible={!!showDetail} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Topshiriq</Text>
+              <TouchableOpacity onPress={() => setShowDetail(null)} style={styles.modalCloseBtn}>
+                <Text style={styles.modalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            {showDetail && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text style={styles.detailTitle}>{showDetail.title}</Text>
+                <View style={[styles.detailBadge, { backgroundColor: (STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.pending).bg }]}>
+                  <Text style={[styles.detailBadgeText, { color: (STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.pending).text }]}>
+                    {(STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.pending).icon} {(STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.pending).label}
+                  </Text>
+                </View>
+                {showDetail.description ? (
+                  <Text style={styles.detailDesc}>{showDetail.description}</Text>
+                ) : null}
+                <View style={styles.detailInfo}>
+                  {showDetail.productName && (
+                    <View style={styles.detailInfoRow}>
+                      <Text style={styles.detailInfoLabel}>Mahsulot:</Text>
+                      <Text style={styles.detailInfoValue}>{showDetail.productName}</Text>
+                    </View>
+                  )}
+                  {showDetail.materialName && (
+                    <View style={styles.detailInfoRow}>
+                      <Text style={styles.detailInfoLabel}>Materiallar:</Text>
+                      <Text style={styles.detailInfoValue}>{showDetail.materialName}</Text>
+                    </View>
+                  )}
+                  {showDetail.date && (
+                    <View style={styles.detailInfoRow}>
+                      <Text style={styles.detailInfoLabel}>Sana:</Text>
+                      <Text style={styles.detailInfoValue}>{new Date(showDetail.date).toLocaleDateString("uz")}</Text>
+                    </View>
+                  )}
+                </View>
+                {NEXT_STATUS[showDetail.status] && (
+                  <TouchableOpacity
+                    style={[styles.detailActionBtn, { backgroundColor: NEXT_STATUS[showDetail.status] === "completed" ? "#dcfce7" : "#dbeafe" }]}
+                    onPress={() => updateStatus(showDetail.id, NEXT_STATUS[showDetail.status])}
+                  >
+                    <Text style={[styles.detailActionText, { color: NEXT_STATUS[showDetail.status] === "completed" ? "#16a34a" : "#2563eb" }]}>
+                      {NEXT_STATUS[showDetail.status] === "in_progress" ? "Boshlash" : "Yakunlash"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -197,28 +253,45 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 22, fontWeight: "800" },
   statLabel: { fontSize: 10, color: colors.textSecondary, marginTop: 2 },
   filterRow: { flexDirection: "row", gap: 8, paddingHorizontal: spacing.lg },
-  filterBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: radius.full, backgroundColor: colors.surfaceAlt },
+  filterBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.full, backgroundColor: colors.surfaceAlt },
   filterActive: { backgroundColor: colors.primary },
-  filterText: { fontSize: 13, fontWeight: "600", color: colors.textSecondary },
-  taskCard: {
-    backgroundColor: colors.surface, borderRadius: radius.xl, padding: spacing.lg,
-    marginBottom: spacing.md, marginHorizontal: spacing.lg, ...shadows.sm,
+  timeFilterActive: { backgroundColor: "#6366f1" },
+  filterText: { fontSize: 12, fontWeight: "600", color: colors.textSecondary },
+
+  taskRow: {
+    flexDirection: "row", alignItems: "center", backgroundColor: colors.surface,
+    borderRadius: radius.lg, padding: spacing.md, marginBottom: 8,
+    marginHorizontal: spacing.lg, ...shadows.sm,
   },
-  taskHeader: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: spacing.sm },
-  statusDot: { width: 40, height: 40, borderRadius: 20, justifyContent: "center", alignItems: "center" },
-  taskTitle: { fontSize: 16, fontWeight: "700", color: colors.text, marginBottom: 4 },
-  taskTitleDone: { textDecorationLine: "line-through", color: colors.textMuted },
-  badge: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  badgeText: { fontSize: 10, fontWeight: "700" },
-  taskDesc: { fontSize: 13, color: colors.textSecondary, marginBottom: spacing.sm, lineHeight: 19 },
-  taskMeta: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: spacing.md },
-  metaPill: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: colors.surfaceAlt, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  metaIcon: { fontSize: 11 },
-  metaText: { fontSize: 11, color: colors.textSecondary },
-  actionBtn: { paddingVertical: 12, borderRadius: radius.lg, alignItems: "center" },
-  actionText: { fontSize: 14, fontWeight: "700" },
+  taskStatusDot: { width: 32, height: 32, borderRadius: 16, justifyContent: "center", alignItems: "center", marginRight: 10 },
+  taskRowContent: { flex: 1 },
+  taskRowTitle: { fontSize: 14, fontWeight: "700", color: colors.text },
+  taskRowMeta: { flexDirection: "row", gap: 8, marginTop: 2 },
+  taskRowMetaText: { fontSize: 11, color: colors.textMuted },
+  nextBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.md },
+  nextBtnText: { fontSize: 11, fontWeight: "700" },
+
   empty: { padding: 60, alignItems: "center" },
-  emptyIconWrap: { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.surfaceAlt, justifyContent: "center", alignItems: "center", marginBottom: spacing.md },
-  emptyText: { fontSize: 16, color: colors.textMuted, fontWeight: "600" },
-  emptyHint: { fontSize: 12, color: colors.textMuted, marginTop: 6, textAlign: "center" },
+  emptyText: { fontSize: 14, color: colors.textMuted, fontWeight: "600" },
+
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  modalContent: {
+    backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    padding: spacing.xxl, paddingBottom: 40, maxHeight: "90%",
+  },
+  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg },
+  modalTitle: { fontSize: 20, fontWeight: "800", color: colors.text },
+  modalCloseBtn: { padding: 4 },
+  modalClose: { fontSize: 24, color: colors.textMuted },
+
+  detailTitle: { fontSize: 18, fontWeight: "800", color: colors.text, marginBottom: 8 },
+  detailBadge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginBottom: 12 },
+  detailBadgeText: { fontSize: 12, fontWeight: "700" },
+  detailDesc: { fontSize: 14, color: colors.textSecondary, lineHeight: 20, marginBottom: 16 },
+  detailInfo: { backgroundColor: colors.surfaceAlt, borderRadius: radius.lg, padding: spacing.md, marginBottom: 16 },
+  detailInfoRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 },
+  detailInfoLabel: { fontSize: 13, color: colors.textMuted, fontWeight: "600" },
+  detailInfoValue: { fontSize: 13, color: colors.text, fontWeight: "600" },
+  detailActionBtn: { height: 48, borderRadius: radius.lg, justifyContent: "center", alignItems: "center" },
+  detailActionText: { fontSize: 15, fontWeight: "700" },
 });

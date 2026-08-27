@@ -1,8 +1,30 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef, createContext, useContext, Component } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { ActivityIndicator, View, StatusBar, Text, ErrorUtils, Image, TouchableOpacity } from "react-native";
+import { ActivityIndicator, View, StatusBar, Text, Image, TouchableOpacity } from "react-native";
+
+class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: any }> {
+  state = { error: null as any };
+  static getDerivedStateFromError(error: any) { return { error }; }
+  componentDidCatch(error: any) {
+    try { logClientError("mobile:crash", {}, error?.stack || String(error)); } catch {}
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff", padding: 24 }}>
+          <Text style={{ fontSize: 20, fontWeight: "700", marginBottom: 12 }}>Xatolik yuz berdi</Text>
+          <Text style={{ color: "#666", textAlign: "center", marginBottom: 20 }}>{String(this.state.error?.message || this.state.error)}</Text>
+          <TouchableOpacity onPress={() => { this.setState({ error: null }); }} style={{ backgroundColor: "#f97316", paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 }}>
+            <Text style={{ color: "#fff", fontWeight: "600" }}>Qayta urinish</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { getToken, getUserRole, logClientError } from "./src/api";
 import { colors } from "./src/theme";
 import { I18nProvider } from "./src/i18n";
@@ -24,15 +46,24 @@ import EmployeesScreen from "./src/screens/EmployeesScreen";
 import FaceAttendanceScreen from "./src/screens/FaceAttendanceScreen";
 import FaceRegisterScreen from "./src/screens/FaceRegisterScreen";
 import SalesScreen from "./src/screens/SalesScreen";
-import TasksScreen from "./src/screens/TasksScreen";
 import AdminTasksScreen from "./src/screens/AdminTasksScreen";
 import EmployeeTasksScreen from "./src/screens/EmployeeTasksScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const LOGO_IMG = require("./assets/logo.png");
-const HeaderLogo = () => <View style={{ width: 32, height: 32, borderRadius: 16, overflow: "hidden", marginRight: 8, backgroundColor: "#fff" }}><Image source={LOGO_IMG} style={{ width: 32, height: 32 }} resizeMode="contain" /></View>;
-const BackIcon = ({ navigation }: { navigation: any }) => {
+
+const AuthContext = createContext<{ onLogout: () => void }>({ onLogout: () => {} });
+const RoleContext = createContext<string | null>(null);
+
+const HeaderLogo = React.memo(() => (
+  <View style={{ width: 32, height: 32, borderRadius: 16, overflow: "hidden", marginRight: 8, backgroundColor: "#fff" }}>
+    <Image source={LOGO_IMG} style={{ width: 32, height: 32 }} resizeMode="contain" />
+  </View>
+));
+
+const BackIcon = React.memo(({ navigation }: { navigation: any }) => {
+  if (!navigation || typeof navigation.getState !== "function") return null;
   const state = navigation.getState();
   const isRoot = state && state.index === 0;
   if (isRoot) return null;
@@ -41,249 +72,225 @@ const BackIcon = ({ navigation }: { navigation: any }) => {
       <Text style={{ color: "#fff", fontSize: 22 }}>←</Text>
     </TouchableOpacity>
   );
+});
+
+const hdrOpts = {
+  headerStyle: { backgroundColor: colors.primary },
+  headerTintColor: "#fff",
+  headerTitleStyle: { fontWeight: "700" as const },
+  animation: "slide_from_right" as const,
+  headerLeft: ({ navigation }: any) => <BackIcon navigation={navigation} />,
 };
-const hdrOpts = { headerStyle: { backgroundColor: colors.primary }, headerTintColor: "#fff", headerTitleStyle: { fontWeight: "700" as const }, animation: "slide_from_right" as const, headerLeft: ({ navigation }: any) => <BackIcon navigation={navigation} /> };
 
 function TI({ emoji, focused }: { emoji: string; focused: boolean }) {
-  return (<View style={{ alignItems: "center", paddingTop: 4 }}><View style={{ width: focused ? 42 : 34, height: focused ? 42 : 34, borderRadius: focused ? 13 : 11, backgroundColor: focused ? colors.primary + "15" : "transparent", justifyContent: "center", alignItems: "center" }}><Text style={{ fontSize: focused ? 21 : 18 }}>{emoji}</Text></View></View>);
+  return (
+    <View style={{ alignItems: "center", paddingTop: 4 }}>
+      <View style={{ width: focused ? 42 : 34, height: focused ? 42 : 34, borderRadius: focused ? 13 : 11, backgroundColor: focused ? colors.primary + "15" : "transparent", justifyContent: "center", alignItems: "center" }}>
+        <Text style={{ fontSize: focused ? 21 : 18 }}>{emoji}</Text>
+      </View>
+    </View>
+  );
 }
 
 const tabStyle = { height: 90, paddingBottom: 30, paddingTop: 8, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#f5f5f4", elevation: 20, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.06, shadowRadius: 16 };
+const tabOpts = { headerShown: false, tabBarStyle: tabStyle, tabBarLabelStyle: { fontSize: 10, fontWeight: "700" as const, marginTop: -2 }, tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: "#94a3b8" };
 
-// ===================== ADMIN TABS =====================
-function AdminHome({ onLogout }: { onLogout: () => void }) {
+// Stable profile stack — reused across all roles
+const ProfileStackNavigator = React.memo(function ProfileStackNavigator() {
+  const { onLogout } = useContext(AuthContext);
+  const S = createNativeStackNavigator();
   return (
-    <Stack.Navigator screenOptions={hdrOpts}>
-      <Stack.Screen name="H" options={{ headerShown: false }}>
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="Prof" options={{ title: "Profil", headerLeft: () => <HeaderLogo /> }}>
+        {({ navigation }) => <ProfileScreen navigation={navigation} onLogout={onLogout} />}
+      </S.Screen>
+    </S.Navigator>
+  );
+});
+
+// Stable home stack — reused across all roles
+const HomeStackNavigator = React.memo(function HomeStackNavigator() {
+  const { onLogout } = useContext(AuthContext);
+  const S = createNativeStackNavigator();
+  return (
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="H" options={{ headerShown: false }}>
         {({ navigation }) => <HomeScreen navigation={navigation} onLogout={onLogout} />}
-      </Stack.Screen>
-      <Stack.Screen name="Profile" options={{ title: "Profil", headerLeft: ({ navigation }: any) => <HeaderLogo /> }}>
+      </S.Screen>
+      <S.Screen name="Profile" options={{ title: "Profil", headerLeft: () => <HeaderLogo /> }}>
         {({ navigation }) => <ProfileScreen navigation={navigation} onLogout={onLogout} />}
-      </Stack.Screen>
-      <Stack.Screen name="OrdersList" component={OrdersScreen} options={{ title: "📋 Buyurtmalar" }} />
-      <Stack.Screen name="Sales" component={SalesScreen} options={{ title: "📊 Savdo" }} />
-      <Stack.Screen name="Delivery" component={DeliveryScreen} options={{ title: "🚚 Yetkazish", headerShown: false }} />
-      <Stack.Screen name="DeliveryMap" component={DeliveryMapScreen} options={{ title: "🗺️ Xarita" }} />
-      <Stack.Screen name="Clients" component={ClientsScreen} options={{ title: "🏢 Mijozlar" }} />
-    </Stack.Navigator>
+      </S.Screen>
+      <S.Screen name="OrdersList" component={OrdersScreen} options={{ title: "📋 Buyurtmalar" }} />
+      <S.Screen name="Sales" component={SalesScreen} options={{ title: "📊 Savdo" }} />
+      <S.Screen name="Delivery" component={DeliveryScreen} options={{ title: "🚚 Yetkazish", headerShown: false }} />
+      <S.Screen name="DeliveryMap" component={DeliveryMapScreen} options={{ title: "🗺️ Xarita" }} />
+      <S.Screen name="Clients" component={ClientsScreen} options={{ title: "🏢 Mijozlar" }} />
+    </S.Navigator>
   );
-}
-function AdminProduction() {
-  return (<Stack.Navigator screenOptions={hdrOpts}><Stack.Screen name="ProdMain" component={ProductionScreen} options={{ title: "🏭 Ishlab chiqarish" }} /><Stack.Screen name="Products" component={ProductsScreen} options={{ title: "📦 Mahsulotlar" }} /><Stack.Screen name="Stock" component={StockViewScreen} options={{ title: "📦 Ombor" }} /></Stack.Navigator>);
-}
-function AdminHR() {
-  return (<Stack.Navigator screenOptions={hdrOpts}><Stack.Screen name="Employees" component={EmployeesScreen} options={{ title: "👥 Hodimlar" }} /><Stack.Screen name="Attendance" component={AttendanceScreen} options={{ title: "✅ Davomat" }} /><Stack.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} /><Stack.Screen name="Tasks" component={AdminTasksScreen} options={{ title: "📋 Topshiriqlar" }} /><Stack.Screen name="FaceAttendance" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} /><Stack.Screen name="FaceRegister" component={FaceRegisterScreen} options={{ title: "📸 Yuz ro'yxati" }} /></Stack.Navigator>);
-}
-function AdminFinance() {
-  return (<Stack.Navigator screenOptions={hdrOpts}><Stack.Screen name="Fin" component={FinanceScreen} options={{ title: "💰 Moliya" }} /></Stack.Navigator>);
-}
-function AdminProfileStack({ onLogout }: { onLogout: () => void }) {
-  return (
-    <Stack.Navigator screenOptions={hdrOpts}>
-      <Stack.Screen name="Prof" options={{ title: "Profil", headerLeft: ({ navigation }: any) => <HeaderLogo /> }}>
-        {({ navigation }) => <ProfileScreen navigation={navigation} onLogout={onLogout} />}
-      </Stack.Screen>
-    </Stack.Navigator>
-  );
-}
+});
 
-function AdminTabs({ onLogout }: { onLogout: () => void }) {
-  return (<Tab.Navigator screenOptions={{ headerShown: false, tabBarStyle: tabStyle, tabBarLabelStyle: { fontSize: 10, fontWeight: "700", marginTop: -2 }, tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: "#94a3b8" }}>
-    <Tab.Screen name="Bosh sahifa" options={{ tabBarIcon: ({ focused }) => <TI emoji="🏠" focused={focused} /> }}>{() => <AdminHome onLogout={onLogout} />}</Tab.Screen>
-    <Tab.Screen name="Ishlab chiq." component={AdminProduction} options={{ tabBarIcon: ({ focused }) => <TI emoji="🏭" focused={focused} /> }} />
-    <Tab.Screen name="HR" component={AdminHR} options={{ tabBarIcon: ({ focused }) => <TI emoji="👥" focused={focused} /> }} />
-    <Tab.Screen name="Moliya" component={AdminFinance} options={{ tabBarIcon: ({ focused }) => <TI emoji="💰" focused={focused} /> }} />
-    <Tab.Screen name="Profil" options={{ tabBarIcon: ({ focused }) => <TI emoji="👤" focused={focused} /> }}>
-      {() => <AdminProfileStack onLogout={onLogout} />}
-    </Tab.Screen>
-  </Tab.Navigator>);
-}
+const AdminProductionScreen = React.memo(() => {
+  const S = createNativeStackNavigator();
+  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="ProdMain" component={ProductionScreen} options={{ title: "🏭 Ishlab chiqarish" }} /><S.Screen name="Products" component={ProductsScreen} options={{ title: "📦 Mahsulotlar" }} /><S.Screen name="Stock" component={StockViewScreen} options={{ title: "📦 Ombor" }} /></S.Navigator>);
+});
 
-// ===================== BOSHQARUVCHI (Manager) TABS =====================
-function ManagerHome({ onLogout }: { onLogout: () => void }) {
-  return (<Stack.Navigator screenOptions={hdrOpts}><Stack.Screen name="H" options={{ headerShown: false }}>{({ navigation }) => <HomeScreen navigation={navigation} onLogout={onLogout} />}</Stack.Screen><Stack.Screen name="Profile" options={{ title: "Profil", headerLeft: ({ navigation }: any) => <HeaderLogo /> }}>{({ navigation }) => <ProfileScreen navigation={navigation} onLogout={onLogout} />}</Stack.Screen><Stack.Screen name="FaceAttendance" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} /></Stack.Navigator>);
-}
-function ManagerProduction() {
-  return (<Stack.Navigator screenOptions={hdrOpts}><Stack.Screen name="ProdMain" component={ProductionScreen} options={{ title: "🏭 Ishlab chiqarish" }} /><Stack.Screen name="Products" component={ProductsScreen} options={{ title: "📦 Mahsulotlar" }} /><Stack.Screen name="Stock" component={StockViewScreen} options={{ title: "📦 Ombor" }} /></Stack.Navigator>);
-}
-function ManagerAttendance() {
-  return (
-    <Stack.Navigator screenOptions={hdrOpts}>
-      <Stack.Screen name="FaceAtt" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID Davomat" }} />
-      <Stack.Screen name="Attendance" component={AttendanceScreen} options={{ title: "✅ Davomat" }} />
-      <Stack.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} />
-    </Stack.Navigator>
-  );
-}
-function ManagerTasksStack() {
-  return (
-    <Stack.Navigator screenOptions={hdrOpts}>
-      <Stack.Screen name="MyTasks" component={EmployeeTasksScreen} options={{ title: "📋 Topshiriqlarim" }} />
-    </Stack.Navigator>
-  );
-}
-function ManagerTabs({ onLogout }: { onLogout: () => void }) {
-  return (<Tab.Navigator screenOptions={{ headerShown: false, tabBarStyle: tabStyle, tabBarLabelStyle: { fontSize: 10, fontWeight: "700", marginTop: -2 }, tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: "#94a3b8" }}>
-    <Tab.Screen name="Bosh sahifa" options={{ tabBarIcon: ({ focused }) => <TI emoji="🏠" focused={focused} /> }}>{() => <ManagerHome onLogout={onLogout} />}</Tab.Screen>
-    <Tab.Screen name="Topshiriqlar" component={ManagerTasksStack} options={{ tabBarIcon: ({ focused }) => <TI emoji="📋" focused={focused} /> }} />
-    <Tab.Screen name="Davomat" component={ManagerAttendance} options={{ tabBarIcon: ({ focused }) => <TI emoji="✅" focused={focused} /> }} />
-    <Tab.Screen name="Ishlab chiq." component={ManagerProduction} options={{ tabBarIcon: ({ focused }) => <TI emoji="🏭" focused={focused} /> }} />
-    <Tab.Screen name="Profil" options={{ tabBarIcon: ({ focused }) => <TI emoji="👤" focused={focused} /> }}>{() => <Stack.Navigator screenOptions={hdrOpts}><Stack.Screen name="Prof" options={{ title: "Profil", headerLeft: ({ navigation }: any) => <HeaderLogo /> }}>{({ navigation }) => <ProfileScreen navigation={navigation} onLogout={onLogout} />}</Stack.Screen></Stack.Navigator>}</Tab.Screen>
-  </Tab.Navigator>);
-}
+const AdminHRScreen = React.memo(() => {
+  const S = createNativeStackNavigator();
+  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="Employees" component={EmployeesScreen} options={{ title: "👥 Hodimlar" }} /><S.Screen name="Attendance" component={AttendanceScreen} options={{ title: "✅ Davomat" }} /><S.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} /><S.Screen name="Tasks" component={AdminTasksScreen} options={{ title: "📋 Topshiriqlar" }} /><S.Screen name="FaceAttendance" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} /><S.Screen name="FaceRegister" component={FaceRegisterScreen} options={{ title: "📸 Yuz ro'yxati" }} /></S.Navigator>);
+});
 
-// ===================== ODDIY HODIM (Employee) TABS =====================
-function EmployeeHomeStack({ onLogout }: { onLogout: () => void }) {
+const AdminFinanceScreen = React.memo(() => {
+  const S = createNativeStackNavigator();
+  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="Fin" component={FinanceScreen} options={{ title: "💰 Moliya" }} /></S.Navigator>);
+});
+
+const AdminTabs = React.memo(function AdminTabs() {
   return (
-    <Stack.Navigator screenOptions={hdrOpts}>
-      <Stack.Screen name="H" options={{ headerShown: false }}>
+    <Tab.Navigator screenOptions={tabOpts}>
+      <Tab.Screen name="Bosh sahifa" component={HomeStackNavigator} options={{ tabBarIcon: ({ focused }) => <TI emoji="🏠" focused={focused} /> }} />
+      <Tab.Screen name="Ishlab chiq." component={AdminProductionScreen} options={{ tabBarIcon: ({ focused }) => <TI emoji="🏭" focused={focused} /> }} />
+      <Tab.Screen name="HR" component={AdminHRScreen} options={{ tabBarIcon: ({ focused }) => <TI emoji="👥" focused={focused} /> }} />
+      <Tab.Screen name="Moliya" component={AdminFinanceScreen} options={{ tabBarIcon: ({ focused }) => <TI emoji="💰" focused={focused} /> }} />
+      <Tab.Screen name="Profil" component={ProfileStackNavigator} options={{ tabBarIcon: ({ focused }) => <TI emoji="👤" focused={focused} /> }} />
+    </Tab.Navigator>
+  );
+});
+
+// Manager
+const ManagerHomeScreen = React.memo(function ManagerHomeScreen() {
+  const { onLogout } = useContext(AuthContext);
+  const S = createNativeStackNavigator();
+  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="H" options={{ headerShown: false }}>{({ navigation }) => <HomeScreen navigation={navigation} onLogout={onLogout} />}</S.Screen><S.Screen name="Profile" options={{ title: "Profil", headerLeft: () => <HeaderLogo /> }}>{({ navigation }) => <ProfileScreen navigation={navigation} onLogout={onLogout} />}</S.Screen><S.Screen name="FaceAttendance" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} /></S.Navigator>);
+});
+const ManagerProductionScreen = React.memo(() => {
+  const S = createNativeStackNavigator();
+  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="ProdMain" component={ProductionScreen} options={{ title: "🏭 Ishlab chiqarish" }} /><S.Screen name="Products" component={ProductsScreen} options={{ title: "📦 Mahsulotlar" }} /><S.Screen name="Stock" component={StockViewScreen} options={{ title: "📦 Ombor" }} /></S.Navigator>);
+});
+const ManagerAttendanceScreen = React.memo(() => {
+  const S = createNativeStackNavigator();
+  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="FaceAtt" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID Davomat" }} /><S.Screen name="Attendance" component={AttendanceScreen} options={{ title: "✅ Davomat" }} /><S.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} /></S.Navigator>);
+});
+const ManagerTasksScreen = React.memo(() => {
+  const S = createNativeStackNavigator();
+  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="MyTasks" component={EmployeeTasksScreen} options={{ title: "📋 Topshiriqlarim" }} /></S.Navigator>);
+});
+
+const ManagerTabs = React.memo(function ManagerTabs() {
+  return (
+    <Tab.Navigator screenOptions={tabOpts}>
+      <Tab.Screen name="Bosh sahifa" component={ManagerHomeScreen} options={{ tabBarIcon: ({ focused }) => <TI emoji="🏠" focused={focused} /> }} />
+      <Tab.Screen name="Topshiriqlar" component={ManagerTasksScreen} options={{ tabBarIcon: ({ focused }) => <TI emoji="📋" focused={focused} /> }} />
+      <Tab.Screen name="Davomat" component={ManagerAttendanceScreen} options={{ tabBarIcon: ({ focused }) => <TI emoji="✅" focused={focused} /> }} />
+      <Tab.Screen name="Ishlab chiq." component={ManagerProductionScreen} options={{ tabBarIcon: ({ focused }) => <TI emoji="🏭" focused={focused} /> }} />
+      <Tab.Screen name="Profil" component={ProfileStackNavigator} options={{ tabBarIcon: ({ focused }) => <TI emoji="👤" focused={focused} /> }} />
+    </Tab.Navigator>
+  );
+});
+
+// Employee
+const EmployeeDavomatScreen = React.memo(() => {
+  const S = createNativeStackNavigator();
+  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="FaceAtt" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID Davomat" }} /><S.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} /></S.Navigator>);
+});
+const EmployeeTasksScreenNav = React.memo(() => {
+  const S = createNativeStackNavigator();
+  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="MyTasks" component={EmployeeTasksScreen} options={{ title: "📋 Topshiriqlarim" }} /></S.Navigator>);
+});
+const EmployeeReportScreen = React.memo(() => {
+  const S = createNativeStackNavigator();
+  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="Report" component={AttendanceReportScreen} options={{ title: "📊 Davomat hisoboti" }} /></S.Navigator>);
+});
+
+const EmployeeTabs = React.memo(function EmployeeTabs() {
+  return (
+    <Tab.Navigator screenOptions={tabOpts}>
+      <Tab.Screen name="Bosh sahifa" component={HomeStackNavigator} options={{ tabBarIcon: ({ focused }) => <TI emoji="🏠" focused={focused} /> }} />
+      <Tab.Screen name="Topshiriqlar" component={EmployeeTasksScreenNav} options={{ tabBarIcon: ({ focused }) => <TI emoji="📋" focused={focused} /> }} />
+      <Tab.Screen name="Davomat" component={EmployeeDavomatScreen} options={{ tabBarIcon: ({ focused }) => <TI emoji="🤳" focused={focused} /> }} />
+      <Tab.Screen name="Hisobot" component={EmployeeReportScreen} options={{ tabBarIcon: ({ focused }) => <TI emoji="📊" focused={focused} /> }} />
+      <Tab.Screen name="Profil" component={ProfileStackNavigator} options={{ tabBarIcon: ({ focused }) => <TI emoji="👤" focused={focused} /> }} />
+    </Tab.Navigator>
+  );
+});
+
+// Driver
+const DriverHomeScreen = React.memo(function DriverHomeScreen() {
+  const { onLogout } = useContext(AuthContext);
+  const S = createNativeStackNavigator();
+  return (
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="H" options={{ headerShown: false }}>
         {({ navigation }) => <HomeScreen navigation={navigation} onLogout={onLogout} />}
-      </Stack.Screen>
-      <Stack.Screen name="Profile" options={{ title: "Profil", headerLeft: ({ navigation }: any) => <HeaderLogo /> }}>
+      </S.Screen>
+      <S.Screen name="Profile" options={{ title: "Profil", headerLeft: () => <HeaderLogo /> }}>
         {({ navigation }) => <ProfileScreen navigation={navigation} onLogout={onLogout} />}
-      </Stack.Screen>
-    </Stack.Navigator>
+      </S.Screen>
+    </S.Navigator>
   );
-}
+});
+const DriverDeliveryScreen = React.memo(() => {
+  const S = createNativeStackNavigator();
+  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="Delivery" component={DeliveryScreen} options={{ title: "🚚 Yetkazish", headerShown: false }} /><S.Screen name="DeliveryMap" component={DeliveryMapScreen} options={{ title: "🗺️ Xarita" }} /></S.Navigator>);
+});
+const DriverDavomatScreen = React.memo(() => {
+  const S = createNativeStackNavigator();
+  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="FaceAtt" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} /><S.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} /></S.Navigator>);
+});
+const DriverOrdersScreen = React.memo(() => {
+  const S = createNativeStackNavigator();
+  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="Orders" component={OrdersScreen} options={{ title: "📋 Buyurtmalar" }} /></S.Navigator>);
+});
 
-function EmployeeDavomatStack() {
+const DriverTabs = React.memo(function DriverTabs() {
   return (
-    <Stack.Navigator screenOptions={hdrOpts}>
-      <Stack.Screen name="FaceAtt" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID Davomat" }} />
-      <Stack.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} />
-    </Stack.Navigator>
+    <Tab.Navigator screenOptions={tabOpts}>
+      <Tab.Screen name="Bosh sahifa" component={DriverHomeScreen} options={{ tabBarIcon: ({ focused }) => <TI emoji="🏠" focused={focused} /> }} />
+      <Tab.Screen name="Yetkazish" component={DriverDeliveryScreen} options={{ tabBarIcon: ({ focused }) => <TI emoji="🚚" focused={focused} /> }} />
+      <Tab.Screen name="Davomat" component={DriverDavomatScreen} options={{ tabBarIcon: ({ focused }) => <TI emoji="🤳" focused={focused} /> }} />
+      <Tab.Screen name="Buyurtma" component={DriverOrdersScreen} options={{ tabBarIcon: ({ focused }) => <TI emoji="📋" focused={focused} /> }} />
+      <Tab.Screen name="Profil" component={ProfileStackNavigator} options={{ tabBarIcon: ({ focused }) => <TI emoji="👤" focused={focused} /> }} />
+    </Tab.Navigator>
   );
-}
-
-function EmployeeTasksStack() {
-  return (
-    <Stack.Navigator screenOptions={hdrOpts}>
-      <Stack.Screen name="MyTasks" component={EmployeeTasksScreen} options={{ title: "📋 Topshiriqlarim" }} />
-    </Stack.Navigator>
-  );
-}
-
-function EmployeeReportStack() {
-  return (
-    <Stack.Navigator screenOptions={hdrOpts}>
-      <Stack.Screen name="Report" component={AttendanceReportScreen} options={{ title: "📊 Davomat hisoboti" }} />
-    </Stack.Navigator>
-  );
-}
-
-function EmployeeProfileStack({ onLogout }: { onLogout: () => void }) {
-  return (
-    <Stack.Navigator screenOptions={hdrOpts}>
-      <Stack.Screen name="Prof" options={{ title: "Profil", headerLeft: ({ navigation }: any) => <HeaderLogo /> }}>
-        {({ navigation }) => <ProfileScreen navigation={navigation} onLogout={onLogout} />}
-      </Stack.Screen>
-    </Stack.Navigator>
-  );
-}
-
-function EmployeeTabs({ onLogout }: { onLogout: () => void }) {
-  return (<Tab.Navigator screenOptions={{ headerShown: false, tabBarStyle: tabStyle, tabBarLabelStyle: { fontSize: 10, fontWeight: "700", marginTop: -2 }, tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: "#94a3b8" }}>
-    <Tab.Screen name="Bosh sahifa" options={{ tabBarIcon: ({ focused }) => <TI emoji="🏠" focused={focused} /> }}>
-      {() => <EmployeeHomeStack onLogout={onLogout} />}
-    </Tab.Screen>
-    <Tab.Screen name="Topshiriqlar" component={EmployeeTasksStack} options={{ tabBarIcon: ({ focused }) => <TI emoji="📋" focused={focused} /> }} />
-    <Tab.Screen name="Davomat" component={EmployeeDavomatStack} options={{ tabBarIcon: ({ focused }) => <TI emoji="🤳" focused={focused} /> }} />
-    <Tab.Screen name="Hisobot" component={EmployeeReportStack} options={{ tabBarIcon: ({ focused }) => <TI emoji="📊" focused={focused} /> }} />
-    <Tab.Screen name="Profil" options={{ tabBarIcon: ({ focused }) => <TI emoji="👤" focused={focused} /> }}>
-      {() => <EmployeeProfileStack onLogout={onLogout} />}
-    </Tab.Screen>
-  </Tab.Navigator>);
-}
-
-// ===================== HAYDOVCHI (Driver) TABS =====================
-function DriverHomeStack({ onLogout }: { onLogout: () => void }) {
-  return (
-    <Stack.Navigator screenOptions={hdrOpts}>
-      <Stack.Screen name="H" options={{ headerShown: false }}>
-        {({ navigation }) => <HomeScreen navigation={navigation} onLogout={onLogout} />}
-      </Stack.Screen>
-      <Stack.Screen name="Profile" options={{ title: "Profil", headerLeft: ({ navigation }: any) => <HeaderLogo /> }}>
-        {({ navigation }) => <ProfileScreen navigation={navigation} onLogout={onLogout} />}
-      </Stack.Screen>
-    </Stack.Navigator>
-  );
-}
-
-function DriverDeliveryStack() {
-  return (
-    <Stack.Navigator screenOptions={hdrOpts}>
-      <Stack.Screen name="Delivery" component={DeliveryScreen} options={{ title: "🚚 Yetkazish", headerShown: false }} />
-      <Stack.Screen name="DeliveryMap" component={DeliveryMapScreen} options={{ title: "🗺️ Xarita" }} />
-    </Stack.Navigator>
-  );
-}
-
-function DriverDavomatStack() {
-  return (
-    <Stack.Navigator screenOptions={hdrOpts}>
-      <Stack.Screen name="FaceAtt" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} />
-      <Stack.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} />
-    </Stack.Navigator>
-  );
-}
-
-function DriverOrdersStack() {
-  return (
-    <Stack.Navigator screenOptions={hdrOpts}>
-      <Stack.Screen name="Orders" component={OrdersScreen} options={{ title: "📋 Buyurtmalar" }} />
-    </Stack.Navigator>
-  );
-}
-
-function DriverProfileStack({ onLogout }: { onLogout: () => void }) {
-  return (
-    <Stack.Navigator screenOptions={hdrOpts}>
-      <Stack.Screen name="Prof" options={{ title: "Profil", headerLeft: ({ navigation }: any) => <HeaderLogo /> }}>
-        {({ navigation }) => <ProfileScreen navigation={navigation} onLogout={onLogout} />}
-      </Stack.Screen>
-    </Stack.Navigator>
-  );
-}
-
-function DriverTabs({ onLogout }: { onLogout: () => void }) {
-  return (<Tab.Navigator screenOptions={{ headerShown: false, tabBarStyle: tabStyle, tabBarLabelStyle: { fontSize: 10, fontWeight: "700", marginTop: -2 }, tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: "#94a3b8" }}>
-    <Tab.Screen name="Bosh sahifa" options={{ tabBarIcon: ({ focused }) => <TI emoji="🏠" focused={focused} /> }}>
-      {() => <DriverHomeStack onLogout={onLogout} />}
-    </Tab.Screen>
-    <Tab.Screen name="Yetkazish" component={DriverDeliveryStack} options={{ tabBarIcon: ({ focused }) => <TI emoji="🚚" focused={focused} /> }} />
-    <Tab.Screen name="Davomat" component={DriverDavomatStack} options={{ tabBarIcon: ({ focused }) => <TI emoji="🤳" focused={focused} /> }} />
-    <Tab.Screen name="Buyurtma" component={DriverOrdersStack} options={{ tabBarIcon: ({ focused }) => <TI emoji="📋" focused={focused} /> }} />
-    <Tab.Screen name="Profil" options={{ tabBarIcon: ({ focused }) => <TI emoji="👤" focused={focused} /> }}>
-      {() => <DriverProfileStack onLogout={onLogout} />}
-    </Tab.Screen>
-  </Tab.Navigator>);
-}
+});
 
 // ===================== ROOT APP =====================
+const MainScreen = React.memo(function MainScreen() {
+  const role = useContext(RoleContext);
+  if (role === "admin" || role === "owner") return <AdminTabs />;
+  if (role === "manager" || role === "boshqaruvchi") return <ManagerTabs />;
+  if (role === "driver" || role === "haydovchi") return <DriverTabs />;
+  return <EmployeeTabs />;
+});
+
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const loginRef = useRef(false);
 
   useEffect(() => {
     (async () => {
-      const token = await getToken();
-      if (token) {
-        const r = await getUserRole();
-        setRole(r);
+      try {
+        const token = await getToken();
+        if (token) {
+          const r = await getUserRole();
+          setRole(r);
+        }
+        setIsLoggedIn(!!token);
+      } catch {
+        setIsLoggedIn(false);
       }
-      setIsLoggedIn(!!token);
     })();
   }, []);
 
-  // Forward any uncaught JS error to the server log so it can be debugged.
   useEffect(() => {
     try {
-      const base = ErrorUtils && typeof ErrorUtils.getGlobalHandler === "function"
-        ? ErrorUtils.getGlobalHandler()
+      const gu = (globalThis as any).ErrorUtils;
+      const base = gu && typeof gu.getGlobalHandler === "function"
+        ? gu.getGlobalHandler()
         : null;
       let handling = false;
-      ErrorUtils.setGlobalHandler((error: any, isFatal?: boolean) => {
-        if (handling) return; // prevent infinite loop
+      gu?.setGlobalHandler?.((error: any, isFatal?: boolean) => {
+        if (handling) return;
         handling = true;
         try {
           logClientError(
@@ -292,45 +299,59 @@ export default function App() {
             error?.stack || (error instanceof Error ? error.message : String(error)),
           );
         } catch {}
-        try {
-          if (base) base(error, isFatal);
-        } catch {}
+        try { if (base) base(error, isFatal); } catch {}
         setTimeout(() => { handling = false; }, 1000);
       });
     } catch {}
   }, []);
 
-  const handleLogin = async () => {
-    const r = await getUserRole();
-    setRole(r);
-    setIsLoggedIn(true);
-  };
+  const handleLogout = useCallback(() => {
+    loginRef.current = false;
+    setRole(null);
+    setIsLoggedIn(false);
+  }, []);
 
-  const handleLogout = () => { setIsLoggedIn(false); setRole(null); };
+  const handleLogin = useCallback((loginRole?: string) => {
+    if (loginRef.current) return;
+    loginRef.current = true;
+    if (loginRole) {
+      setRole(loginRole);
+      setIsLoggedIn(true);
+    } else {
+      getUserRole()
+        .then(r => { setRole(r); setIsLoggedIn(true); })
+        .catch(() => { setRole("employee"); setIsLoggedIn(true); });
+    }
+  }, []);
 
   if (isLoggedIn === null) {
-    return (<View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background }}><ActivityIndicator size="large" color={colors.primary} /></View>);
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
 
-  const renderMain = () => {
-    if (role === "admin" || role === "owner") return <AdminTabs onLogout={handleLogout} />;
-    if (role === "manager" || role === "boshqaruvchi") return <ManagerTabs onLogout={handleLogout} />;
-    if (role === "driver" || role === "haydovchi") return <DriverTabs onLogout={handleLogout} />;
-    return <EmployeeTabs onLogout={handleLogout} />;
-  };
-
   return (
+    <ErrorBoundary>
+    <AuthContext.Provider value={{ onLogout: handleLogout }}>
+    <RoleContext.Provider value={role}>
     <I18nProvider>
     <NavigationContainer>
       <StatusBar barStyle="light-content" backgroundColor="#ea580c" />
       <Stack.Navigator screenOptions={{ headerShown: false, animation: "fade" }}>
         {isLoggedIn ? (
-          <Stack.Screen name="Main">{renderMain}</Stack.Screen>
+          <Stack.Screen name="Main" component={MainScreen} />
         ) : (
-          <Stack.Screen name="Login">{() => <LoginScreen onLogin={handleLogin} />}</Stack.Screen>
+          <Stack.Screen name="Login">
+            {() => <LoginScreen onLogin={handleLogin} />}
+          </Stack.Screen>
         )}
       </Stack.Navigator>
     </NavigationContainer>
     </I18nProvider>
+    </RoleContext.Provider>
+    </AuthContext.Provider>
+    </ErrorBoundary>
   );
 }

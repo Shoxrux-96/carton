@@ -4,14 +4,13 @@ import {
   RefreshControl, Animated, Dimensions, Image,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { LineChart, BarChart } from "react-native-chart-kit";
+
 import { apiFetch, getUser, clearToken, getUserRole } from "../api";
 import { colors, radius, shadows, spacing } from "../theme";
 import { faceImageKey, syncUserProfile } from "../lib/employee-profile";
 import AppLogo from "../components/AppLogo";
 
 const { width } = Dimensions.get("window");
-const chartWidth = width - 40;
 
 interface Props {
   navigation: any;
@@ -29,16 +28,9 @@ const roleLabels: Record<string, { label: string; color: string; bg: string; emo
 const adminMenu = [
   { title: "Buyurtmalar", screen: "OrdersList", icon: "📋", desc: "Barcha buyurtmalar", color: "#2563eb", bg: "#dbeafe" },
   { title: "Savdo", screen: "Sales", icon: "📊", desc: "Sotish va kuzatish", color: "#22c55e", bg: "#f0fdf4" },
-  { title: "Yetkazish", screen: "Delivery", icon: "🚚", desc: "Yetkazish jarayoni", color: "#d97706", bg: "#fef3c7" },
-  { title: "Xarita", screen: "DeliveryMap", icon: "🗺️", desc: "Real-time kuzatish", color: "#0ea5e9", bg: "#e0f2fe" },
-  { title: "Mijozlar", screen: "Clients", icon: "🏢", desc: "Mijozlar bazasi", color: "#7c3aed", bg: "#f3e8ff" },
   { title: "Mahsulotlar", tab: "Ishlab chiq.", screen: "Products", icon: "📦", desc: "Mahsulotlar ro'yxati", color: "#0891b2", bg: "#ecfeff" },
-  { title: "Ishlab chiqarish", tab: "Ishlab chiq.", screen: "ProdMain", icon: "🏭", desc: "Ishlab chiqarish", color: "#ea580c", bg: "#fff7ed" },
   { title: "Ombor", tab: "Ishlab chiq.", screen: "Stock", icon: "📦", desc: "Ombor qoldiqlari", color: "#64748b", bg: "#f1f5f9" },
-  { title: "Hodimlar", tab: "HR", screen: "Employees", icon: "👥", desc: "Hodimlar boshqaruvi", color: "#059669", bg: "#ecfdf5" },
   { title: "Topshiriqlar", tab: "HR", screen: "Tasks", icon: "📋", desc: "Topshiriqlar boshqaruvi", color: "#ea580c", bg: "#fff7ed" },
-  { title: "Davomat", tab: "HR", screen: "Attendance", icon: "✅", desc: "Kunlik davomat", color: "#16a34a", bg: "#dcfce7" },
-  { title: "Yuz ro'yxati", tab: "HR", screen: "FaceRegister", icon: "📸", desc: "Yuzni ro'yxatga olish", color: "#db2777", bg: "#fdf2f8" },
   { title: "Moliya", tab: "Moliya", screen: "Fin", icon: "💰", desc: "Kirim va chiqimlar", color: "#ca8a04", bg: "#fef9c3" },
 ];
 
@@ -47,60 +39,96 @@ const driverMenu = [
 ];
 
 const employeeMenu: any[] = [
-  { title: "Face ID Davomat", tab: "HR", screen: "FaceAttendance", icon: "🤳", desc: "Yuz orqali belgilash", color: "#f97316", bg: "#fff7ed" },
+  { title: "Face ID Davomat", tab: "Davomat", screen: "FaceAtt", icon: "🤳", desc: "Yuz orqali belgilash", color: "#f97316", bg: "#fff7ed" },
 ];
+
+function LineChart({ labels, data }: { labels: string[]; data: number[] }) {
+  const chartW = width - 80;
+  const chartH = 140;
+  const maxVal = Math.max(...data, 1);
+  const minVal = 0;
+  const range = maxVal - minVal || 1;
+  const pad2 = (n: number) => String(n).padStart(2, "0");
+
+  const points = data.map((v, i) => ({
+    x: (i / Math.max(data.length - 1, 1)) * chartW,
+    y: chartH - ((v - minVal) / range) * (chartH - 20),
+  }));
+
+  return (
+    <View style={{ marginTop: 8 }}>
+      <View style={{ height: chartH, position: "relative" }}>
+        {[0, 0.25, 0.5, 0.75, 1].map((pct) => (
+          <View key={pct} style={{ position: "absolute", top: chartH - 20 - pct * (chartH - 20), left: 0, right: 0, height: 1, backgroundColor: "#e5e7eb" }} />
+        ))}
+        {points.map((pt, i) => {
+          if (i === 0) return null;
+          const prev = points[i - 1];
+          const dx = pt.x - prev.x;
+          const dy = pt.y - prev.y;
+          const length = Math.sqrt(dx * dx + dy * dy);
+          const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+          return (
+            <View
+              key={`line-${i}`}
+              style={{
+                position: "absolute",
+                left: prev.x,
+                top: prev.y,
+                width: length,
+                height: 2.5,
+                backgroundColor: "#f97316",
+                borderRadius: 1.25,
+                transformOrigin: "left center",
+                transform: [{ rotate: `${angle}deg` }],
+              }}
+            />
+          );
+        })}
+        {points.map((pt, i) => (
+          <View
+            key={`dot-${i}`}
+            style={{
+              position: "absolute",
+              left: pt.x - 5,
+              top: pt.y - 5,
+              width: 10,
+              height: 10,
+              borderRadius: 5,
+              backgroundColor: "#f97316",
+              borderWidth: 2,
+              borderColor: "#fff",
+            }}
+          />
+        ))}
+      </View>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6, paddingHorizontal: 2 }}>
+        {labels.map((l, i) => (
+          <Text key={i} style={{ fontSize: 9, color: colors.textMuted, textAlign: "center", width: chartW / labels.length }}>{l}</Text>
+        ))}
+      </View>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 4, paddingHorizontal: 2 }}>
+        {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
+          const val = Math.round(minVal + pct * range);
+          return <Text key={pct} style={{ fontSize: 8, color: colors.textMuted }}>{val}</Text>;
+        })}
+      </View>
+    </View>
+  );
+}
 
 export default function HomeScreen({ navigation, onLogout }: Props) {
   const [stats, setStats] = React.useState<any>(null);
   const [user, setUserState] = React.useState<any>(null);
   const [role, setRole] = React.useState<string | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
-  const [salesChart, setSalesChart] = React.useState<any>(null);
-  const [financeChart, setFinanceChart] = React.useState<any>(null);
+  const [salesChart, setSalesChart] = React.useState<{ labels: string[]; data: number[] } | null>(null);
+  const [productionChart, setProductionChart] = React.useState<{ labels: string[]; data: number[] } | null>(null);
   const [faceImg, setFaceImg] = React.useState<string | null>(null);
-  const [finPeriod, setFinPeriod] = React.useState<"daily" | "monthly" | "yearly">("monthly");
-  const financeRaw = React.useRef<any[]>([]);
 
   const monthNames = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"];
   const money = (v: number) => Math.round(v / 1000);
   const pad = (n: number) => String(n).padStart(2, "0");
-
-  const applyFinancePeriod = (p: "daily" | "monthly" | "yearly") => {
-    setFinPeriod(p);
-    const finArr = financeRaw.current;
-    const labels: string[] = [];
-    const income: number[] = [];
-    const expense: number[] = [];
-    const now = new Date();
-    const points: Date[] = [];
-
-    if (p === "daily") {
-      for (let i = 29; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); points.push(d); }
-    } else if (p === "yearly") {
-      for (let i = 4; i >= 0; i--) points.push(new Date(now.getFullYear() - i, 0, 1));
-    } else {
-      for (let i = 5; i >= 0; i--) points.push(new Date(now.getFullYear(), now.getMonth() - i, 1));
-    }
-
-    points.forEach((d) => {
-      let key: string;
-      if (p === "daily") {
-        key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-        labels.push(`${pad(d.getDate())}.${pad(d.getMonth() + 1)}`);
-      } else if (p === "yearly") {
-        key = String(d.getFullYear());
-        labels.push(String(d.getFullYear()));
-      } else {
-        key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
-        labels.push(`${monthNames[d.getMonth()]}-${String(d.getFullYear()).slice(2)}`);
-      }
-      const monthTx = finArr.filter((t: any) => String(t.date).startsWith(key));
-      income.push(money(monthTx.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + (t.amount || 0), 0)));
-      expense.push(money(monthTx.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + (t.amount || 0), 0)));
-    });
-
-    setFinanceChart({ labels, income, expense });
-  };
 
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
@@ -122,30 +150,33 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
         setFaceImg(admin ? null : (profile.faceImage ?? null));
       }
 
-      // Load chart data
-      const [salesData, financeData] = await Promise.all([
-        apiFetch("/production/transactions").catch(() => []),
-        apiFetch("/finance").catch(() => []),
-      ]);
+      const salesData = await apiFetch("/sales").catch(() => []);
       const salesArr = Array.isArray(salesData) ? salesData : [];
-      const finArr = Array.isArray(financeData) ? financeData : [];
-      financeRaw.current = finArr;
 
-      // Sales chart — last 6 months (monthly production)
-      const salesLabels: string[] = [];
-      const salesSeries: number[] = [];
+      const prodData = await apiFetch("/production/transactions").catch(() => []);
+      const prodArr = Array.isArray(prodData) ? prodData : [];
+
       const now = new Date();
+      const salesLabels: string[] = [];
+      const salesValues: number[] = [];
+      const prodValues: number[] = [];
       for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const ym = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
-        salesLabels.push(`${monthNames[d.getMonth()]}-${String(d.getFullYear()).slice(2)}`);
-        const sum = salesArr.filter((t: any) => t.date?.startsWith(ym)).reduce((s: number, t: any) => s + (t.totalSum || 0), 0);
-        salesSeries.push(money(sum));
+        salesLabels.push(`${monthNames[d.getMonth()]}`);
+        const sSum = salesArr.filter((t: any) => {
+          const dateStr = t.date || t.createdAt || "";
+          return String(dateStr).startsWith(ym);
+        }).reduce((s: number, t: any) => s + (t.totalAmount || t.totalSum || t.amount || 0), 0);
+        salesValues.push(money(sSum));
+        const pSum = prodArr.filter((t: any) => {
+          const dateStr = t.date || t.createdAt || "";
+          return String(dateStr).startsWith(ym);
+        }).reduce((s: number, t: any) => s + (t.totalSum || t.totalAmount || t.amount || 0), 0);
+        prodValues.push(money(pSum));
       }
-      setSalesChart({ labels: salesLabels, datasets: [{ data: salesSeries.map(v => v || 0) }] });
-
-      // Finance chart — income vs expense per selected period
-      applyFinancePeriod(finPeriod);
+      setSalesChart({ labels: salesLabels, data: salesValues });
+      setProductionChart({ labels: salesLabels, data: prodValues });
     } catch {}
   };
 
@@ -153,10 +184,9 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
     React.useCallback(() => {
       load();
       Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
-      // Auto-refresh every 15s
       const interval = setInterval(load, 15000);
       return () => clearInterval(interval);
-    }, [finPeriod])
+    }, [])
   );
 
   const onRefresh = async () => {
@@ -182,7 +212,6 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
       <View style={styles.headerBg}>
         <View style={styles.headerContent}>
           <View style={styles.profileSection}>
@@ -211,36 +240,34 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
         </View>
       </View>
 
-      {/* Quick actions — admin */}
       {isAdminRole && menuItems.length > 0 && (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Tezkor amallar</Text>
-        <View style={styles.menuGrid}>
-          {menuItems.map((m, i) => (
-            <TouchableOpacity
-              key={`${m.title ?? "menu-item"}-${m.screen ?? i}`}
-              style={styles.menuItem}
-              onPress={() => {
-                if (m.tab) {
-                  navigation.navigate(m.tab, { screen: m.screen });
-                } else {
-                  navigation.navigate(m.screen);
-                }
-              }}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.menuIconWrap, { backgroundColor: m.bg }]}>
-                <Text style={styles.menuIcon}>{m.icon}</Text>
-              </View>
-              <Text style={styles.menuTitle}>{m.title}</Text>
-              <Text style={styles.menuDesc}>{m.desc}</Text>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Tezkor amallar</Text>
+          <View style={styles.menuGrid}>
+            {menuItems.map((m, i) => (
+              <TouchableOpacity
+                key={`${m.title ?? "menu-item"}-${m.screen ?? i}`}
+                style={styles.menuItem}
+                onPress={() => {
+                  if (m.tab) {
+                    navigation.navigate(m.tab, { screen: m.screen });
+                  } else {
+                    navigation.navigate(m.screen);
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.menuIconWrap, { backgroundColor: m.bg }]}>
+                  <Text style={styles.menuIcon}>{m.icon}</Text>
+                </View>
+                <Text style={styles.menuTitle}>{m.title}</Text>
+                <Text style={styles.menuDesc}>{m.desc}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-      </View>
       )}
 
-      {/* Stats — shown for all users; placeholders if not available */}
       <Animated.View style={[styles.statsContainer, { opacity: fadeAnim, marginTop: 20 }]}>
         <Text style={[styles.sectionTitle, { paddingHorizontal: spacing.xl }]}>Ko'rsatkichlar</Text>
         <View style={styles.statsRow}>
@@ -263,110 +290,33 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
             <Text style={styles.statLabel}>Xodimlar</Text>
           </View>
         </View>
-        {!stats && (
-          <View style={{ paddingHorizontal: spacing.xl, marginTop: 8 }}>
-            <Text style={{ color: colors.textMuted, fontSize: 12 }}>Ma'lumotlar yuklanmadi — iltimos tizimga kiring yoki internetni tekshiring.</Text>
-          </View>
-        )}
       </Animated.View>
 
-      {/* Charts — available for all users (fallback message if no data) */}
-      {(
-        salesChart || financeChart
-      ) ? (
-        <View style={styles.chartSection}>
-          {salesChart ? (
-            <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>📈 Ishlab chiqarish trendi (ming so'm)</Text>
-              <Text style={styles.chartSubtitle}>Oxirgi 6 oy</Text>
-              <LineChart
-                data={salesChart}
-                width={chartWidth}
-                height={180}
-                chartConfig={{
-                  backgroundColor: "#fff",
-                  backgroundGradientFrom: "#fff",
-                  backgroundGradientTo: "#fff",
-                  decimalPlaces: 0,
-                  color: (opacity = 1) => `rgba(249, 115, 22, ${opacity})`,
-                  labelColor: () => colors.textMuted,
-                  propsForDots: { r: "4", strokeWidth: "2", stroke: "#f97316" },
-                  propsForBackgroundLines: { stroke: "#f5f5f4" },
-                }}
-                bezier
-                style={{ borderRadius: 12, marginTop: 8 }}
-              />
-            </View>
+      <View style={styles.chartSection}>
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>📈 Sotuv trendi (ming so'm)</Text>
+          <Text style={styles.chartSubtitle}>Oxirgi 6 oy</Text>
+          {salesChart && salesChart.data.some((v) => v > 0) ? (
+            <LineChart labels={salesChart.labels} data={salesChart.data} />
           ) : (
-            <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>📈 Ishlab chiqarish trendi</Text>
-              <Text style={styles.chartSubtitle}>Ma'lumotlar mavjud emas</Text>
-            </View>
-          )}
-
-          {financeChart ? (
-            <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>💰 Moliya (ming so'm)</Text>
-              <Text style={styles.chartSubtitle}>Kirim vs Chiqim</Text>
-              <View style={styles.periodRow}>
-                {([["daily", "Kunlik"], ["monthly", "Oylik"], ["yearly", "Yillik"]] as const).map(([key, label]) => (
-                  <TouchableOpacity
-                    key={key}
-                    style={[styles.periodBtn, finPeriod === key && styles.periodBtnActive]}
-                    onPress={() => applyFinancePeriod(key)}
-                  >
-                    <Text style={[styles.periodBtnText, finPeriod === key && styles.periodBtnTextActive]}>{label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <View style={styles.legendRow}>
-                <View style={[styles.legendDot, { backgroundColor: "#22c55e" }]} />
-                <Text style={styles.legendText}>Kirim</Text>
-                <View style={[styles.legendDot, { backgroundColor: "#ef4444" }]} />
-                <Text style={styles.legendText}>Chiqim</Text>
-              </View>
-              <BarChart
-                data={{
-                  labels: financeChart.labels,
-                  datasets: [
-                    { data: financeChart.income.map((v: number) => v || 0), color: (o: number = 1) => `rgba(34, 197, 94, ${o})` },
-                    { data: financeChart.expense.map((v: number) => v || 0), color: (o: number = 1) => `rgba(239, 68, 68, ${o})` },
-                  ],
-                }}
-                width={chartWidth}
-                height={190}
-                yAxisLabel=""
-                yAxisSuffix=""
-                chartConfig={{
-                  backgroundColor: "#fff",
-                  backgroundGradientFrom: "#fff",
-                  backgroundGradientTo: "#fff",
-                  decimalPlaces: 0,
-                  color: (opacity = 1) => `rgba(34, 197, 94, ${opacity})`,
-                  labelColor: () => colors.textMuted,
-                  propsForBackgroundLines: { stroke: "#f5f5f4" },
-                  barPercentage: 0.5,
-                }}
-                style={{ borderRadius: 12, marginTop: 8 }}
-              />
-            </View>
-          ) : (
-            <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>💰 Moliya</Text>
-              <Text style={styles.chartSubtitle}>Ma'lumotlar mavjud emas</Text>
+            <View style={{ height: 80, justifyContent: "center", alignItems: "center" }}>
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>Ma'lumotlar yuklanmoqda...</Text>
             </View>
           )}
         </View>
-      ) : (
-        <View style={styles.chartSection}>
-          <View style={styles.chartCard}>
-            <Text style={styles.chartTitle}>Ko'rsatkichlar</Text>
-            <Text style={styles.chartSubtitle}>Hech qanday diagramma ma'lumotlari mavjud emas</Text>
-          </View>
-        </View>
-      )}
 
-      {/* End of content */}
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>📈 Ishlab chiqarish trendi (ming so'm)</Text>
+          <Text style={styles.chartSubtitle}>Oxirgi 6 oy</Text>
+          {productionChart && productionChart.data.some((v) => v > 0) ? (
+            <LineChart labels={productionChart.labels} data={productionChart.data} />
+          ) : (
+            <View style={{ height: 80, justifyContent: "center", alignItems: "center" }}>
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>Ma'lumotlar yuklanmoqda...</Text>
+            </View>
+          )}
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -423,14 +373,6 @@ const styles = StyleSheet.create({
   chartCard: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: spacing.lg, marginBottom: spacing.md, ...shadows.sm },
   chartTitle: { fontSize: 14, fontWeight: "700", color: colors.text },
   chartSubtitle: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  periodRow: { flexDirection: "row", marginTop: 10, backgroundColor: "#f5f5f4", borderRadius: 8, padding: 3, alignSelf: "flex-start" },
-  periodBtn: { paddingHorizontal: 14, paddingVertical: 5, borderRadius: 6 },
-  periodBtnActive: { backgroundColor: "#fff" },
-  periodBtnText: { fontSize: 12, color: colors.textMuted, fontWeight: "600" },
-  periodBtnTextActive: { color: colors.text },
-  legendRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
-  legendDot: { width: 10, height: 10, borderRadius: 5, marginRight: 4 },
-  legendText: { fontSize: 12, color: colors.textMuted, marginRight: 14 },
   sectionTitle: { fontSize: 16, fontWeight: "700", color: colors.text, marginBottom: spacing.lg },
   menuGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   menuItem: {

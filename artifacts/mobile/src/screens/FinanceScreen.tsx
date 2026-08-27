@@ -79,11 +79,10 @@ export default function FinanceScreen() {
   const handleSave = async () => {
     if (!amount || Number(amount) <= 0) { Alert.alert("Xatolik", "Summani kiriting"); return; }
     setSaving(true);
-    const today = new Date().toISOString().split("T")[0];
     try {
       await apiFetch("/finance", {
         method: "POST",
-        body: JSON.stringify({ type: formType, amount: Number(amount), category: category || (formType === "income" ? "Kirim" : "Chiqim"), description, date: today }),
+        body: JSON.stringify({ type: formType, amount: Number(amount), category: category || (formType === "income" ? "Kirim" : "Chiqim"), description, date }),
       });
       Alert.alert("Muvaffaqiyat", "Yozuv qo'shildi");
       setShowModal(false); resetForm(); await load();
