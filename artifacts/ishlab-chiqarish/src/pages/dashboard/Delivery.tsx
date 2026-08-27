@@ -65,14 +65,53 @@ function MapBoundsUpdater({ points }: { points: [number, number][] }) {
   return null;
 }
 
+const myLocationIcon = L.divIcon({
+  className: "",
+  html: `<div style="width:20px;height:20px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 0 2px #3b82f6,0 2px 8px rgba(59,130,246,0.4);"></div>`,
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+});
+
+function CurrentLocationMarker({ position }: { position: [number, number] }) {
+  const map = useMap();
+  return (
+    <Marker position={position} icon={myLocationIcon}>
+      <Popup>
+        <div className="text-center">
+          <p className="font-bold text-sm">📍 Mening lokatsiyam</p>
+          <p className="text-xs text-muted-foreground">{position[0].toFixed(6)}, {position[1].toFixed(6)}</p>
+        </div>
+      </Popup>
+    </Marker>
+  );
+}
+
+function FlyToLocation({ position }: { position: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo(position, 15, { duration: 1.5 });
+  }, [position, map]);
+  return null;
+}
+
 export default function Delivery() {
   const queryClient = useQueryClient();
   const authOpts = useAuthHeaders();
   const [satellite, setSatellite] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [driverLocations, setDriverLocations] = useState<Record<number, [number, number]>>({});
+  const [myLocation, setMyLocation] = useState<[number, number] | null>(null);
 
   const { t } = useLang();
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      pos => setMyLocation([pos.coords.latitude, pos.coords.longitude]),
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
 
   const deliverySteps = [
     { key: "pending", label: t('delivery_step_pending') },
@@ -317,6 +356,20 @@ export default function Delivery() {
           {/* Controls overlay */}
           <div className="absolute top-4 right-4 z-[1000] flex gap-2">
             <button
+              onClick={() => {
+                if (!navigator.geolocation) return;
+                navigator.geolocation.getCurrentPosition(
+                  pos => setMyLocation([pos.coords.latitude, pos.coords.longitude]),
+                  () => {},
+                  { enableHighAccuracy: true, timeout: 10000 }
+                );
+              }}
+              className="px-3 py-2 bg-white rounded-xl shadow-lg border border-border text-sm font-medium flex items-center gap-2 hover:bg-muted transition-colors"
+            >
+              <Navigation className="w-4 h-4" />
+              {t('my_location')}
+            </button>
+            <button
               onClick={() => setSatellite(!satellite)}
               className="px-3 py-2 bg-white rounded-xl shadow-lg border border-border text-sm font-medium flex items-center gap-2 hover:bg-muted transition-colors"
             >
@@ -348,6 +401,10 @@ export default function Delivery() {
               />
 
               {allPoints.length > 1 && <MapBoundsUpdater points={allPoints} />}
+
+              {/* Joriy lokatsiya */}
+              {myLocation && <CurrentLocationMarker position={myLocation} />}
+              {myLocation && <FlyToLocation position={myLocation} />}
 
               {/* Warehouse marker */}
               <Marker position={[41.3, 69.2]}>

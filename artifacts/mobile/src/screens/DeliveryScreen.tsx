@@ -5,6 +5,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { apiFetch } from "../api";
 import { colors, radius, shadows, spacing } from "../theme";
 import { buildDeliveryMap } from "../lib/mapHtml";
+import * as Location from "expo-location";
 
 const { height } = Dimensions.get("window");
 const steps = [
@@ -18,11 +19,22 @@ const stC: Record<string, { bg: string; text: string }> = { pending: { bg: "#f3f
 export default function DeliveryScreen({ navigation }: any) {
   const [orders, setOrders] = useState<any[]>([]);
   const [wh, setWh] = useState({ lat: 41.311081, lng: 69.240562 });
+  const [myLoc, setMyLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [selId, setSelId] = useState<number | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const webRef = useRef<any>(null);
   const pH = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === "granted") {
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        setMyLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      }
+    })();
+  }, []);
 
   const load = async () => {
     try {
@@ -52,9 +64,11 @@ export default function DeliveryScreen({ navigation }: any) {
   const tc = orders.filter(o => o.deliveryStatus === "in_transit").length;
   const dc = orders.filter(o => o.deliveryStatus === "delivered").length;
 
+  const mapCenter = myLoc || wh;
+
   return (
     <View style={s.box}>
-      <WebView ref={webRef} source={{ html: buildDeliveryMap(wh.lat, wh.lng) }} style={s.map} onLoad={onLoad} javaScriptEnabled domStorageEnabled originWhitelist={["*"]} />
+      <WebView ref={webRef} source={{ html: buildDeliveryMap(mapCenter.lat, mapCenter.lng) }} style={s.map} onLoad={onLoad} javaScriptEnabled domStorageEnabled originWhitelist={["*"]} />
       <TouchableOpacity style={s.back} onPress={() => navigation.goBack()}><Text style={s.backT}>←</Text></TouchableOpacity>
       <View style={s.pills}>
         <View style={[s.pill, { backgroundColor: "#dbeafe" }]}><Text style={[s.pillT, { color: "#2563eb" }]}>📤 {sc}</Text></View>

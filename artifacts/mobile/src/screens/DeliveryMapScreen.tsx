@@ -5,12 +5,24 @@ import { useFocusEffect } from "@react-navigation/native";
 import { apiFetch } from "../api";
 import { colors } from "../theme";
 import { buildDeliveryMap } from "../lib/mapHtml";
+import * as Location from "expo-location";
 
 export default function DeliveryMapScreen() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [wh, setWh] = useState({ lat: 41.311081, lng: 69.240562 });
+  const [myLoc, setMyLoc] = useState<{ lat: number; lng: number } | null>(null);
   const webRef = useRef<any>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === "granted") {
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        setMyLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      }
+    })();
+  }, []);
 
   const load = async () => {
     try {
@@ -27,10 +39,12 @@ export default function DeliveryMapScreen() {
   useEffect(() => { if (webRef.current && mData.length > 0) webRef.current.postMessage(JSON.stringify({ type: "update", data: mData })); }, [orders]);
   const onLoad = () => { setTimeout(() => { if (webRef.current && mData.length > 0) webRef.current.postMessage(JSON.stringify({ type: "update", data: mData })); }, 800); };
 
+  const mapCenter = myLoc || wh;
+
   if (loading) return <View style={s.c}><ActivityIndicator size="large" color={colors.primary} /></View>;
   return (
     <View style={s.f}>
-      <WebView ref={webRef} source={{ html: buildDeliveryMap(wh.lat, wh.lng) }} style={s.f} onLoad={onLoad} javaScriptEnabled domStorageEnabled originWhitelist={["*"]} />
+      <WebView ref={webRef} source={{ html: buildDeliveryMap(mapCenter.lat, mapCenter.lng) }} style={s.f} onLoad={onLoad} javaScriptEnabled domStorageEnabled originWhitelist={["*"]} />
       {orders.length === 0 && <View style={s.e}><Text style={{ fontSize: 40 }}>🚚</Text><Text style={s.et}>Faol yetkazishlar yo'q</Text></View>}
     </View>
   );
