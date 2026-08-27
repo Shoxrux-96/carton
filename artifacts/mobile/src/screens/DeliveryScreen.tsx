@@ -25,15 +25,20 @@ export default function DeliveryScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const webRef = useRef<any>(null);
   const pH = useRef(new Animated.Value(0)).current;
+  const watchRef = useRef<Location.LocationSubscription | null>(null);
 
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === "granted") {
-        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        setMyLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-      }
+      if (status !== "granted") return;
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      setMyLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      watchRef.current = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.High, distanceInterval: 10, timeInterval: 5000 },
+        p => setMyLoc({ lat: p.coords.latitude, lng: p.coords.longitude })
+      );
     })();
+    return () => { watchRef.current?.remove(); };
   }, []);
 
   const load = async () => {

@@ -88,9 +88,19 @@ function CurrentLocationMarker({ position }: { position: [number, number] }) {
 
 function FlyToLocation({ position }: { position: [number, number] }) {
   const map = useMap();
+  const hasFlown = useRef(false);
   useEffect(() => {
-    map.flyTo(position, 15, { duration: 1.5 });
+    if (!hasFlown.current) {
+      hasFlown.current = true;
+      map.setView(position, 15);
+    }
   }, [position, map]);
+  return null;
+}
+
+function MapRef({ mapRef }: { mapRef: React.MutableRefObject<any> }) {
+  const map = useMap();
+  useEffect(() => { mapRef.current = map; }, [map, mapRef]);
   return null;
 }
 
@@ -101,16 +111,24 @@ export default function Delivery() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [driverLocations, setDriverLocations] = useState<Record<number, [number, number]>>({});
   const [myLocation, setMyLocation] = useState<[number, number] | null>(null);
+  const mapRef = useRef<any>(null);
 
   const { t } = useLang();
 
   useEffect(() => {
     if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      pos => setMyLocation([pos.coords.latitude, pos.coords.longitude]),
+    const watchId = navigator.geolocation.watchPosition(
+      pos => {
+        const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        setMyLocation(loc);
+        if (mapRef.current) {
+          mapRef.current.setView(loc, mapRef.current.getZoom());
+        }
+      },
       () => {},
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
     );
+    return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
   const deliverySteps = [
@@ -275,7 +293,7 @@ export default function Delivery() {
     return null;
   }, [selectedOrder]);
 
-  const defaultCenter: [number, number] = [41.3, 69.2];
+  const defaultCenter: [number, number] = myLocation || [41.3, 69.2];
 
   return (
     <DashboardLayout>
@@ -388,10 +406,11 @@ export default function Delivery() {
             <MapContainer
               key={satellite ? "sat" : "street"}
               center={defaultCenter}
-              zoom={12}
+              zoom={myLocation ? 15 : 12}
               className="h-full w-full"
               scrollWheelZoom={true}
             >
+              <MapRef mapRef={mapRef} />
               <TileLayer
                 attribution={satellite ? "" : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}
                 url={satellite
