@@ -290,25 +290,33 @@ export default function ProductionCalc() {
         return (
         <div className="print-only" style={{ display: "none" }}>
           <div style={{ fontFamily: "Arial", padding: "10mm", width: "297mm", minHeight: "210mm" }}>
-            {/* SARLAVHA: korxona + quti + o'lchamlar */}
+            {/* SARLAVHA */}
             <div style={{ borderBottom: "2px solid black", paddingBottom: "8px", marginBottom: "8px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                <div>
-                  <h1 style={{ fontSize: "18px", fontWeight: 900, textTransform: "uppercase", margin: 0 }}>{companyName}</h1>
-                  <p style={{ fontSize: "13px", fontWeight: 700, margin: "2px 0 0 0" }}>{boxName}</p>
-                </div>
-                <span style={{ color: "#ccc" }}>|</span>
-                <div style={{ fontSize: "11px", display: "flex", gap: "16px" }}>
+              {/* 1-QATOR: korxona nomi + quti nomi */}
+              <div style={{ display: "flex", alignItems: "baseline", gap: "12px", marginBottom: "4px" }}>
+                <h1 style={{ fontSize: "20px", fontWeight: 900, textTransform: "uppercase", margin: 0 }}>{companyName}</h1>
+                <span style={{ color: "#999", fontSize: "14px" }}>—</span>
+                <p style={{ fontSize: "14px", fontWeight: 700, margin: 0 }}>{boxName}</p>
+                <span style={{ fontSize: "10px", color: "#666", marginLeft: "auto" }}>Sana: {new Date().toLocaleDateString("uz-UZ")}</span>
+              </div>
+              {/* 2-QATOR: mahsulot haqida ma'lumot */}
+              <div style={{ display: "flex", alignItems: "center", gap: "20px", fontSize: "12px", background: "#f5f5f5", padding: "5px 10px", borderRadius: "3px" }}>
+                <div style={{ display: "flex", gap: "16px" }}>
                   <span><b>Eni (W):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bw} sm</span></span>
                   <span><b>Balandligi (H):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bh} sm</span></span>
                   <span><b>Bo'yi (L):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bl} sm</span></span>
                 </div>
                 <span style={{ color: "#ccc" }}>|</span>
-                <div style={{ fontSize: "11px", display: "flex", gap: "16px" }}>
+                <div style={{ display: "flex", gap: "16px" }}>
                   <span><b>Kesma:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(blankLen)} × {fmt(blankW)} sm</span></span>
                   <span><b>Kanot:</b> <span style={{ fontFamily: "monospace" }}>{fmt(flapH)} sm</span></span>
                 </div>
-                <span style={{ fontSize: "10px", color: "#666", marginLeft: "auto" }}>Sana: {new Date().toLocaleDateString("uz-UZ")}</span>
+                <span style={{ color: "#ccc" }}>|</span>
+                <span><b>Sof maydon:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(calc.netAreaM2)} m²</span></span>
+                <span style={{ color: "#ccc" }}>|</span>
+                <span><b>Umumiy og'irlik:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(calc.totalWeight)} kg</span></span>
+                <span style={{ color: "#ccc" }}>|</span>
+                <span><b>1 dona narxi:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(calc.totalPaperCost)} so'm</span></span>
               </div>
             </div>
 
