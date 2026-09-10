@@ -14,9 +14,13 @@ export default function ProductionCalc() {
   const [boxW, setBoxW] = useState("");
   const [boxH, setBoxH] = useState("");
 
-  // Qog'oz parametrlari
-  const [paperWeightKg, setPaperWeightKg] = useState("0.125"); // kg/m² (default)
-  const [paperPriceKg, setPaperPriceKg] = useState("");        // so'm/kg
+  // Qog'oz og'irligi (har 3 qatlam uchun umumiy)
+  const [paperWeightKg, setPaperWeightKg] = useState("0.125"); // kg/m²
+
+  // Har bir qatlam uchun alohida NARX (so'm/kg)
+  const [priceLayer1, setPriceLayer1] = useState(""); // tashqi qog'oz
+  const [priceLayer2, setPriceLayer2] = useState(""); // gofra qog'oz
+  const [priceLayer3, setPriceLayer3] = useState(""); // ichki qog'oz
 
   // Bosma
   const [printColors, setPrintColors] = useState("1");
@@ -31,15 +35,14 @@ export default function ProductionCalc() {
   const [quantity, setQuantity] = useState("1000");
 
   const printRef = useRef<HTMLDivElement>(null);
-
   const n = (s: string) => parseFloat(s) || 0;
 
   const calc = useMemo(() => {
-    const L = n(boxL);  // sm
-    const W = n(boxW);  // sm
-    const H = n(boxH);  // sm
-    const pwKg = n(paperWeightKg); // kg/m²
-    const ppKg = n(paperPriceKg);  // so'm/kg
+    const L = n(boxL), W = n(boxW), H = n(boxH);
+    const pwKg = n(paperWeightKg);
+    const p1 = n(priceLayer1);
+    const p2 = n(priceLayer2);
+    const p3 = n(priceLayer3);
     const pc = parseInt(printColors) || 0;
     const prp = n(printPriceM2);
     const gl = n(gluePerBox);
@@ -50,78 +53,49 @@ export default function ProductionCalc() {
     if (L <= 0 || W <= 0 || H <= 0 || pwKg <= 0 || q <= 0) return null;
 
     // Kesma o'lchamlari (sm)
-    const blankLen = 2 * W + 2 * L + 5; // 4 panel + 5sm yelim
+    const blankLen = 2 * W + 2 * L + 5;
     const flapH = H / 2;
-    const blankW = 1 + H + flapH + flapH + 1; // 1sm tepa chiqindi + H + 2×H/2 + 1sm past chiqindi
+    const blankW = 1 + H + flapH + flapH + 1;
 
-    // Maydon (m²) — sm² → m²
+    // Maydon (m²)
     const netAreaM2 = (blankLen * blankW) / 10000;
     const grossAreaM2 = netAreaM2 * (1 + w / 100);
 
     // ===== 3 QATLAMLI QOG'OZ =====
-    // 1-qatlam: tashqi qog'oz — to'liq og'irlik
-    const layer1WeightKg = grossAreaM2 * pwKg;
-    const layer1Cost = layer1WeightKg * ppKg;
+    // 1-qatlam: tashqi qog'oz (×1.0)
+    const l1Weight = grossAreaM2 * pwKg;
+    const l1Cost = l1Weight * p1;
 
-    // 2-qatlam: gofra qog'oz — 0.7 koeffitsient
-    const layer2WeightKg = grossAreaM2 * pwKg * 0.7;
-    const layer2Cost = layer2WeightKg * ppKg;
+    // 2-qatlam: gofra qog'oz (×0.7)
+    const l2Weight = grossAreaM2 * pwKg * 0.7;
+    const l2Cost = l2Weight * p2;
 
-    // 3-qatlam: ichki qog'oz — to'liq og'irlik
-    const layer3WeightKg = grossAreaM2 * pwKg;
-    const layer3Cost = layer3WeightKg * ppKg;
+    // 3-qatlam: ichki qog'oz (×1.0)
+    const l3Weight = grossAreaM2 * pwKg;
+    const l3Cost = l3Weight * p3;
 
-    // Jami qog'oz
-    const totalPaperWeightKg = layer1WeightKg + layer2WeightKg + layer3WeightKg;
-    const totalPaperCost = layer1Cost + layer2Cost + layer3Cost;
-
-    // Bosma
+    // Jami
+    const totalWeight = l1Weight + l2Weight + l3Weight;
+    const totalPaperCost = l1Cost + l2Cost + l3Cost;
     const printCost = grossAreaM2 * prp * pc;
-
-    // 1 dona jami
     const totalPerBox = totalPaperCost + printCost + gl + cu;
 
     return {
-      // Kesma
-      blankLen: +fmtD(blankLen, 1),
-      blankW: +fmtD(blankW, 1),
-      netAreaM2: +fmtD(netAreaM2, 4),
-      grossAreaM2: +fmtD(grossAreaM2, 4),
-
+      blankLen: +fmtD(blankLen, 1), blankW: +fmtD(blankW, 1),
+      netAreaM2: +fmtD(netAreaM2, 4), grossAreaM2: +fmtD(grossAreaM2, 4),
       // 1-qatlam
-      layer1: { weightKg: +fmtD(layer1WeightKg, 4), cost: Math.round(layer1Cost) },
-      // 2-qatlam (gofra)
-      layer2: { weightKg: +fmtD(layer2WeightKg, 4), cost: Math.round(layer2Cost) },
+      l1: { weight: +fmtD(l1Weight, 4), price: p1, cost: Math.round(l1Cost) },
+      // 2-qatlam
+      l2: { weight: +fmtD(l2Weight, 4), price: p2, cost: Math.round(l2Cost) },
       // 3-qatlam
-      layer3: { weightKg: +fmtD(layer3WeightKg, 4), cost: Math.round(layer3Cost) },
-
-      // Jami qog'oz
-      totalPaperWeightKg: +fmtD(totalPaperWeightKg, 4),
-      totalPaperCost: Math.round(totalPaperCost),
-
-      // Bosma
-      printCost: Math.round(printCost),
-
-      // 1 dona
-      perBox: {
-        paper: Math.round(totalPaperCost),
-        printing: Math.round(printCost),
-        glue: Math.round(gl),
-        cutting: Math.round(cu),
-        total: Math.round(totalPerBox),
-      },
-
+      l3: { weight: +fmtD(l3Weight, 4), price: p3, cost: Math.round(l3Cost) },
       // Jami
-      total: {
-        quantity: q,
-        paper: Math.round(totalPaperCost * q),
-        printing: Math.round(printCost * q),
-        glue: Math.round(gl * q),
-        cutting: Math.round(cu * q),
-        grandTotal: Math.round(totalPerBox * q),
-      },
+      totalWeight: +fmtD(totalWeight, 4), totalPaperCost: Math.round(totalPaperCost),
+      printCost: Math.round(printCost),
+      perBox: { paper: Math.round(totalPaperCost), printing: Math.round(printCost), glue: Math.round(gl), cutting: Math.round(cu), total: Math.round(totalPerBox) },
+      total: { quantity: q, paper: Math.round(totalPaperCost * q), printing: Math.round(printCost * q), glue: Math.round(gl * q), cutting: Math.round(cu * q), grandTotal: Math.round(totalPerBox * q) },
     };
-  }, [boxL, boxW, boxH, paperWeightKg, paperPriceKg, printColors, printPriceM2, gluePerBox, cuttingPerBox, wastePercent, quantity]);
+  }, [boxL, boxW, boxH, paperWeightKg, priceLayer1, priceLayer2, priceLayer3, printColors, printPriceM2, gluePerBox, cuttingPerBox, wastePercent, quantity]);
 
   const hasBox = n(boxL) > 0 && n(boxW) > 0 && n(boxH) > 0;
 
@@ -136,11 +110,11 @@ export default function ProductionCalc() {
     setTimeout(() => { w.print(); w.close(); }, 300);
   };
 
-  const sm = (label: string, val: string, set: (v: string) => void, ph: string, unit: string, def?: string) => (
+  const sm = (label: string, val: string, set: (v: string) => void, ph: string, unit: string) => (
     <div className="flex items-center gap-1.5">
       <span className="text-[10px] text-muted-foreground w-16 shrink-0 text-right">{label}</span>
       <div className="relative flex-1">
-        <Input type="number" value={val} onChange={e => set(e.target.value)} placeholder={ph || def}
+        <Input type="number" value={val} onChange={e => set(e.target.value)} placeholder={ph}
           className="h-8 text-xs px-2 pr-8 bg-background/50 border-border/50" />
         <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground">{unit}</span>
       </div>
@@ -162,11 +136,11 @@ export default function ProductionCalc() {
       </div>
 
       <div className="flex flex-col lg:flex-row">
-        {/* Chap — kichik inputlar */}
+        {/* Chap — inputlar */}
         <div className="lg:w-80 p-3 space-y-2 border-r border-border/50">
           {/* Quti */}
           <div className="bg-muted/30 rounded-lg p-2">
-            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">📦 Quti o'lchamlari (sm)</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">📦 Quti (sm)</p>
             <div className="space-y-1">
               {sm("Bo'yi", boxL, setBoxL, "30", "sm")}
               {sm("Eni", boxW, setBoxW, "20", "sm")}
@@ -174,12 +148,21 @@ export default function ProductionCalc() {
             </div>
           </div>
 
-          {/* Qog'oz */}
+          {/* Qog'oz og'irligi */}
           <div className="bg-muted/30 rounded-lg p-2">
-            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">📄 Qog'oz</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">📄 Qog'oz og'irligi</p>
             <div className="space-y-1">
               {sm("Og'irlik", paperWeightKg, setPaperWeightKg, "0.125", "kg/m²")}
-              {sm("Narx", paperPriceKg, setPaperPriceKg, "", "so'm/kg")}
+            </div>
+          </div>
+
+          {/* 3 qatlam narxlari */}
+          <div className="bg-muted/30 rounded-lg p-2">
+            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">💰 Har bir qatlam narxi (so'm/kg)</p>
+            <div className="space-y-1">
+              {sm("1-qatlam", priceLayer1, setPriceLayer1, "", "so'm/kg")}
+              {sm("2-qatlam", priceLayer2, setPriceLayer2, "", "so'm/kg")}
+              {sm("3-qatlam", priceLayer3, setPriceLayer3, "", "so'm/kg")}
             </div>
           </div>
 
@@ -215,7 +198,6 @@ export default function ProductionCalc() {
         <div className="flex-1 p-3">
           {hasBox ? (
             <div className="space-y-3">
-              {/* Eskiz */}
               <div ref={printRef}>
                 <BoxTemplate boxLength={n(boxL)} boxWidth={n(boxW)} boxHeight={n(boxH)} />
               </div>
@@ -254,38 +236,38 @@ export default function ProductionCalc() {
                           <tr className="text-muted-foreground border-b border-border/50">
                             <th className="text-left py-1.5 font-semibold">Qatlam</th>
                             <th className="text-left py-1.5 font-semibold">Turi</th>
-                            <th className="text-right py-1.5 font-semibold">Og'irlik</th>
-                            <th className="text-right py-1.5 font-semibold">Ko'paytma</th>
-                            <th className="text-right py-1.5 font-semibold">Narx</th>
+                            <th className="text-right py-1.5 font-semibold">Og'irlik (kg)</th>
+                            <th className="text-right py-1.5 font-semibold">Narx (so'm/kg)</th>
+                            <th className="text-right py-1.5 font-semibold">Summa</th>
                           </tr>
                         </thead>
                         <tbody>
                           <tr className="border-b border-border/30">
                             <td className="py-1.5 font-bold text-blue-600">1-qatlam</td>
                             <td className="py-1.5 text-muted-foreground">Tashqi qog'oz</td>
-                            <td className="py-1.5 text-right font-mono">{calc.layer1.weightKg} kg</td>
-                            <td className="py-1.5 text-right font-mono text-muted-foreground">×1.0</td>
-                            <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.layer1.cost)} so'm</td>
+                            <td className="py-1.5 text-right font-mono font-bold">{calc.l1.weight}</td>
+                            <td className="py-1.5 text-right font-mono text-muted-foreground">{fmt(calc.l1.price)}</td>
+                            <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.l1.cost)} so'm</td>
                           </tr>
                           <tr className="border-b border-border/30 bg-amber-50/50 dark:bg-amber-950/20">
                             <td className="py-1.5 font-bold text-amber-600">2-qatlam</td>
-                            <td className="py-1.5 text-muted-foreground">Gofra qog'oz</td>
-                            <td className="py-1.5 text-right font-mono">{calc.layer2.weightKg} kg</td>
-                            <td className="py-1.5 text-right font-mono text-amber-600 font-bold">×0.7</td>
-                            <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.layer2.cost)} so'm</td>
+                            <td className="py-1.5 text-muted-foreground">Gofra (×0.7)</td>
+                            <td className="py-1.5 text-right font-mono font-bold">{calc.l2.weight}</td>
+                            <td className="py-1.5 text-right font-mono text-amber-600">{fmt(calc.l2.price)}</td>
+                            <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.l2.cost)} so'm</td>
                           </tr>
                           <tr className="border-b border-border/50">
                             <td className="py-1.5 font-bold text-green-600">3-qatlam</td>
                             <td className="py-1.5 text-muted-foreground">Ichki qog'oz</td>
-                            <td className="py-1.5 text-right font-mono">{calc.layer3.weightKg} kg</td>
-                            <td className="py-1.5 text-right font-mono text-muted-foreground">×1.0</td>
-                            <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.layer3.cost)} so'm</td>
+                            <td className="py-1.5 text-right font-mono font-bold">{calc.l3.weight}</td>
+                            <td className="py-1.5 text-right font-mono text-muted-foreground">{fmt(calc.l3.price)}</td>
+                            <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.l3.cost)} so'm</td>
                           </tr>
                         </tbody>
                         <tfoot>
                           <tr className="bg-primary/5 font-bold">
-                            <td className="py-1.5" colSpan={2}>JAMI QOG'OZ</td>
-                            <td className="py-1.5 text-right font-mono">{calc.totalPaperWeightKg} kg</td>
+                            <td className="py-1.5" colSpan={2}>JAMI</td>
+                            <td className="py-1.5 text-right font-mono">{calc.totalWeight} kg</td>
                             <td></td>
                             <td className="py-1.5 text-right font-mono text-primary">{fmt(calc.totalPaperCost)} so'm</td>
                           </tr>
@@ -299,7 +281,7 @@ export default function ProductionCalc() {
                     <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3">
                       <p className="text-[9px] font-bold text-blue-600 uppercase mb-1.5">📦 1 dona uchun</p>
                       <div className="space-y-1 text-xs">
-                        <div className="flex justify-between"><span className="text-muted-foreground">📄 Qog'оз (3 qatlam)</span><span className="font-semibold">{fmt(calc.perBox.paper)} so'm</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">📄 Qog'oz (3 qatlam)</span><span className="font-semibold">{fmt(calc.perBox.paper)} so'm</span></div>
                         <div className="flex justify-between"><span className="text-muted-foreground">🖨️ Bosma</span><span className="font-semibold">{fmt(calc.perBox.printing)} so'm</span></div>
                         <div className="flex justify-between"><span className="text-muted-foreground">🧴 Yelim</span><span className="font-semibold">{fmt(calc.perBox.glue)} so'm</span></div>
                         <div className="flex justify-between"><span className="text-muted-foreground">✂️ Kesish</span><span className="font-semibold">{fmt(calc.perBox.cutting)} so'm</span></div>
