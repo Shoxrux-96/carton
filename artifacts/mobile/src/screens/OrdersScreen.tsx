@@ -41,6 +41,7 @@ export default function OrdersScreen({ navigation }: any) {
   const [orderType, setOrderType] = useState<OrderType>("delivery");
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
 
   // Form state
   const [selectedClientId, setSelectedClientId] = useState<number>(0);
@@ -100,7 +101,25 @@ export default function OrdersScreen({ navigation }: any) {
 
   const resetForm = () => {
     setSelectedClientId(0); setSupplier(""); setNotes("");
-    setItems([{ name: "", quantity: 1, price: 0 }]);
+    setItems([{ name: "", quantity: 1, price: 0 }]); setEditing(null);
+  };
+
+  const openEdit = (order: any) => {
+    setEditing(order);
+    setNotes(order.notes || "");
+    if (order.orderType === "delivery") {
+      setSelectedClientId(order.clientId || 0);
+    } else {
+      setSupplier(order.supplier || "");
+    }
+    if (Array.isArray(order.items) && order.items.length > 0) {
+      setItems(order.items.map((i: any) => ({
+        name: i.name || "", quantity: i.quantity || 1, price: i.price || 0, productId: i.productId,
+      })));
+    } else {
+      setItems([{ name: order.materialName || order.productName || "", quantity: order.quantity || 1, price: 0 }]);
+    }
+    setShowModal(true);
   };
 
   const addItem = () => setItems([...items, { name: "", quantity: 1, price: 0 }]);
@@ -125,7 +144,6 @@ export default function OrdersScreen({ navigation }: any) {
     setSaving(true);
     try {
       const totalSum = validItems.reduce((s, i) => s + i.quantity * i.price, 0);
-      const client = clients.find(c => c.id === selectedClientId);
       const payload: any = {
         orderType,
         notes,
@@ -136,15 +154,19 @@ export default function OrdersScreen({ navigation }: any) {
 
       if (orderType === "delivery") {
         payload.clientId = selectedClientId;
-        const firstItem = validItems[0];
-        payload.productId = firstItem?.productId || 0;
+        payload.productId = validItems[0]?.productId || 0;
       } else {
         payload.supplier = supplier;
         payload.materialName = validItems.map(i => i.name).join(", ");
       }
 
-      await apiFetch("/orders", { method: "POST", body: JSON.stringify(payload) });
-      Alert.alert("Muvaffaqiyat", "Buyurtma yaratildi");
+      if (editing) {
+        await apiFetch(`/orders/${editing.id}`, { method: "PUT", body: JSON.stringify(payload) });
+        Alert.alert("Muvaffaqiyat", "Buyurtma yangilandi");
+      } else {
+        await apiFetch("/orders", { method: "POST", body: JSON.stringify(payload) });
+        Alert.alert("Muvaffaqiyat", "Buyurtma yaratildi");
+      }
       setShowModal(false);
       resetForm();
       await load();
@@ -263,6 +285,9 @@ export default function OrdersScreen({ navigation }: any) {
 
             {/* Actions */}
             <View style={styles.actionRow}>
+              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: "#dbeafe" }]} onPress={() => openEdit(order)}>
+                <Text style={[styles.actionText, { color: "#2563eb" }]}>✏️ Tahrirlash</Text>
+              </TouchableOpacity>
               {orderType === "delivery" && order.deliveryStatus !== "delivered" && (
                 <TouchableOpacity style={[styles.actionBtn, { backgroundColor: "#fef3c7" }]} onPress={() => {
                   const next = order.deliveryStatus === "pending" ? "shipped" : order.deliveryStatus === "shipped" ? "in_transit" : "delivered";
@@ -295,7 +320,7 @@ export default function OrdersScreen({ navigation }: any) {
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>
-                  {orderType === "delivery" ? "Yangi yetkazish" : "Yangi xarid"}
+                  {editing ? "✏️ Tahrirlash" : orderType === "delivery" ? "Yangi yetkazish" : "Yangi xarid"}
                 </Text>
                 <TouchableOpacity onPress={() => setShowModal(false)}>
                   <Text style={styles.modalClose}>✕</Text>

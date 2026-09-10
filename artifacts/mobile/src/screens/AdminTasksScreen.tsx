@@ -150,6 +150,19 @@ export default function AdminTasksScreen() {
     ]);
   };
 
+  const updateStatus = async (task: any, newStatus: string) => {
+    try {
+      await apiFetch(`/tasks/${task.id}`, { method: "PUT", body: JSON.stringify({ status: newStatus }) });
+      await load();
+    } catch (e: any) { Alert.alert("Xatolik", e.message); }
+  };
+
+  const nextStatus = (current: string) => {
+    if (current === "pending") return "in_progress";
+    if (current === "in_progress") return "completed";
+    return null;
+  };
+
   const activeEmployees = employees.filter(e => e.status === "active");
 
   return (
@@ -224,6 +237,16 @@ export default function AdminTasksScreen() {
                 </View>
               </View>
               <View style={styles.taskRowActions}>
+                {(() => {
+                  const nxt = nextStatus(task.status);
+                  return nxt ? (
+                    <TouchableOpacity onPress={() => updateStatus(task, nxt)} style={styles.taskRowBtn}>
+                      <View style={[styles.statusQuickBtn, { backgroundColor: STATUS_CONFIG[nxt]?.bg || colors.primary }]}>
+                        <Text style={{ fontSize: 10 }}>{STATUS_CONFIG[nxt]?.icon}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ) : null;
+                })()}
                 <TouchableOpacity onPress={() => openEdit(task)} style={styles.taskRowBtn}>
                   <Text style={{ fontSize: 14 }}>✏️</Text>
                 </TouchableOpacity>
@@ -293,11 +316,19 @@ export default function AdminTasksScreen() {
                   )}
                 </View>
                 <View style={styles.detailActions}>
+                  {(() => {
+                    const nxt = nextStatus(showDetail.status);
+                    return nxt ? (
+                      <TouchableOpacity style={[styles.detailEditBtn, { backgroundColor: STATUS_CONFIG[nxt]?.bg || colors.primary }]} onPress={() => { setShowDetail(null); updateStatus(showDetail, nxt); }}>
+                        <Text style={[styles.detailEditText, { color: STATUS_CONFIG[nxt]?.text || "#fff" }]}>{STATUS_CONFIG[nxt]?.icon} {STATUS_CONFIG[nxt]?.label}</Text>
+                      </TouchableOpacity>
+                    ) : null;
+                  })()}
                   <TouchableOpacity style={styles.detailEditBtn} onPress={() => { setShowDetail(null); openEdit(showDetail); }}>
-                    <Text style={styles.detailEditText}>Tahrirlash</Text>
+                    <Text style={styles.detailEditText}>✏️ Tahrirlash</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.detailDeleteBtn} onPress={() => { setShowDetail(null); handleDelete(showDetail.id); }}>
-                    <Text style={styles.detailDeleteText}>O'chirish</Text>
+                    <Text style={styles.detailDeleteText}>🗑️ O'chirish</Text>
                   </TouchableOpacity>
                 </View>
               </ScrollView>
@@ -415,6 +446,7 @@ const styles = StyleSheet.create({
   taskRowMetaText: { fontSize: 11, color: colors.textMuted },
   taskRowActions: { flexDirection: "row", gap: 4 },
   taskRowBtn: { padding: 6 },
+  statusQuickBtn: { width: 26, height: 26, borderRadius: 13, justifyContent: "center", alignItems: "center" },
 
   empty: { padding: 60, alignItems: "center" },
   emptyText: { fontSize: 14, color: colors.textMuted, fontWeight: "600" },

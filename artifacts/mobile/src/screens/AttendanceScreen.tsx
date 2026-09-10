@@ -10,9 +10,15 @@ import { colors, radius, shadows, spacing } from "../theme";
 export default function AttendanceScreen() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [attendance, setAttendance] = useState<any[]>([]);
-  const [date] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState<number | null>(null);
+
+  const shiftDate = (days: number) => {
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    setDate(d.toISOString().split("T")[0]);
+  };
 
   const load = async () => {
     try {
@@ -25,7 +31,7 @@ export default function AttendanceScreen() {
     } catch {}
   };
 
-  useFocusEffect(useCallback(() => { load(); }, []));
+  useFocusEffect(useCallback(() => { load(); }, [date]));
 
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
@@ -77,7 +83,19 @@ export default function AttendanceScreen() {
         </View>
       </View>
 
-      <Text style={styles.dateText}>📅 {date}</Text>
+      {/* Date navigator */}
+      <View style={styles.dateNav}>
+        <TouchableOpacity onPress={() => shiftDate(-1)} style={styles.dateArrow}>
+          <Text style={styles.dateArrowText}>◀</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setDate(new Date().toISOString().split("T")[0])} style={styles.dateToday}>
+          <Text style={styles.dateTodayText}>📅 {date}</Text>
+          <Text style={styles.dateTodayHint}>Bugun</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => shiftDate(1)} style={styles.dateArrow}>
+          <Text style={styles.dateArrowText}>▶</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Employee list */}
       {employees.filter(e => e.status === "active").map((emp) => {
@@ -148,7 +166,12 @@ const styles = StyleSheet.create({
   },
   summaryValue: { fontSize: 20, fontWeight: "800", color: colors.text },
   summaryLabel: { fontSize: 10, color: colors.textSecondary, marginTop: 2 },
-  dateText: { fontSize: 15, fontWeight: "600", color: colors.text, marginBottom: spacing.lg },
+  dateNav: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: spacing.lg },
+  dateArrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surfaceAlt, justifyContent: "center", alignItems: "center" },
+  dateArrowText: { fontSize: 16, color: colors.text },
+  dateToday: { alignItems: "center", paddingHorizontal: 16, paddingVertical: 8, borderRadius: radius.md, backgroundColor: colors.primary + "15", borderWidth: 1, borderColor: colors.primary },
+  dateTodayText: { fontSize: 14, fontWeight: "700", color: colors.primary },
+  dateTodayHint: { fontSize: 9, color: colors.textMuted },
   empCard: {
     backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg,
     marginBottom: spacing.md, ...shadows.sm,
