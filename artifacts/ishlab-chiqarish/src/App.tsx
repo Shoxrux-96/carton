@@ -5,6 +5,7 @@ import Login from "./pages/auth/Login";
 import Overview from "./pages/dashboard/Overview";
 import Products from "./pages/dashboard/Products";
 import Production from "./pages/dashboard/Production";
+import ProductionCalcPage from "./pages/dashboard/ProductionCalcPage";
 import Warehouse from "./pages/dashboard/Warehouse";
 import Sales from "./pages/dashboard/Sales";
 import Profile from "./pages/dashboard/Profile";
@@ -49,6 +50,7 @@ function Router() {
       <Route path="/dashboard" component={Overview} />
       <Route path="/dashboard/products" component={Products} />
       <Route path="/dashboard/production" component={Production} />
+      <Route path="/dashboard/production/calc" component={ProductionCalcPage} />
       <Route path="/dashboard/warehouse" component={Warehouse} />
       <Route path="/dashboard/sales" component={Sales} />
       <Route path="/dashboard/orders" component={Orders} />

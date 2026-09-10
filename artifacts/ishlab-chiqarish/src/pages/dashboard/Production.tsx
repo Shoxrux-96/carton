@@ -16,7 +16,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import customFetch from "@/lib/custom-fetch";
 import { useLang } from "@/lib/i18n";
-import ProductionCalc from "./ProductionCalc";
 
 const schema = z.object({
   productId: z.coerce.number().min(1, "Tanlash majburiy"),
@@ -280,9 +279,6 @@ export default function Production() {
           </table>
         </div>
       </Card>
-
-      {/* Kalkulyatsiya — ishlab chiqarish sahifasi pastida */}
-      <ProductionCalc />
 
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen} title={t('enter_production_dialog')}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">

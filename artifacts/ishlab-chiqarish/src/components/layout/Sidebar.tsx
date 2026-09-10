@@ -18,6 +18,7 @@ import {
   Box,
   Warehouse,
   Truck,
+  Calculator,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -103,6 +104,7 @@ export function Sidebar() {
       children: [
         { href: "/dashboard/products", label: t("products"), icon: Package },
         { href: "/dashboard/production", label: t("production"), icon: Wrench },
+        { href: "/dashboard/production/calc", label: "Kalkulyatsiya", icon: Calculator },
         { href: "/dashboard/warehouse", label: t("warehouse"), icon: Warehouse },
       ],
     },
