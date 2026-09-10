@@ -233,24 +233,22 @@ export default function ProductionCalc() {
                       </div>
                     </div>
 
-                    {/* Narxlar — yon tomonda katta */}
-                    <div className="lg:w-64 flex flex-col gap-3">
+                    {/* Narxlar — kichik card'lar */}
+                    <div className="lg:w-48 flex flex-row lg:flex-col gap-2">
                       {/* Ishlab chiqarish narxi */}
-                      <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 flex-1 flex flex-col items-center justify-center border border-blue-200 dark:border-blue-800">
-                        <TrendingUp className="w-6 h-6 text-blue-500 mb-2" />
-                        <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">Ishlab chiqarish</p>
-                        <div className="text-3xl font-extrabold text-blue-600">{fmt(calc.perBox.total)}</div>
-                        <div className="text-xs text-blue-500 mt-1">so'm / dona</div>
+                      <div className="flex-1 lg:flex-none bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                        <p className="text-[9px] font-bold text-blue-600 uppercase mb-1">Ishlab chiqarish</p>
+                        <div className="text-xl font-extrabold text-blue-600">{fmt(calc.perBox.total)}</div>
+                        <div className="text-[10px] text-blue-500">so'm / dona</div>
                       </div>
 
                       {/* Sotish narxi */}
-                      <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-4 flex-1 flex flex-col items-center justify-center border-2 border-emerald-400 dark:border-emerald-600">
-                        <TrendingUp className="w-6 h-6 text-emerald-600 mb-2" />
-                        <p className="text-[10px] font-bold text-emerald-700 uppercase mb-1">Sotish narxi</p>
-                        <div className="text-4xl font-extrabold text-emerald-600">{fmt(calc.sellingPrice)}</div>
-                        <div className="text-sm text-emerald-500 mt-1">so'm / dona</div>
-                        <div className="text-[10px] text-emerald-600 mt-2 bg-emerald-100 dark:bg-emerald-900 px-2 py-0.5 rounded-full">
-                          × {calc.coefficient} koeffitsient
+                      <div className="flex-1 lg:flex-none bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 border-2 border-emerald-400 dark:border-emerald-600">
+                        <p className="text-[9px] font-bold text-emerald-700 uppercase mb-1">Sotish narxi</p>
+                        <div className="text-xl font-extrabold text-emerald-600">{fmt(calc.sellingPrice)}</div>
+                        <div className="text-[10px] text-emerald-500">so'm / dona</div>
+                        <div className="text-[9px] text-emerald-600 mt-1 bg-emerald-100 dark:bg-emerald-900 px-1.5 py-0.5 rounded inline-block">
+                          × {calc.coefficient}
                         </div>
                       </div>
                     </div>

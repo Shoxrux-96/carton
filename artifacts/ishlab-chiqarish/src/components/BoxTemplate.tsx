@@ -40,16 +40,26 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight }: BoxTempl
   const yCutBot = (1 + flapH + H + flapH) * S;           // past chiqindi boshlanishi
   const yEnd = (1 + flapH + H + flapH + 1) * S;         // yakun
 
+  // 3D box SVG dimensions
+  const box3dW = 280;
+  const box3dH = 220;
+  const bx = 40;  // box x offset
+  const by = 20;  // box y offset
+  const bw = 160; // box width
+  const bh = 100; // box height
+  const d = 50;   // depth (oblique projection)
+
   const f = (n: number) => Math.round(n * 10) / 10;
 
   return (
     <div className="relative">
+      {/* FLAT SKETCH */}
       <svg
         width={svgW + pad * 2 + 30}
         height={svgH + pad * 2 + 20}
         viewBox={`${-pad - 30} ${-pad} ${svgW + pad * 2 + 30} ${svgH + pad * 2 + 20}`}
         className="w-full h-auto"
-        style={{ maxHeight: "480px" }}
+        style={{ maxHeight: "400px" }}
       >
         {/* Fon */}
         <rect x={-pad - 30} y={-pad} width={svgW + pad * 2 + 30} height={svgH + pad * 2 + 20} fill="white" />
@@ -200,6 +210,71 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight }: BoxTempl
           <marker id="aL" markerWidth={8} markerHeight={8} refX={0} refY={4} orient="auto"><path d="M8,0 L0,4 L8,8 Z" fill="#374151" /></marker>
         </defs>
       </svg>
+
+      {/* 3D QUTI CHIZMASI */}
+      <div className="mt-4 border-t border-border/50 pt-4">
+        <p className="text-xs font-bold text-center text-muted-foreground mb-3">📦 3D ko'rinish — Yig'ilgan quti</p>
+        <svg
+          viewBox={`0 0 ${box3dW + 40} ${box3dH + 40}`}
+          className="w-full h-auto"
+          style={{ maxHeight: "260px" }}
+        >
+          <rect x={0} y={0} width={box3dW + 40} height={box3dH + 40} fill="white" />
+
+          {/* Old tomon (W × H) */}
+          <rect x={bx} y={by} width={bw} height={bh}
+            fill="#fef3c7" stroke="#d97706" strokeWidth={2} />
+
+          {/* Ong tomon (L × H) — oblique */}
+          <polygon
+            points={`${bx + bw},${by} ${bx + bw + d},${by - d * 0.6} ${bx + bw + d},${by + bh - d * 0.6} ${bx + bw},${by + bh}`}
+            fill="#fed7aa" stroke="#ea580c" strokeWidth={2} />
+          <line x1={bx + bw} y1={by} x2={bx + bw + d} y2={by - d * 0.6}
+            stroke="#ea580c" strokeWidth={1} strokeDasharray="4 2" />
+
+          {/* Tepa tomon (W × L) — oblique */}
+          <polygon
+            points={`${bx},${by} ${bx + d},${by - d * 0.6} ${bx + bw + d},${by - d * 0.6} ${bx + bw},${by}`}
+            fill="#dbeafe" stroke="#3b82f6" strokeWidth={2} />
+
+          {/* Tepa qanot chizig'i (yelim) */}
+          <line x1={bx + bw * 0.6} y1={by} x2={bx + bw * 0.6 + d} y2={by - d * 0.6}
+            stroke="#10b981" strokeWidth={1.5} strokeDasharray="3 2" />
+
+          {/* O'lchamlar — W */}
+          <line x1={bx} y1={by + bh + 15} x2={bx + bw} y2={by + bh + 15}
+            stroke="#d97706" strokeWidth={1.5} markerEnd="url(#aR3d)" markerStart="url(#aL3d)" />
+          <text x={bx + bw / 2} y={by + bh + 28} textAnchor="middle" fontSize={10} fill="#d97706" fontWeight="bold">
+            W = {W} sm
+          </text>
+
+          {/* O'lchamlar — H */}
+          <line x1={bx - 15} y1={by} x2={bx - 15} y2={by + bh}
+            stroke="#d97706" strokeWidth={1.5} markerEnd="url(#aD3d)" markerStart="url(#aU3d)" />
+          <text x={bx - 22} y={by + bh / 2 + 4} textAnchor="end" fontSize={10} fill="#d97706" fontWeight="bold">
+            H = {H} sm
+          </text>
+
+          {/* O'lchamlar — L (oblique) */}
+          <line x1={bx + bw + d + 8} y1={by - d * 0.6} x2={bx + bw + d + 8} y2={by + bh - d * 0.6}
+            stroke="#ea580c" strokeWidth={1.5} markerEnd="url(#aD3d)" markerStart="url(#aU3d)" />
+          <text x={bx + bw + d + 15} y={by + (bh - d * 0.6) / 2 + 4} textAnchor="start" fontSize={10} fill="#ea580c" fontWeight="bold">
+            L = {L} sm
+          </text>
+
+          {/* Label */}
+          <text x={bx + bw / 2} y={by + bh / 2 + 4} textAnchor="middle" fontSize={11} fill="#92400e" fontWeight="bold">
+            {W} × {H} × {L}
+          </text>
+
+          <defs>
+            <marker id="aR3d" markerWidth={7} markerHeight={7} refX={7} refY={3.5} orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#d97706" /></marker>
+            <marker id="aL3d" markerWidth={7} markerHeight={7} refX={0} refY={3.5} orient="auto"><path d="M7,0 L0,3.5 L7,7 Z" fill="#d97706" /></marker>
+            <marker id="aD3d" markerWidth={7} markerHeight={7} refX={3.5} refY={7} orient="auto"><path d="M0,0 L7,0 L3.5,7 Z" fill="#d97706" /></marker>
+            <marker id="aU3d" markerWidth={7} markerHeight={7} refX={3.5} refY={0} orient="auto"><path d="M0,7 L7,7 L3.5,0 Z" fill="#d97706" /></marker>
+          </defs>
+        </svg>
+      </div>
     </div>
   );
 }
