@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calculator, Printer, Layers, TrendingUp, Building2, Package } from "lucide-react";
 import BoxTemplate from "@/components/BoxTemplate";
-import PrintLayout from "@/components/PrintLayout";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 const fmtD = (n: number, d = 2) => n.toFixed(d);
@@ -22,7 +21,6 @@ export default function ProductionCalc() {
   const [coefficient, setCoefficient] = useState("1.5");
   const [companyName, setCompanyName] = useState("Shovot Carton");
   const [boxName, setBoxName] = useState("RSC quti");
-  const [showPrint, setShowPrint] = useState(false);
 
   const printRef = useRef<HTMLDivElement>(null);
   const n = (s: string) => parseFloat(s) || 0;
@@ -77,7 +75,7 @@ export default function ProductionCalc() {
 
   const handlePrint = () => {
     if (!calc) return;
-    setShowPrint(true);
+    window.print();
   };
 
   const sm = (label: string, val: string, set: (v: string) => void, ph: string, unit: string) => (
@@ -282,32 +280,54 @@ export default function ProductionCalc() {
         </div>
       </div>
 
-      {/* PRINT MODAL */}
-      {showPrint && calc && (
-        <div className="fixed inset-0 z-50 bg-white overflow-auto">
-          <PrintLayout
-            boxLength={n(boxL)}
-            boxWidth={n(boxW)}
-            boxHeight={n(boxH)}
-            companyName={companyName}
-            boxName={boxName}
-          />
-          <div className="no-print fixed top-4 left-4 z-[60] flex gap-2">
-            <button
-              onClick={() => setShowPrint(false)}
-              className="bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-gray-700 text-sm font-bold"
-            >
-              ← Orqaga
-            </button>
-            <button
-              onClick={() => window.print()}
-              className="bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg hover:bg-primary/90 text-sm font-bold"
-            >
-              🖨️ Qayta chop etish
-            </button>
+      {/* CHOP ETISH UCHUN — faqat print da ko'rinadi */}
+      {calc && (
+        <div className="print-only" style={{ display: "none" }}>
+          <div style={{ fontFamily: "Arial", padding: "10mm", width: "297mm", minHeight: "210mm" }}>
+            {/* Sarlavha */}
+            <div style={{ display: "flex", alignItems: "center", gap: "24px", borderBottom: "2px solid black", paddingBottom: "8px", marginBottom: "12px" }}>
+              <h1 style={{ fontSize: "18px", fontWeight: 900, textTransform: "uppercase" }}>{companyName}</h1>
+              <span style={{ color: "#999" }}>|</span>
+              <span style={{ fontSize: "14px", fontWeight: 700 }}>{boxName}</span>
+              <span style={{ color: "#999" }}>|</span>
+              <span style={{ fontSize: "11px", color: "#666" }}>Sana: {new Date().toLocaleDateString("uz-UZ")}</span>
+            </div>
+
+            {/* O'lchamlar */}
+            <div style={{ display: "flex", gap: "24px", fontSize: "11px", background: "#f5f5f5", padding: "6px 12px", borderRadius: "4px", marginBottom: "12px", border: "1px solid #ddd" }}>
+              <div><b>Eni (W):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{n(boxW)} sm</span></div>
+              <div><b>Balandligi (H):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{n(boxH)} sm</span></div>
+              <div><b>Bo'yi (L):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{n(boxL)} sm</span></div>
+              <div style={{ borderLeft: "1px solid #ccc", paddingLeft: "12px" }}><b>Kesma:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(2*n(boxW)+2*n(boxL)+6)} × {fmt(1+n(boxL)/2+n(boxH)+n(boxL)/2+1)} sm</span></div>
+            </div>
+
+            {/* Asosiy qism */}
+            <div style={{ display: "flex", gap: "16px" }}>
+              {/* 3D — 30% */}
+              <div style={{ flex: "3", border: "1px solid #ccc", borderRadius: "4px", padding: "8px" }}>
+                <p style={{ fontSize: "9px", fontWeight: 700, textAlign: "center", color: "#666", marginBottom: "4px" }}>3D ko'rinish</p>
+                <BoxTemplate boxLength={n(boxL)} boxWidth={n(boxW)} boxHeight={n(boxH)} />
+              </div>
+
+              {/* Eskiz — 70% */}
+              <div style={{ flex: "7", border: "1px solid #ccc", borderRadius: "4px", padding: "8px" }}>
+                <p style={{ fontSize: "9px", fontWeight: 700, textAlign: "center", color: "#666", marginBottom: "4px" }}>Kesma eskizi</p>
+                <BoxTemplate boxLength={n(boxL)} boxWidth={n(boxW)} boxHeight={n(boxH)} />
+              </div>
+            </div>
           </div>
         </div>
       )}
+
+      {/* PRINT STYLES */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden !important; }
+          .print-only, .print-only * { visibility: visible !important; }
+          .print-only { display: block !important; position: absolute; left: 0; top: 0; }
+          @page { margin: 5mm; size: A4 landscape; }
+        }
+      `}</style>
     </Card>
   );
 }
