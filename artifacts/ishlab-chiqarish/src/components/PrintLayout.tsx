@@ -141,35 +141,10 @@ export default function PrintLayout({
           </table>
         </div>
 
-        {/* NARXLAR JADVALI */}
-        <div className="mb-6">
-          <h2 className="text-sm font-bold mb-2 uppercase border-b border-gray-400 pb-1">
-            2. Narxlar
-          </h2>
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border border-gray-400 px-3 py-2 text-left">Ko'rsatkich</th>
-                <th className="border border-gray-400 px-3 py-2 text-center">Qiymat</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="border border-gray-400 px-3 py-1.5 font-bold">Ishlab chiqarish narxi</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-center font-mono font-bold">{fmt(productionPrice)} so'm / dona</td>
-              </tr>
-              <tr>
-                <td className="border border-gray-400 px-3 py-1.5 font-bold">Sotish narxi</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-center font-mono font-bold text-lg">{fmt(sellingPrice)} so'm / dona</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
         {/* 3D CHIZMA */}
         <div className="mb-6">
           <h2 className="text-sm font-bold mb-2 uppercase border-b border-gray-400 pb-1">
-            3. Qutining 3D ko'rinishi
+            2. Qutining 3D ko'rinishi
           </h2>
           <div className="flex justify-center">
             <svg viewBox={`0 0 ${bx3d + bw3d + d3d + 60} ${by3d + bh3d + 50}`} width="320" height="220">
@@ -230,7 +205,7 @@ export default function PrintLayout({
         {/* ESKIZ — TO'LIQ */}
         <div className="mb-6 page-break-before">
           <h2 className="text-sm font-bold mb-2 uppercase border-b border-gray-400 pb-1">
-            4. Kesma eskizi (to'liq)
+            3. Kesma eskizi (to'liq)
           </h2>
           <div className="flex justify-center overflow-hidden">
             <svg
