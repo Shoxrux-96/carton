@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calculator, Printer, Layers, TrendingUp } from "lucide-react";
 import BoxTemplate from "@/components/BoxTemplate";
+import PrintLayout from "@/components/PrintLayout";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 const fmtD = (n: number, d = 2) => n.toFixed(d);
@@ -19,6 +20,7 @@ export default function ProductionCalc() {
   const [wastePercent, setWastePercent] = useState("10");
   const [quantity, setQuantity] = useState("1000");
   const [coefficient, setCoefficient] = useState("1.5");
+  const [showPrint, setShowPrint] = useState(false);
 
   const printRef = useRef<HTMLDivElement>(null);
   const n = (s: string) => parseFloat(s) || 0;
@@ -72,14 +74,8 @@ export default function ProductionCalc() {
   const hasBox = n(boxL) > 0 && n(boxW) > 0 && n(boxH) > 0;
 
   const handlePrint = () => {
-    const el = printRef.current;
-    if (!el) return;
-    const w = window.open("", "_blank", "width=900,height=600");
-    if (!w) return;
-    w.document.write(`<html><head><title>Eskiz</title><style>@page{size:landscape;margin:10mm;}body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;}svg{max-width:100%;height:auto;}</style></head><body>${el.innerHTML}</body></html>`);
-    w.document.close();
-    w.focus();
-    setTimeout(() => { w.print(); w.close(); }, 300);
+    if (!calc) return;
+    setShowPrint(true);
   };
 
   const sm = (label: string, val: string, set: (v: string) => void, ph: string, unit: string) => (
@@ -256,7 +252,7 @@ export default function ProductionCalc() {
                 </>
               )}
             </div>
-          ) : (
+           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Calculator className="w-12 h-12 mb-3 opacity-20" />
               <p className="text-sm font-medium">Quti o'lchamlarini kiriting (sm)</p>
@@ -265,6 +261,27 @@ export default function ProductionCalc() {
           )}
         </div>
       </div>
+
+      {/* PRINT MODAL */}
+      {showPrint && calc && (
+        <div className="fixed inset-0 z-50 bg-white overflow-auto">
+          <PrintLayout
+            boxLength={n(boxL)}
+            boxWidth={n(boxW)}
+            boxHeight={n(boxH)}
+            companyName="Shovot Carton"
+            boxName="RSC quti"
+            sellingPrice={calc.sellingPrice}
+            productionPrice={calc.perBox.total}
+          />
+          <button
+            onClick={() => setShowPrint(false)}
+            className="no-print fixed top-4 left-4 z-[60] bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-gray-700 text-sm font-bold"
+          >
+            ← Orqaga
+          </button>
+        </div>
+      )}
     </Card>
   );
 }
