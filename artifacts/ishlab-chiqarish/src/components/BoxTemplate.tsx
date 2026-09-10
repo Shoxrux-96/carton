@@ -1,40 +1,46 @@
 import React from "react";
 
 interface BoxTemplateProps {
-  boxLength: number; // mm
-  boxWidth: number;  // mm
-  boxHeight: number; // mm
+  boxLength: number;  // cm
+  boxWidth: number;   // cm
+  boxHeight: number;  // cm
 }
 
 export default function BoxTemplate({ boxLength, boxWidth, boxHeight }: BoxTemplateProps) {
-  const L = boxLength;
-  const W = boxWidth;
-  const H = boxHeight;
+  // cm → mm
+  const L = boxLength * 10;
+  const W = boxWidth * 10;
+  const H = boxHeight * 10;
 
   // Kesma o'lchamlari (mm)
-  const blankLen = 2 * W + 2 * L + 50; // eni: 4 panel + 5cm yelim chok
+  const blankLen = 2 * W + 2 * L + 50;    // 4 panel + 5cm yelim chok
   const flapH = H / 2;
-  const blankW = H + 2 * flapH + 20; // bo'yi: markaz + 2 kanot + 2cm chiqindi
+  const cutTop = 10;    // 1 sm tepadan
+  const cutBottom = 10; // 1 sm pastdan
+  const blankW = cutTop + H + flapH + flapH + cutBottom; // 2H + 20mm
 
-  // SVG масштаб — 1mm = 0.35px (katta qutilar uchun)
+  // SVG масштаб — 1mm = 0.35px
   const scale = 0.35;
   const svgW = blankLen * scale;
   const svgH = blankW * scale;
-  const pad = 40;
+  const pad = 50;
 
   // Panel koordinatalari (chapdan)
-  const p1x = 0;          // panel 1 (W)
-  const p2x = W * scale;  // panel 2 (L)
-  const p3x = (W + L) * scale; // panel 3 (W)
-  const p4x = (2 * W + L) * scale; // panel 4 (L)
-  const glueX = (2 * W + 2 * L) * scale; // yelim chok (50mm)
+  const p1x = 0;
+  const p2x = W * scale;
+  const p3x = (W + L) * scale;
+  const p4x = (2 * W + L) * scale;
+  const glueX = (2 * W + 2 * L) * scale;
 
   // Vertikal koordinatalar
-  const topFlapY = 0;
-  const centerY = flapH * scale;
-  const bottomFlapY = (flapH + H) * scale;
+  const cutTopY = 0;
+  const topFlapY = cutTop * scale;
+  const centerY = (cutTop + flapH) * scale;
+  const bottomFlapY = (cutTop + H) * scale;
+  const cutBottomY = (cutTop + H + flapH + flapH) * scale;
 
   const fmt = (n: number) => Math.round(n);
+  const fmtSm = (n: number) => (n / 10).toFixed(1);
 
   return (
     <div className="relative">
@@ -43,36 +49,31 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight }: BoxTempl
         height={svgH + pad * 2}
         viewBox={`${-pad} ${-pad} ${svgW + pad * 2} ${svgH + pad * 2}`}
         className="w-full h-auto"
-        style={{ maxHeight: "500px" }}
+        style={{ maxHeight: "450px" }}
       >
-        {/* Background */}
         <rect x={-pad} y={-pad} width={svgW + pad * 2} height={svgH + pad * 2} fill="white" />
 
-        {/* ===== TOP FLAPS ===== */}
-        {/* Top flap 1 (W) */}
-        <rect x={p1x} y={topFlapY} width={W * scale} height={flapH * scale}
-          fill="#dbeafe" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 2" />
-        {/* Top flap 2 (L) */}
-        <rect x={p2x} y={topFlapY} width={L * scale} height={flapH * scale}
-          fill="#dbeafe" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 2" />
-        {/* Top flap 3 (W) */}
-        <rect x={p3x} y={topFlapY} width={W * scale} height={flapH * scale}
-          fill="#dbeafe" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 2" />
-        {/* Top flap 4 (L) */}
-        <rect x={p4x} y={topFlapY} width={L * scale} height={flapH * scale}
-          fill="#dbeafe" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 2" />
+        {/* ===== CHIQINDI — tepadan 1sm ===== */}
+        <rect x={0} y={cutTopY} width={svgW} height={cutTop * scale}
+          fill="#fee2e2" stroke="#ef4444" strokeWidth={0.5} strokeDasharray="3 2" />
+        <text x={svgW / 2} y={cutTop * scale / 2 + 3} textAnchor="middle" fontSize={7} fill="#ef4444">1 sm chiqindi</text>
 
-        {/* ===== CENTER PANELS (asosiy devorlar) ===== */}
-        {/* Panel 1 — Width */}
+        {/* ===== TOP FLAPS ===== */}
+        {[p1x, p2x, p3x, p4x].map((x, i) => {
+          const w = i % 2 === 0 ? W : L;
+          return (
+            <rect key={`tf${i}`} x={x} y={topFlapY} width={w * scale} height={flapH * scale}
+              fill="#dbeafe" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 2" />
+          );
+        })}
+
+        {/* ===== CENTER PANELS ===== */}
         <rect x={p1x} y={centerY} width={W * scale} height={H * scale}
           fill="#fef3c7" stroke="#d97706" strokeWidth={2} />
-        {/* Panel 2 — Length */}
         <rect x={p2x} y={centerY} width={L * scale} height={H * scale}
           fill="#fed7aa" stroke="#ea580c" strokeWidth={2} />
-        {/* Panel 3 — Width */}
         <rect x={p3x} y={centerY} width={W * scale} height={H * scale}
           fill="#fef3c7" stroke="#d97706" strokeWidth={2} />
-        {/* Panel 4 — Length */}
         <rect x={p4x} y={centerY} width={L * scale} height={H * scale}
           fill="#fed7aa" stroke="#ea580c" strokeWidth={2} />
 
@@ -81,106 +82,64 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight }: BoxTempl
           fill="#d1fae5" stroke="#10b981" strokeWidth={1.5} strokeDasharray="6 3" />
 
         {/* ===== BOTTOM FLAPS ===== */}
-        <rect x={p1x} y={bottomFlapY} width={W * scale} height={flapH * scale}
-          fill="#dbeafe" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 2" />
-        <rect x={p2x} y={bottomFlapY} width={L * scale} height={flapH * scale}
-          fill="#dbeafe" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 2" />
-        <rect x={p3x} y={bottomFlapY} width={W * scale} height={flapH * scale}
-          fill="#dbeafe" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 2" />
-        <rect x={p4x} y={bottomFlapY} width={L * scale} height={flapH * scale}
-          fill="#dbeafe" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 2" />
+        {[p1x, p2x, p3x, p4x].map((x, i) => {
+          const w = i % 2 === 0 ? W : L;
+          return (
+            <rect key={`bf${i}`} x={x} y={bottomFlapY} width={w * scale} height={flapH * scale}
+              fill="#dbeafe" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 2" />
+          );
+        })}
 
-        {/* ===== CHIQINDI (2cm) — pastda ===== */}
-        <rect x={0} y={bottomFlapY + flapH * scale} width={svgW} height={10 * scale}
+        {/* ===== CHIQINDI — pastdan 1sm ===== */}
+        <rect x={0} y={cutBottomY} width={svgW} height={cutBottom * scale}
           fill="#fee2e2" stroke="#ef4444" strokeWidth={0.5} strokeDasharray="3 2" />
+        <text x={svgW / 2} y={cutBottomY + cutBottom * scale / 2 + 3} textAnchor="middle" fontSize={7} fill="#ef4444">1 sm chiqindi</text>
 
-        {/* ===== PANEL MARKERS (ichida) ===== */}
-        {/* Panel 1 */}
-        <text x={p1x + W * scale / 2} y={centerY + H * scale / 2 - 8}
-          textAnchor="middle" fontSize={11} fontWeight="bold" fill="#92400e">W</text>
-        <text x={p1x + W * scale / 2} y={centerY + H * scale / 2 + 8}
-          textAnchor="middle" fontSize={9} fill="#92400e">{fmt(W)} mm</text>
+        {/* ===== PANEL MARKERS ===== */}
+        <text x={p1x + W * scale / 2} y={centerY + H * scale / 2 - 6} textAnchor="middle" fontSize={10} fontWeight="bold" fill="#92400e">W</text>
+        <text x={p1x + W * scale / 2} y={centerY + H * scale / 2 + 7} textAnchor="middle" fontSize={8} fill="#92400e">{fmtSm(W)} sm</text>
 
-        {/* Panel 2 */}
-        <text x={p2x + L * scale / 2} y={centerY + H * scale / 2 - 8}
-          textAnchor="middle" fontSize={11} fontWeight="bold" fill="#9a3412">L</text>
-        <text x={p2x + L * scale / 2} y={centerY + H * scale / 2 + 8}
-          textAnchor="middle" fontSize={9} fill="#9a3412">{fmt(L)} mm</text>
+        <text x={p2x + L * scale / 2} y={centerY + H * scale / 2 - 6} textAnchor="middle" fontSize={10} fontWeight="bold" fill="#9a3412">L</text>
+        <text x={p2x + L * scale / 2} y={centerY + H * scale / 2 + 7} textAnchor="middle" fontSize={8} fill="#9a3412">{fmtSm(L)} sm</text>
 
-        {/* Panel 3 */}
-        <text x={p3x + W * scale / 2} y={centerY + H * scale / 2 - 8}
-          textAnchor="middle" fontSize={11} fontWeight="bold" fill="#92400e">W</text>
-        <text x={p3x + W * scale / 2} y={centerY + H * scale / 2 + 8}
-          textAnchor="middle" fontSize={9} fill="#92400e">{fmt(W)} mm</text>
+        <text x={p3x + W * scale / 2} y={centerY + H * scale / 2 - 6} textAnchor="middle" fontSize={10} fontWeight="bold" fill="#92400e">W</text>
+        <text x={p3x + W * scale / 2} y={centerY + H * scale / 2 + 7} textAnchor="middle" fontSize={8} fill="#92400e">{fmtSm(W)} sm</text>
 
-        {/* Panel 4 */}
-        <text x={p4x + L * scale / 2} y={centerY + H * scale / 2 - 8}
-          textAnchor="middle" fontSize={11} fontWeight="bold" fill="#9a3412">L</text>
-        <text x={p4x + L * scale / 2} y={centerY + H * scale / 2 + 8}
-          textAnchor="middle" fontSize={9} fill="#9a3412">{fmt(L)} mm</text>
+        <text x={p4x + L * scale / 2} y={centerY + H * scale / 2 - 6} textAnchor="middle" fontSize={10} fontWeight="bold" fill="#9a3412">L</text>
+        <text x={p4x + L * scale / 2} y={centerY + H * scale / 2 + 7} textAnchor="middle" fontSize={8} fill="#9a3412">{fmtSm(L)} sm</text>
 
-        {/* Glue flap */}
-        <text x={glueX + 25 * scale} y={centerY + H * scale / 2 - 6}
-          textAnchor="middle" fontSize={8} fontWeight="bold" fill="#065f46">YELIM</text>
-        <text x={glueX + 25 * scale} y={centerY + H * scale / 2 + 6}
-          textAnchor="middle" fontSize={7} fill="#065f46">50mm</text>
+        <text x={glueX + 25 * scale} y={centerY + H * scale / 2 - 4} textAnchor="middle" fontSize={7} fontWeight="bold" fill="#065f46">YELIM</text>
+        <text x={glueX + 25 * scale} y={centerY + H * scale / 2 + 6} textAnchor="middle" fontSize={6} fill="#065f46">5 sm</text>
 
         {/* Top flap labels */}
-        <text x={p1x + W * scale / 2} y={topFlapY + flapH * scale / 2 + 3}
-          textAnchor="middle" fontSize={7} fill="#1e40af">H/2</text>
-        <text x={p2x + L * scale / 2} y={topFlapY + flapH * scale / 2 + 3}
-          textAnchor="middle" fontSize={7} fill="#1e40af">H/2</text>
+        <text x={p1x + W * scale / 2} y={topFlapY + flapH * scale / 2 + 3} textAnchor="middle" fontSize={6} fill="#1e40af">H/2</text>
 
-        {/* ===== O'LCHAM CHIZIQLARI ====="""
-
+        {/* ===== O'LCHAM CHIZIQLARI ===== */}
         {/* Pastki umumiy uzunlik */}
-        <line x1={0} y1={svgH + 15} x2={svgW} y2={svgH + 15} stroke="#374151" strokeWidth={1} markerEnd="url(#arrowR)" markerStart="url(#arrowL)" />
-        <text x={svgW / 2} y={svgH + 30} textAnchor="middle" fontSize={10} fontWeight="bold" fill="#374151">
-          Kesma uzunligi: {fmt(blankLen)} mm (2W + 2L + 50)
+        <line x1={0} y1={svgH + 12} x2={svgW} y2={svgH + 12} stroke="#374151" strokeWidth={1} markerEnd="url(#aR)" markerStart="url(#aL)" />
+        <text x={svgW / 2} y={svgH + 27} textAnchor="middle" fontSize={9} fontWeight="bold" fill="#374151">
+          Kesma: {fmtSm(blankLen)} sm × {fmtSm(blankW)} sm
         </text>
 
-        {/* Chap umumiy eni */}
-        <line x1={-15} y1={0} x2={-15} y2={svgH} stroke="#374151" strokeWidth={1} markerEnd="url(#arrowD)" markerStart="url(#arrowU)" />
-        <text x={-25} y={svgH / 2} textAnchor="middle" fontSize={10} fontWeight="bold" fill="#374151"
-          transform={`rotate(-90, -25, ${svgH / 2})`}>
-          Kesma eni: {fmt(blankW)} mm (2H + 20)
-        </text>
+        {/* Har bir panel ustida */}
+        <line x1={p1x} y1={-6} x2={p2x} y2={-6} stroke="#d97706" strokeWidth={0.8} />
+        <text x={p1x + W * scale / 2} y={-10} textAnchor="middle" fontSize={7} fill="#d97706" fontWeight="bold">{fmtSm(W)}</text>
 
-        {/* Har bir panel ustida eni */}
-        {/* Panel 1 width */}
-        <line x1={p1x} y1={-8} x2={p2x} y2={-8} stroke="#d97706" strokeWidth={0.8} />
-        <text x={p1x + W * scale / 2} y={-12} textAnchor="middle" fontSize={8} fill="#d97706" fontWeight="bold">{fmt(W)}</text>
+        <line x1={p2x} y1={-6} x2={p3x} y2={-6} stroke="#ea580c" strokeWidth={0.8} />
+        <text x={p2x + L * scale / 2} y={-10} textAnchor="middle" fontSize={7} fill="#ea580c" fontWeight="bold">{fmtSm(L)}</text>
 
-        {/* Panel 2 width */}
-        <line x1={p2x} y1={-8} x2={p3x} y2={-8} stroke="#ea580c" strokeWidth={0.8} />
-        <text x={p2x + L * scale / 2} y={-12} textAnchor="middle" fontSize={8} fill="#ea580c" fontWeight="bold">{fmt(L)}</text>
+        <line x1={p3x} y1={-6} x2={p4x} y2={-6} stroke="#d97706" strokeWidth={0.8} />
+        <text x={p3x + W * scale / 2} y={-10} textAnchor="middle" fontSize={7} fill="#d97706" fontWeight="bold">{fmtSm(W)}</text>
 
-        {/* Panel 3 width */}
-        <line x1={p3x} y1={-8} x2={p4x} y2={-8} stroke="#d97706" strokeWidth={0.8} />
-        <text x={p3x + W * scale / 2} y={-12} textAnchor="middle" fontSize={8} fill="#d97706" fontWeight="bold">{fmt(W)}</text>
+        <line x1={p4x} y1={-6} x2={glueX} y2={-6} stroke="#ea580c" strokeWidth={0.8} />
+        <text x={p4x + L * scale / 2} y={-10} textAnchor="middle" fontSize={7} fill="#ea580c" fontWeight="bold">{fmtSm(L)}</text>
 
-        {/* Panel 4 width */}
-        <line x1={p4x} y1={-8} x2={glueX} y2={-8} stroke="#ea580c" strokeWidth={0.8} />
-        <text x={p4x + L * scale / 2} y={-12} textAnchor="middle" fontSize={8} fill="#ea580c" fontWeight="bold">{fmt(L)}</text>
+        <line x1={glueX} y1={-6} x2={glueX + 50 * scale} y2={-6} stroke="#10b981" strokeWidth={0.8} />
+        <text x={glueX + 25 * scale} y={-10} textAnchor="middle" fontSize={6} fill="#10b981" fontWeight="bold">5</text>
 
-        {/* Glue flap width */}
-        <line x1={glueX} y1={-8} x2={glueX + 50 * scale} y2={-8} stroke="#10b981" strokeWidth={0.8} />
-        <text x={glueX + 25 * scale} y={-12} textAnchor="middle" fontSize={7} fill="#10b981" fontWeight="bold">50</text>
-
-        {/* Arrow markers */}
         <defs>
-          <marker id="arrowR" markerWidth={6} markerHeight={6} refX={6} refY={3} orient="auto">
-            <path d="M0,0 L6,3 L0,6 Z" fill="#374151" />
-          </marker>
-          <marker id="arrowL" markerWidth={6} markerHeight={6} refX={0} refY={3} orient="auto">
-            <path d="M6,0 L0,3 L6,6 Z" fill="#374151" />
-          </marker>
-          <marker id="arrowD" markerWidth={6} markerHeight={6} refX={3} refY={6} orient="auto">
-            <path d="M0,0 L3,6 L6,0 Z" fill="#374151" />
-          </marker>
-          <marker id="arrowU" markerWidth={6} markerHeight={6} refX={3} refY={0} orient="auto">
-            <path d="M0,6 L3,0 L6,6 Z" fill="#374151" />
-          </marker>
+          <marker id="aR" markerWidth={6} markerHeight={6} refX={6} refY={3} orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#374151" /></marker>
+          <marker id="aL" markerWidth={6} markerHeight={6} refX={0} refY={3} orient="auto"><path d="M6,0 L0,3 L6,6 Z" fill="#374151" /></marker>
         </defs>
       </svg>
     </div>
