@@ -331,9 +331,19 @@ export default function ProductionCalc() {
       {/* PRINT STYLES */}
       <style>{`
         @media print {
+          body, html { background: white !important; color: black !important; }
           body * { visibility: hidden !important; }
-          .print-only, .print-only * { visibility: visible !important; }
-          .print-only { display: block !important; position: absolute; left: 0; top: 0; }
+          .print-only, .print-only * { visibility: visible !important; color: black !important; }
+          .print-only { display: block !important; position: absolute; left: 0; top: 0; background: white !important; }
+          .print-only svg text { fill: black !important; }
+          .print-only svg rect, .print-only svg polygon, .print-only svg line { stroke: black !important; }
+          .print-only svg rect[fill="#dbeafe"],
+          .print-only svg rect[fill="#fef3c7"],
+          .print-only svg rect[fill="#fed7aa"],
+          .print-only svg rect[fill="#d1fae5"],
+          .print-only svg rect[fill="#fee2e2"] { fill: white !important; stroke: black !important; }
+          .print-only svg polygon[fill="#e5e5e5"],
+          .print-only svg polygon[fill="#d5d5d5"] { fill: white !important; stroke: black !important; }
           @page { margin: 5mm; size: A4 landscape; }
         }
       `}</style>
