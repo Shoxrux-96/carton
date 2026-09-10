@@ -234,6 +234,23 @@ export default function CalculationsScreen() {
                   <View style={styles.detailRow}><Text style={styles.detailLabel}>Koeffitsient</Text><Text style={styles.detailValue}>×{showDetail.coefficient}</Text></View>
                   <View style={[styles.detailRow, { borderBottomWidth: 0, paddingTop: 8 }]}><Text style={[styles.detailLabel, { fontWeight: "800", fontSize: 14 }]}>Sotish narxi</Text><Text style={[styles.detailValue, { color: colors.success, fontSize: 16, fontWeight: "800" }]}>{fmt(Number(showDetail.salePrice))} so'm</Text></View>
                 </View>
+
+                {/* DAROMAD + SOF FOYDA */}
+                <View style={styles.detailSection}>
+                  <Text style={styles.detailSectionTitle}>💰 Daromad va sof foyda</Text>
+                  <View style={{ flexDirection: "row", gap: 10 }}>
+                    <View style={{ flex: 1, backgroundColor: "#eef2ff", borderRadius: 8, padding: 12, alignItems: "center" }}>
+                      <Text style={{ fontSize: 11, fontWeight: "700", color: "#4f46e5" }}>DAROMAD</Text>
+                      <Text style={{ fontSize: 16, fontWeight: "800", color: "#4338ca", marginTop: 4 }}>{fmt(Number(showDetail.salePrice) * 1000)}</Text>
+                      <Text style={{ fontSize: 10, color: "#6366f1" }}>1000 dona uchun</Text>
+                    </View>
+                    <View style={{ flex: 1, backgroundColor: "#fff1f2", borderRadius: 8, padding: 12, alignItems: "center" }}>
+                      <Text style={{ fontSize: 11, fontWeight: "700", color: "#e11d48" }}>SOF FOYDA</Text>
+                      <Text style={{ fontSize: 16, fontWeight: "800", color: "#be123c", marginTop: 4 }}>{fmt((Number(showDetail.salePrice) - Number(showDetail.totalPaperCost)) * 1000)}</Text>
+                      <Text style={{ fontSize: 10, color: "#f43f5e" }}>1000 dona uchun</Text>
+                    </View>
+                  </View>
+                </View>
               </ScrollView>
             )}
           </View>

@@ -67,6 +67,8 @@ export default function ProductionCalc() {
       total: { quantity: q, paper: Math.round(totalPaperCost * q), grandTotal: Math.round(totalPaperCost * q) },
       sellingPrice,
       sellingTotal: Math.round(sellingPrice * q),
+      revenue: Math.round(sellingPrice * q),
+      profit: Math.round((sellingPrice - totalPaperCost) * q),
       coefficient: k,
     };
   }, [boxL, boxW, boxH, paperWeightKg, priceLayer1, priceLayer2, priceLayer3, wastePercent, quantity, coefficient]);
@@ -75,7 +77,10 @@ export default function ProductionCalc() {
 
   const handlePrint = () => {
     if (!calc) return;
+    const fileName = `${companyName} - ${boxName}`;
+    document.title = fileName;
     window.print();
+    setTimeout(() => { document.title = "Shovot Carton ERP"; }, 1000);
   };
 
   const sm = (label: string, val: string, set: (v: string) => void, ph: string, unit: string) => (
@@ -266,6 +271,20 @@ export default function ProductionCalc() {
                         </div>
                       </div>
                     </div>
+
+                    {/* DAROMAD + SOF FOYDA — 1000 dona uchun */}
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div className="bg-indigo-50 dark:bg-indigo-950/30 rounded-lg p-3 border border-indigo-200 dark:border-indigo-800 text-center">
+                        <p className="text-[10px] font-bold text-indigo-700 uppercase mb-1">💰 Daromad ({fmt(n(quantity))} dona)</p>
+                        <div className="text-xl font-extrabold text-indigo-600 leading-none">{fmt(calc.revenue)}</div>
+                        <div className="text-[11px] text-indigo-500 mt-1">so'm</div>
+                      </div>
+                      <div className="bg-rose-50 dark:bg-rose-950/30 rounded-lg p-3 border border-rose-200 dark:border-rose-800 text-center">
+                        <p className="text-[10px] font-bold text-rose-700 uppercase mb-1">📈 Sof foyda ({fmt(n(quantity))} dona)</p>
+                        <div className="text-xl font-extrabold text-rose-600 leading-none">{fmt(calc.profit)}</div>
+                        <div className="text-[11px] text-rose-500 mt-1">so'm</div>
+                      </div>
+                    </div>
                   </div>
                 </>
               )}
@@ -315,6 +334,12 @@ export default function ProductionCalc() {
                 <span><b>Sof maydon:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(calc.netAreaM2)} m²</span></span>
                 <span style={{ color: "#ccc" }}>|</span>
                 <span><b>Umumiy og'irlik:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(calc.totalWeight)} kg</span></span>
+                <span style={{ color: "#ccc" }}>|</span>
+                <span><b>Miqdor:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(calc.total.quantity)} dona</span></span>
+                <span style={{ color: "#ccc" }}>|</span>
+                <span><b>Daromad:</b> <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#4f46e5" }}>{fmt(calc.revenue)} so'm</span></span>
+                <span style={{ color: "#ccc" }}>|</span>
+                <span><b>Sof foyda:</b> <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#e11d48" }}>{fmt(calc.profit)} so'm</span></span>
               </div>
             </div>
 
