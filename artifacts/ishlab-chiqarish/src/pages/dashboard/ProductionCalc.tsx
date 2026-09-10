@@ -291,8 +291,6 @@ export default function ProductionCalc() {
             boxHeight={n(boxH)}
             companyName={companyName}
             boxName={boxName}
-            sellingPrice={calc.sellingPrice}
-            productionPrice={calc.perBox.total}
           />
           <button
             onClick={() => setShowPrint(false)}
