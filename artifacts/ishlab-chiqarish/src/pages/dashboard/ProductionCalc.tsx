@@ -161,7 +161,8 @@ export default function ProductionCalc() {
 
               {calc && (
                 <>
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                  {/* Kesma o'lchamlari */}
+                  <div className="grid grid-cols-3 gap-2">
                     <div className="text-center p-2 bg-violet-50 dark:bg-violet-950/30 rounded-lg">
                       <div className="text-base font-bold text-violet-600">{calc.blankLen} sm</div>
                       <div className="text-[9px] text-muted-foreground">Kesma uzunligi</div>
@@ -176,93 +177,80 @@ export default function ProductionCalc() {
                     </div>
                   </div>
 
-                  {/* 3 QATLAMLI QOG'OZ */}
-                  <div className="bg-card rounded-lg border border-border/50 overflow-hidden">
-                    <div className="p-2.5 border-b border-border/50 bg-muted/30 flex items-center gap-2">
-                      <Layers className="w-3.5 h-3.5 text-primary" />
-                      <span className="text-xs font-bold">3 qatlamli qog'oz (1 dona uchun)</span>
-                    </div>
-                    <div className="p-2.5">
-                      <table className="w-full text-[11px]">
-                        <thead>
-                          <tr className="text-muted-foreground border-b border-border/50">
-                            <th className="text-left py-1.5 font-semibold">Qatlam</th>
-                            <th className="text-left py-1.5 font-semibold">Turi</th>
-                            <th className="text-right py-1.5 font-semibold">Og'irlik (kg)</th>
-                            <th className="text-right py-1.5 font-semibold">Narx (so'm/kg)</th>
-                            <th className="text-right py-1.5 font-semibold">Summa</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr className="border-b border-border/30">
-                            <td className="py-1.5 font-bold text-blue-600">1-qatlam</td>
-                            <td className="py-1.5 text-muted-foreground">Tashqi qog'oz</td>
-                            <td className="py-1.5 text-right font-mono font-bold">{calc.l1.weight}</td>
-                            <td className="py-1.5 text-right font-mono text-muted-foreground">{fmt(calc.l1.price)}</td>
-                            <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.l1.cost)} so'm</td>
-                          </tr>
-                          <tr className="border-b border-border/30 bg-amber-50/50 dark:bg-amber-950/20">
-                            <td className="py-1.5 font-bold text-amber-600">2-qatlam</td>
-                            <td className="py-1.5 text-muted-foreground">Gofra (÷0.7)</td>
-                            <td className="py-1.5 text-right font-mono font-bold">{calc.l2.weight}</td>
-                            <td className="py-1.5 text-right font-mono text-amber-600">{fmt(calc.l2.price)}</td>
-                            <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.l2.cost)} so'm</td>
-                          </tr>
-                          <tr className="border-b border-border/50">
-                            <td className="py-1.5 font-bold text-green-600">3-qatlam</td>
-                            <td className="py-1.5 text-muted-foreground">Ichki qog'oz</td>
-                            <td className="py-1.5 text-right font-mono font-bold">{calc.l3.weight}</td>
-                            <td className="py-1.5 text-right font-mono text-muted-foreground">{fmt(calc.l3.price)}</td>
-                            <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.l3.cost)} so'm</td>
-                          </tr>
-                        </tbody>
-                        <tfoot>
-                          <tr className="bg-primary/5 font-bold">
-                            <td className="py-1.5" colSpan={2}>JAMI</td>
-                            <td className="py-1.5 text-right font-mono">{calc.totalWeight} kg</td>
-                            <td></td>
-                            <td className="py-1.5 text-right font-mono text-primary">{fmt(calc.totalPaperCost)} so'm</td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* SOTISH NARXI — katta ko'rsatkich */}
-                  <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg p-4 text-white">
-                    <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp className="w-5 h-5" />
-                      <span className="text-sm font-bold">📈 Sotish narxi</span>
-                      <span className="text-xs opacity-80 ml-auto">Ishlab chiqarish × {calc.coefficient}</span>
-                    </div>
-                    <div className="text-center py-3">
-                      <div className="text-4xl font-extrabold">{fmt(calc.sellingPrice)}</div>
-                      <div className="text-sm opacity-80 mt-1">so'm / dona</div>
-                    </div>
-                    <div className="flex justify-between text-xs opacity-90 mt-2 pt-2 border-t border-white/20">
-                      <span>Ishlab chiqarish: {fmt(calc.perBox.total)} so'm</span>
-                      <span>× {calc.coefficient}</span>
-                      <span className="font-bold">= {fmt(calc.sellingPrice)} so'm</span>
-                    </div>
-                  </div>
-
-                  {/* Natija */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3">
-                      <p className="text-[9px] font-bold text-blue-600 uppercase mb-1.5">📦 1 dona uchun</p>
-                      <div className="space-y-1 text-xs">
-                        <div className="flex justify-between"><span className="text-muted-foreground">📄 Ishlab chiqarish</span><span className="font-semibold">{fmt(calc.perBox.paper)} so'm</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">📈 Sotish narxi</span><span className="font-bold text-emerald-600">{fmt(calc.sellingPrice)} so'm</span></div>
+                  {/* Eskiz + Narxlar yonma-yon */}
+                  <div className="flex flex-col lg:flex-row gap-3">
+                    {/* Eskiz */}
+                    <div className="flex-1">
+                      <div className="bg-card rounded-lg border border-border/50 overflow-hidden">
+                        <div className="p-2.5 border-b border-border/50 bg-muted/30 flex items-center gap-2">
+                          <Layers className="w-3.5 h-3.5 text-primary" />
+                          <span className="text-xs font-bold">3 qatlamli qog'oz (1 dona uchun)</span>
+                        </div>
+                        <div className="p-2.5">
+                          <table className="w-full text-[11px]">
+                            <thead>
+                              <tr className="text-muted-foreground border-b border-border/50">
+                                <th className="text-left py-1.5 font-semibold">Qatlam</th>
+                                <th className="text-left py-1.5 font-semibold">Turi</th>
+                                <th className="text-right py-1.5 font-semibold">Og'irlik</th>
+                                <th className="text-right py-1.5 font-semibold">Narx</th>
+                                <th className="text-right py-1.5 font-semibold">Summa</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr className="border-b border-border/30">
+                                <td className="py-1.5 font-bold text-blue-600">1</td>
+                                <td className="py-1.5 text-muted-foreground">Tashqi</td>
+                                <td className="py-1.5 text-right font-mono font-bold">{calc.l1.weight} kg</td>
+                                <td className="py-1.5 text-right font-mono text-muted-foreground">{fmt(calc.l1.price)}</td>
+                                <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.l1.cost)}</td>
+                              </tr>
+                              <tr className="border-b border-border/30 bg-amber-50/50 dark:bg-amber-950/20">
+                                <td className="py-1.5 font-bold text-amber-600">2</td>
+                                <td className="py-1.5 text-muted-foreground">Gofra ÷0.7</td>
+                                <td className="py-1.5 text-right font-mono font-bold">{calc.l2.weight} kg</td>
+                                <td className="py-1.5 text-right font-mono text-amber-600">{fmt(calc.l2.price)}</td>
+                                <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.l2.cost)}</td>
+                              </tr>
+                              <tr className="border-b border-border/50">
+                                <td className="py-1.5 font-bold text-green-600">3</td>
+                                <td className="py-1.5 text-muted-foreground">Ichki</td>
+                                <td className="py-1.5 text-right font-mono font-bold">{calc.l3.weight} kg</td>
+                                <td className="py-1.5 text-right font-mono text-muted-foreground">{fmt(calc.l3.price)}</td>
+                                <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.l3.cost)}</td>
+                              </tr>
+                            </tbody>
+                            <tfoot>
+                              <tr className="bg-primary/5 font-bold">
+                                <td className="py-1.5" colSpan={2}>JAMI</td>
+                                <td className="py-1.5 text-right font-mono">{calc.totalWeight} kg</td>
+                                <td></td>
+                                <td className="py-1.5 text-right font-mono text-primary">{fmt(calc.totalPaperCost)} so'm</td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-primary to-primary/80 rounded-lg p-3 text-white">
-                      <p className="text-[9px] font-bold uppercase mb-1 opacity-80">💰 JAMI ({fmt(calc.total.quantity)} dona)</p>
-                      <div className="space-y-1 text-[10px] opacity-90">
-                        <div className="flex justify-between"><span>📄 Ishlab chiqarish</span><span>{fmt(calc.total.paper)} so'm</span></div>
-                        <div className="flex justify-between"><span>📈 Sotish</span><span className="font-bold">{fmt(calc.sellingTotal)} so'm</span></div>
-                        <div className="border-t border-white/20 pt-1 flex justify-between font-bold text-sm">
-                          <span>Foyda:</span><span>{fmt(calc.sellingTotal - calc.total.paper)} so'm</span>
+                    {/* Narxlar — yon tomonda katta */}
+                    <div className="lg:w-64 flex flex-col gap-3">
+                      {/* Ishlab chiqarish narxi */}
+                      <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 flex-1 flex flex-col items-center justify-center border border-blue-200 dark:border-blue-800">
+                        <TrendingUp className="w-6 h-6 text-blue-500 mb-2" />
+                        <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">Ishlab chiqarish</p>
+                        <div className="text-3xl font-extrabold text-blue-600">{fmt(calc.perBox.total)}</div>
+                        <div className="text-xs text-blue-500 mt-1">so'm / dona</div>
+                      </div>
+
+                      {/* Sotish narxi */}
+                      <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-4 flex-1 flex flex-col items-center justify-center border-2 border-emerald-400 dark:border-emerald-600">
+                        <TrendingUp className="w-6 h-6 text-emerald-600 mb-2" />
+                        <p className="text-[10px] font-bold text-emerald-700 uppercase mb-1">Sotish narxi</p>
+                        <div className="text-4xl font-extrabold text-emerald-600">{fmt(calc.sellingPrice)}</div>
+                        <div className="text-sm text-emerald-500 mt-1">so'm / dona</div>
+                        <div className="text-[10px] text-emerald-600 mt-2 bg-emerald-100 dark:bg-emerald-900 px-2 py-0.5 rounded-full">
+                          × {calc.coefficient} koeffitsient
                         </div>
                       </div>
                     </div>
