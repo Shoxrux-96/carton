@@ -241,30 +241,35 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight }: BoxTempl
           <line x1={bx + bw * 0.6} y1={by} x2={bx + bw * 0.6 + d} y2={by - d * 0.6}
             stroke="#10b981" strokeWidth={1.5} strokeDasharray="3 2" />
 
-          {/* O'lchamlar — W */}
+          {/* O'lchamlar — W (pastda) */}
           <line x1={bx} y1={by + bh + 15} x2={bx + bw} y2={by + bh + 15}
             stroke="#d97706" strokeWidth={1.5} markerEnd="url(#aR3d)" markerStart="url(#aL3d)" />
-          <text x={bx + bw / 2} y={by + bh + 28} textAnchor="middle" fontSize={10} fill="#d97706" fontWeight="bold">
-            W = {W} sm
+          <text x={bx + bw / 2} y={by + bh + 30} textAnchor="middle" fontSize={10} fill="#d97706" fontWeight="bold">
+            W = {W}
           </text>
 
-          {/* O'lchamlar — H */}
+          {/* O'lchamlar — H (chapda vertikal) */}
           <line x1={bx - 15} y1={by} x2={bx - 15} y2={by + bh}
             stroke="#d97706" strokeWidth={1.5} markerEnd="url(#aD3d)" markerStart="url(#aU3d)" />
           <text x={bx - 22} y={by + bh / 2 + 4} textAnchor="end" fontSize={10} fill="#d97706" fontWeight="bold">
-            H = {H} sm
+            H = {H}
           </text>
 
-          {/* O'lchamlar — L (oblique) */}
-          <line x1={bx + bw + d + 8} y1={by - d * 0.6} x2={bx + bw + d + 8} y2={by + bh - d * 0.6}
+          {/* O'lchamlar — L (pastda diagonal) */}
+          <line x1={bx + bw} y1={by + bh + 15} x2={bx + bw + d} y2={by + bh + 15 - d * 0.6}
+            stroke="#ea580c" strokeWidth={1.5} />
+          <line x1={bx + bw + d} y1={by + bh + 15 - d * 0.6 + 10} x2={bx + bw + d} y2={by + bh + 15 - d * 0.6 - 10}
             stroke="#ea580c" strokeWidth={1.5} markerEnd="url(#aD3d)" markerStart="url(#aU3d)" />
-          <text x={bx + bw + d + 15} y={by + (bh - d * 0.6) / 2 + 4} textAnchor="start" fontSize={10} fill="#ea580c" fontWeight="bold">
-            L = {L} sm
+          <text x={bx + bw + d + 10} y={by + bh + 15 - d * 0.3 + 4} textAnchor="start" fontSize={10} fill="#ea580c" fontWeight="bold">
+            L = {L}
           </text>
 
           {/* Label */}
-          <text x={bx + bw / 2} y={by + bh / 2 + 4} textAnchor="middle" fontSize={11} fill="#92400e" fontWeight="bold">
+          <text x={bx + bw / 2} y={by + bh / 2 - 6} textAnchor="middle" fontSize={12} fill="#92400e" fontWeight="bold">
             {W} × {H} × {L}
+          </text>
+          <text x={bx + bw / 2} y={by + bh / 2 + 10} textAnchor="middle" fontSize={8} fill="#92400e">
+            W × H × L
           </text>
 
           <defs>
