@@ -286,48 +286,41 @@ export default function ProductionCalc() {
         const blankLen = 2 * bw + 2 * bl + 6;
         const flapH = bl / 2;
         const blankW = 1 + flapH + bh + flapH + 1;
-        // Qog'oz: 297mm - 20mm (1sm har tomondan) = 277mm = 1108px (4px/mm)
-        const pageContentW = 277 * 4; // 1108px
-        const pageContentH = 190 * 4; // 760px (header ~80px, eskiz uchun ~680px)
-        const sketchMaxW = pageContentW;
-        const sketchMaxH = 600;
-        const scaleX = sketchMaxW / (blankLen * 4);
-        const scaleY = sketchMaxH / (blankW * 4);
-        const printS = Math.min(scaleX, scaleY, 1) * 4;
-        const sBlankW = blankLen * printS;
-        const sBlankH = blankW * printS;
 
         return (
         <div className="print-only" style={{ display: "none" }}>
           <div style={{ fontFamily: "Arial", padding: "10mm", width: "297mm", minHeight: "210mm" }}>
-            {/* TEPA: Korxona + 3D + O'lchamlar — yonma-yon */}
-            <div style={{ display: "flex", gap: "16px", alignItems: "flex-start", borderBottom: "2px solid black", paddingBottom: "10px", marginBottom: "10px" }}>
-              {/* Korxona nomi + quti nomi + sana */}
-              <div style={{ flex: "1" }}>
-                <h1 style={{ fontSize: "16px", fontWeight: 900, textTransform: "uppercase", margin: 0 }}>{companyName}</h1>
-                <p style={{ fontSize: "12px", fontWeight: 700, margin: "2px 0 0 0" }}>{boxName}</p>
-                <p style={{ fontSize: "10px", color: "#666", margin: "2px 0 0 0" }}>Sana: {new Date().toLocaleDateString("uz-UZ")}</p>
-              </div>
-
-              {/* 3D ko'rinish */}
-              <div style={{ width: "200px", flexShrink: 0 }}>
-                <BoxTemplate boxLength={bl} boxWidth={bw} boxHeight={bh} showFlat={false} show3D={true} showTitle={false} />
-              </div>
-
-              {/* O'lchamlar */}
-              <div style={{ fontSize: "10px", lineHeight: "1.6" }}>
-                <div><b>Eni (W):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bw} sm</span></div>
-                <div><b>Balandligi (H):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bh} sm</span></div>
-                <div><b>Bo'yi (L):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bl} sm</span></div>
-                <div style={{ borderTop: "1px solid #ccc", paddingTop: "2px", marginTop: "2px" }}>
-                  <b>Kesma:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(blankLen)} × {fmt(blankW)} sm</span>
+            {/* TEPA: Narida — chap: matn, o'ng: 3D */}
+            <div style={{ display: "flex", gap: "20px", borderBottom: "2px solid black", paddingBottom: "10px", marginBottom: "10px", height: "140px" }}>
+              {/* CHAP: korxona + quti + o'lchamlar */}
+              <div style={{ flex: "1", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div>
+                  <h1 style={{ fontSize: "18px", fontWeight: 900, textTransform: "uppercase", margin: 0 }}>{companyName}</h1>
+                  <p style={{ fontSize: "13px", fontWeight: 700, margin: "2px 0 0 0" }}>{boxName}</p>
+                  <p style={{ fontSize: "10px", color: "#666", margin: "2px 0 0 0" }}>Sana: {new Date().toLocaleDateString("uz-UZ")}</p>
                 </div>
-                <div><b>Kanot:</b> <span style={{ fontFamily: "monospace" }}>{fmt(flapH)} sm</span></div>
+                {/* O'lchamlar — 2 qator */}
+                <div style={{ fontSize: "11px", lineHeight: "1.8", background: "#f5f5f5", padding: "6px 10px", borderRadius: "4px", border: "1px solid #ddd" }}>
+                  <div style={{ display: "flex", gap: "20px" }}>
+                    <span><b>Eni (W):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bw} sm</span></span>
+                    <span><b>Balandligi (H):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bh} sm</span></span>
+                    <span><b>Bo'yi (L):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bl} sm</span></span>
+                  </div>
+                  <div style={{ display: "flex", gap: "20px" }}>
+                    <span><b>Kesma:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(blankLen)} × {fmt(blankW)} sm</span></span>
+                    <span><b>Kanot:</b> <span style={{ fontFamily: "monospace" }}>{fmt(flapH)} sm</span></span>
+                  </div>
+                </div>
+              </div>
+
+              {/* O'NG: 3D ko'rinish — katta */}
+              <div style={{ width: "220px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <BoxTemplate boxLength={bl} boxWidth={bw} boxHeight={bh} showFlat={false} show3D={true} showTitle={false} />
               </div>
             </div>
 
-            {/* ESKIZ — to'liq, qog'oz bo'ylab */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            {/* ESKIZ — to'liq kenglikda, katta */}
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1 }}>
               <BoxTemplate boxLength={bl} boxWidth={bw} boxHeight={bh} showFlat={true} show3D={false} />
             </div>
           </div>
