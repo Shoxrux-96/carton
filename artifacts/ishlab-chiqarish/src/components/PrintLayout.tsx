@@ -69,16 +69,13 @@ export default function PrintLayout({
 
       {/* SAHIFA — LANDSCAPE */}
       <div className="bg-white text-black mx-auto" style={{ width: "297mm", minHeight: "210mm", padding: "10mm" }}>
-        {/* SARLAVHA — kompakt */}
-        <div className="flex items-center justify-between border-b-2 border-black pb-2 mb-3">
-          <div>
-            <h1 className="text-xl font-extrabold tracking-wide uppercase">{companyName}</h1>
-            <p className="text-xs text-gray-600">Ishlab chiqarish detali</p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm font-bold">{boxName}</p>
-            <p className="text-[10px] text-gray-500">Sana: {today}</p>
-          </div>
+        {/* SARLAVHA — yonma-yon */}
+        <div className="flex items-center gap-6 border-b-2 border-black pb-2 mb-3">
+          <h1 className="text-xl font-extrabold tracking-wide uppercase">{companyName}</h1>
+          <span className="text-gray-400">|</span>
+          <span className="text-sm font-bold">{boxName}</span>
+          <span className="text-gray-400">|</span>
+          <span className="text-xs text-gray-500">Sana: {today}</span>
         </div>
 
         {/* QUTI O'LCHAMLARI — bitta qatorda */}
@@ -156,7 +153,7 @@ export default function PrintLayout({
                 {/* TEPA CHIQINDI */}
                 <rect x={0} y={yCutTop} width={svgW} height={1 * S}
                   fill="#fee2e2" stroke="#ef4444" strokeWidth={1} strokeDasharray="4 2" />
-                <text x={svgW / 2} y={yCutTop + 0.5 * S + 4} textAnchor="middle" fontSize={8} fill="#ef4444" fontWeight="bold">1 sm chiqindi</text>
+                <text x={svgW / 2} y={yCutTop + 0.5 * S + 5} textAnchor="middle" fontSize={11} fill="#ef4444" fontWeight="bold">1 sm chiqindi</text>
 
                 {/* TOP FLAPS */}
                 <rect x={x0} y={yFlapTop} width={xW1} height={flapH * S} fill="#dbeafe" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="5 3" />
@@ -182,59 +179,59 @@ export default function PrintLayout({
 
                 {/* PASTKI CHIQINDI */}
                 <rect x={0} y={yCutBot} width={svgW} height={1 * S} fill="#fee2e2" stroke="#ef4444" strokeWidth={1} strokeDasharray="4 2" />
-                <text x={svgW / 2} y={yCutBot + 0.5 * S + 4} textAnchor="middle" fontSize={8} fill="#ef4444" fontWeight="bold">1 sm chiqindi</text>
+                <text x={svgW / 2} y={yCutBot + 0.5 * S + 5} textAnchor="middle" fontSize={11} fill="#ef4444" fontWeight="bold">1 sm chiqindi</text>
 
-                {/* PANEL MARKERS */}
-                <text x={xW1 / 2} y={yCenter + H * S / 2 - 6} textAnchor="middle" fontSize={11} fontWeight="bold" fill="#92400e">W</text>
-                <text x={xW1 / 2} y={yCenter + H * S / 2 + 8} textAnchor="middle" fontSize={8} fill="#92400e">{W}</text>
+                {/* PANEL MARKERS — KATTA */}
+                <text x={xW1 / 2} y={yCenter + H * S / 2 - 8} textAnchor="middle" fontSize={16} fontWeight="bold" fill="#92400e">W</text>
+                <text x={xW1 / 2} y={yCenter + H * S / 2 + 12} textAnchor="middle" fontSize={12} fill="#92400e">{W}</text>
 
-                <text x={(xW1 + xL1) / 2} y={yCenter + H * S / 2 - 6} textAnchor="middle" fontSize={11} fontWeight="bold" fill="#9a3412">L</text>
-                <text x={(xW1 + xL1) / 2} y={yCenter + H * S / 2 + 8} textAnchor="middle" fontSize={8} fill="#9a3412">{L}</text>
+                <text x={(xW1 + xL1) / 2} y={yCenter + H * S / 2 - 8} textAnchor="middle" fontSize={16} fontWeight="bold" fill="#9a3412">L</text>
+                <text x={(xW1 + xL1) / 2} y={yCenter + H * S / 2 + 12} textAnchor="middle" fontSize={12} fill="#9a3412">{L}</text>
 
-                <text x={(xL1 + xW2) / 2} y={yCenter + H * S / 2 - 6} textAnchor="middle" fontSize={11} fontWeight="bold" fill="#92400e">W</text>
-                <text x={(xL1 + xW2) / 2} y={yCenter + H * S / 2 + 8} textAnchor="middle" fontSize={8} fill="#92400e">{W}</text>
+                <text x={(xL1 + xW2) / 2} y={yCenter + H * S / 2 - 8} textAnchor="middle" fontSize={16} fontWeight="bold" fill="#92400e">W</text>
+                <text x={(xL1 + xW2) / 2} y={yCenter + H * S / 2 + 12} textAnchor="middle" fontSize={12} fill="#92400e">{W}</text>
 
-                <text x={(xW2 + xL2) / 2} y={yCenter + H * S / 2 - 6} textAnchor="middle" fontSize={11} fontWeight="bold" fill="#9a3412">L</text>
-                <text x={(xW2 + xL2) / 2} y={yCenter + H * S / 2 + 8} textAnchor="middle" fontSize={8} fill="#9a3412">{L}</text>
+                <text x={(xW2 + xL2) / 2} y={yCenter + H * S / 2 - 8} textAnchor="middle" fontSize={16} fontWeight="bold" fill="#9a3412">L</text>
+                <text x={(xW2 + xL2) / 2} y={yCenter + H * S / 2 + 12} textAnchor="middle" fontSize={12} fill="#9a3412">{L}</text>
 
-                <text x={xGlue + 2.5 * S} y={yCenter + H * S / 2 - 4} textAnchor="middle" fontSize={7} fontWeight="bold" fill="#065f46">YELIM</text>
-                <text x={xGlue + 2.5 * S} y={yCenter + H * S / 2 + 6} textAnchor="middle" fontSize={6} fill="#065f46">5 sm</text>
-                <text x={xCut + 0.5 * S} y={yCenter + H * S / 2 + 4} textAnchor="middle" fontSize={6} fill="#ef4444" fontWeight="bold">1</text>
+                <text x={xGlue + 2.5 * S} y={yCenter + H * S / 2 - 5} textAnchor="middle" fontSize={10} fontWeight="bold" fill="#065f46">YELIM</text>
+                <text x={xGlue + 2.5 * S} y={yCenter + H * S / 2 + 8} textAnchor="middle" fontSize={9} fill="#065f46">5 sm</text>
+                <text x={xCut + 0.5 * S} y={yCenter + H * S / 2 + 5} textAnchor="middle" fontSize={9} fill="#ef4444" fontWeight="bold">1</text>
 
-                <text x={xW1 / 2} y={yFlapTop + flapH * S / 2 + 4} textAnchor="middle" fontSize={7} fill="#1e40af" fontWeight="bold">L/2</text>
-                <text x={(xW1 + xL1) / 2} y={yFlapTop + flapH * S / 2 + 4} textAnchor="middle" fontSize={7} fill="#1e40af" fontWeight="bold">L/2</text>
-                <text x={xW1 / 2} y={yFlapBot + flapH * S / 2 + 4} textAnchor="middle" fontSize={7} fill="#1e40af" fontWeight="bold">L/2</text>
-                <text x={(xW1 + xL1) / 2} y={yFlapBot + flapH * S / 2 + 4} textAnchor="middle" fontSize={7} fill="#1e40af" fontWeight="bold">L/2</text>
+                <text x={xW1 / 2} y={yFlapTop + flapH * S / 2 + 5} textAnchor="middle" fontSize={11} fill="#1e40af" fontWeight="bold">L/2</text>
+                <text x={(xW1 + xL1) / 2} y={yFlapTop + flapH * S / 2 + 5} textAnchor="middle" fontSize={11} fill="#1e40af" fontWeight="bold">L/2</text>
+                <text x={xW1 / 2} y={yFlapBot + flapH * S / 2 + 5} textAnchor="middle" fontSize={11} fill="#1e40af" fontWeight="bold">L/2</text>
+                <text x={(xW1 + xL1) / 2} y={yFlapBot + flapH * S / 2 + 5} textAnchor="middle" fontSize={11} fill="#1e40af" fontWeight="bold">L/2</text>
 
-                {/* HORIZONTAL O'LCHAMLAR */}
+                {/* HORIZONTAL O'LCHAMLAR — KATTA */}
                 <line x1={0} y1={svgH + 10} x2={svgW} y2={svgH + 10} stroke="#374151" strokeWidth={1.5} markerEnd="url(#aR)" markerStart="url(#aL)" />
                 <line x1={x0} y1={svgH + 4} x2={xW1} y2={svgH + 4} stroke="#d97706" strokeWidth={1} />
-                <text x={xW1 / 2} y={svgH + 22} textAnchor="middle" fontSize={9} fill="#d97706" fontWeight="bold">{W}</text>
+                <text x={xW1 / 2} y={svgH + 26} textAnchor="middle" fontSize={12} fill="#d97706" fontWeight="bold">{W}</text>
                 <line x1={xW1} y1={svgH + 4} x2={xL1} y2={svgH + 4} stroke="#ea580c" strokeWidth={1} />
-                <text x={(xW1 + xL1) / 2} y={svgH + 22} textAnchor="middle" fontSize={9} fill="#ea580c" fontWeight="bold">{L}</text>
+                <text x={(xW1 + xL1) / 2} y={svgH + 26} textAnchor="middle" fontSize={12} fill="#ea580c" fontWeight="bold">{L}</text>
                 <line x1={xL1} y1={svgH + 4} x2={xW2} y2={svgH + 4} stroke="#d97706" strokeWidth={1} />
-                <text x={(xL1 + xW2) / 2} y={svgH + 22} textAnchor="middle" fontSize={9} fill="#d97706" fontWeight="bold">{W}</text>
+                <text x={(xL1 + xW2) / 2} y={svgH + 26} textAnchor="middle" fontSize={12} fill="#d97706" fontWeight="bold">{W}</text>
                 <line x1={xW2} y1={svgH + 4} x2={xL2} y2={svgH + 4} stroke="#ea580c" strokeWidth={1} />
-                <text x={(xW2 + xL2) / 2} y={svgH + 22} textAnchor="middle" fontSize={9} fill="#ea580c" fontWeight="bold">{L}</text>
+                <text x={(xW2 + xL2) / 2} y={svgH + 26} textAnchor="middle" fontSize={12} fill="#ea580c" fontWeight="bold">{L}</text>
                 <line x1={xGlue} y1={svgH + 4} x2={xCut} y2={svgH + 4} stroke="#10b981" strokeWidth={1} />
-                <text x={xGlue + 2.5 * S} y={svgH + 22} textAnchor="middle" fontSize={8} fill="#10b981" fontWeight="bold">5</text>
+                <text x={xGlue + 2.5 * S} y={svgH + 26} textAnchor="middle" fontSize={11} fill="#10b981" fontWeight="bold">5</text>
                 <line x1={xCut} y1={svgH + 4} x2={xEnd} y2={svgH + 4} stroke="#ef4444" strokeWidth={1} />
-                <text x={xCut + 0.5 * S} y={svgH + 22} textAnchor="middle" fontSize={8} fill="#ef4444" fontWeight="bold">1</text>
-                <text x={svgW / 2} y={svgH + 38} textAnchor="middle" fontSize={10} fontWeight="bold" fill="#374151">
+                <text x={xCut + 0.5 * S} y={svgH + 26} textAnchor="middle" fontSize={11} fill="#ef4444" fontWeight="bold">1</text>
+                <text x={svgW / 2} y={svgH + 44} textAnchor="middle" fontSize={13} fontWeight="bold" fill="#374151">
                   Kesma: {fmt(blankLen)} sm × {fmt(blankW)} sm
                 </text>
 
-                {/* VERTIKAL O'LCHAMLAR */}
+                {/* VERTIKAL O'LCHAMLAR — KATTA */}
                 <line x1={-12} y1={yCutTop} x2={-12} y2={yFlapTop} stroke="#ef4444" strokeWidth={1} />
-                <text x={-18} y={(yCutTop + yFlapTop) / 2 + 4} textAnchor="end" fontSize={7} fill="#ef4444" fontWeight="bold">1</text>
+                <text x={-18} y={(yCutTop + yFlapTop) / 2 + 5} textAnchor="end" fontSize={10} fill="#ef4444" fontWeight="bold">1</text>
                 <line x1={-12} y1={yFlapTop} x2={-12} y2={yCenter} stroke="#3b82f6" strokeWidth={1} />
-                <text x={-18} y={(yFlapTop + yCenter) / 2 + 4} textAnchor="end" fontSize={8} fill="#3b82f6" fontWeight="bold">{fmt(L / 2)}</text>
+                <text x={-18} y={(yFlapTop + yCenter) / 2 + 5} textAnchor="end" fontSize={11} fill="#3b82f6" fontWeight="bold">{fmt(L / 2)}</text>
                 <line x1={-12} y1={yCenter} x2={-12} y2={yFlapBot} stroke="#d97706" strokeWidth={1.5} />
-                <text x={-18} y={(yCenter + yFlapBot) / 2 + 4} textAnchor="end" fontSize={9} fill="#d97706" fontWeight="bold">{H}</text>
+                <text x={-18} y={(yCenter + yFlapBot) / 2 + 5} textAnchor="end" fontSize={13} fill="#d97706" fontWeight="bold">{H}</text>
                 <line x1={-12} y1={yFlapBot} x2={-12} y2={yCutBot} stroke="#3b82f6" strokeWidth={1} />
-                <text x={-18} y={(yFlapBot + yCutBot) / 2 + 4} textAnchor="end" fontSize={8} fill="#3b82f6" fontWeight="bold">{fmt(L / 2)}</text>
+                <text x={-18} y={(yFlapBot + yCutBot) / 2 + 5} textAnchor="end" fontSize={11} fill="#3b82f6" fontWeight="bold">{fmt(L / 2)}</text>
                 <line x1={-12} y1={yCutBot} x2={-12} y2={yEnd} stroke="#ef4444" strokeWidth={1} />
-                <text x={-18} y={(yCutBot + yEnd) / 2 + 4} textAnchor="end" fontSize={7} fill="#ef4444" fontWeight="bold">1</text>
+                <text x={-18} y={(yCutBot + yEnd) / 2 + 5} textAnchor="end" fontSize={10} fill="#ef4444" fontWeight="bold">1</text>
 
                 <defs>
                   <marker id="aR" markerWidth={8} markerHeight={8} refX={8} refY={4} orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#374151" /></marker>
