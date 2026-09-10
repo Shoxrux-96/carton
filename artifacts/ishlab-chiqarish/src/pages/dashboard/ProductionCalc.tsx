@@ -272,17 +272,21 @@ export default function ProductionCalc() {
                       </div>
                     </div>
 
-                    {/* DAROMAD + SOF FOYDA — 1000 dona uchun */}
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      <div className="bg-indigo-50 dark:bg-indigo-950/30 rounded-lg p-3 border border-indigo-200 dark:border-indigo-800 text-center">
-                        <p className="text-[10px] font-bold text-indigo-700 uppercase mb-1">💰 Daromad ({fmt(n(quantity))} dona)</p>
-                        <div className="text-xl font-extrabold text-indigo-600 leading-none">{fmt(calc.revenue)}</div>
-                        <div className="text-[11px] text-indigo-500 mt-1">so'm</div>
+                    {/* DAROMAD + SOF FOYDA — alohida qatorda */}
+                    <div className="flex flex-col lg:flex-row gap-2 mt-2">
+                      <div className="flex-1 flex items-center justify-between bg-indigo-50 dark:bg-indigo-950/30 rounded-lg px-4 py-2.5 border border-indigo-200 dark:border-indigo-800">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">💰</span>
+                          <span className="text-xs font-bold text-indigo-700">Daromad ({fmt(n(quantity))} dona)</span>
+                        </div>
+                        <div className="text-lg font-extrabold text-indigo-600">{fmt(calc.revenue)} so'm</div>
                       </div>
-                      <div className="bg-rose-50 dark:bg-rose-950/30 rounded-lg p-3 border border-rose-200 dark:border-rose-800 text-center">
-                        <p className="text-[10px] font-bold text-rose-700 uppercase mb-1">📈 Sof foyda ({fmt(n(quantity))} dona)</p>
-                        <div className="text-xl font-extrabold text-rose-600 leading-none">{fmt(calc.profit)}</div>
-                        <div className="text-[11px] text-rose-500 mt-1">so'm</div>
+                      <div className="flex-1 flex items-center justify-between bg-rose-50 dark:bg-rose-950/30 rounded-lg px-4 py-2.5 border border-rose-200 dark:border-rose-800">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">📈</span>
+                          <span className="text-xs font-bold text-rose-700">Sof foyda ({fmt(n(quantity))} dona)</span>
+                        </div>
+                        <div className="text-lg font-extrabold text-rose-600">{fmt(calc.profit)} so'm</div>
                       </div>
                     </div>
                   </div>
