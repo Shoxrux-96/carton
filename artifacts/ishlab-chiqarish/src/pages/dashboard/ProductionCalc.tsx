@@ -313,8 +313,8 @@ export default function ProductionCalc() {
                 </div>
               </div>
 
-              {/* O'NG: 3D ko'rinish — katta, pastroq */}
-              <div style={{ width: "280px", flexShrink: 0, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+              {/* O'NG: 3D ko'rinish — katta, 30px pastga */}
+              <div style={{ width: "280px", flexShrink: 0, display: "flex", alignItems: "flex-end", justifyContent: "center", paddingTop: "30px" }}>
                 <BoxTemplate boxLength={bl} boxWidth={bw} boxHeight={bh} showFlat={false} show3D={true} showTitle={false} printMode={true} />
               </div>
             </div>
