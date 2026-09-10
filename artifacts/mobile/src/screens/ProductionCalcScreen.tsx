@@ -1,81 +1,129 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
-  View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, Dimensions,
+  View, Text, ScrollView, StyleSheet, TextInput,
+  TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions,
 } from "react-native";
 import { colors, radius, shadows, spacing } from "../theme";
 
 const { width } = Dimensions.get("window");
 
 interface CalcInput {
-  width: string;    // mm
-  height: string;   // mm
-  length: string;   // mm
-  paperWeight: string; // g/m²
-  quantity: string;    // dona
-  paperPrice: string;  // so'm/kg
-  paintPrice: string;  // so'm/m²
+  // Quti o'lchamlari (mm)
+  boxLength: string;
+  boxWidth: string;
+  boxHeight: string;
+  // Qog'oz
+  paperWeight: string;   // g/m²
+  paperPriceKg: string;  // so'm/kg
+  // Bosma
+  printColors: string;    // ranglar soni
+  printPriceM2: string;   // so'm/m² rang uchun
+  // Xarajatlar
+  gluePricePerBox: string;    // so'm/dona
+  cuttingPricePerBox: string; // so'm/dona
+  wastePercent: string;       // %
+  // Miqdor
+  quantity: string;
 }
 
-export default function ProductionCalcScreen() {
-  const [inputs, setInputs] = useState<CalcInput>({
-    width: "",
-    height: "",
-    length: "",
-    paperWeight: "",
-    quantity: "1",
-    paperPrice: "",
-    paintPrice: "",
-  });
+const defaultValues: CalcInput = {
+  boxLength: "", boxWidth: "", boxHeight: "",
+  paperWeight: "", paperPriceKg: "",
+  printColors: "1", printPriceM2: "",
+  gluePricePerBox: "", cuttingPricePerBox: "",
+  wastePercent: "10",
+  quantity: "1000",
+};
 
-  const set = (key: keyof CalcInput, val: string) => setInputs(prev => ({ ...prev, [key]: val }));
+export default function ProductionCalcScreen() {
+  const [inputs, setInputs] = useState<CalcInput>(defaultValues);
+
+  const set = useCallback((key: keyof CalcInput, val: string) => {
+    setInputs(prev => ({ ...prev, [key]: val }));
+  }, []);
 
   const n = (s: string) => parseFloat(s) || 0;
 
+  // Oddiy (offline) kalkulyatsiya — API'siz
   const calc = useMemo(() => {
-    const w = n(inputs.width) / 1000;   // mm → m
-    const h = n(inputs.height) / 1000;
-    const l = n(inputs.length) / 1000;
-    const pw = n(inputs.paperWeight);   // g/m²
+    const L = n(inputs.boxLength) / 1000;   // mm → m
+    const W = n(inputs.boxWidth) / 1000;
+    const H = n(inputs.boxHeight) / 1000;
+    const pw = n(inputs.paperWeight);
+    const paperPrice = n(inputs.paperPriceKg);
+    const printColorsN = parseInt(inputs.printColors) || 0;
+    const printPrice = n(inputs.printPriceM2);
+    const gluePrice = n(inputs.gluePricePerBox);
+    const cuttingPrice = n(inputs.cuttingPricePerBox);
+    const waste = n(inputs.wastePercent);
     const qty = n(inputs.quantity);
-    const paperPrice = n(inputs.paperPrice); // so'm/kg
-    const paintPrice = n(inputs.paintPrice); // so'm/m²
 
-    // 1 dona mahsulotning yuzasi (tomonlari) — quti uchun 5 ta tomon (pastisiz)
-    const oneSurface = 2 * (w * h + w * l + h * l); // m²
-    const totalSurface = oneSurface * qty;           // jami m²
+    if (L <= 0 || W <= 0 || H <= 0 || pw <= 0 || qty <= 0) {
+      return null;
+    }
 
-    // Qog'oz og'irligi
-    const paperWeightPerM2 = pw;                     // g/m²
-    const totalPaperWeight = totalSurface * paperWeightPerM2; // gram
-    const totalPaperKg = totalPaperWeight / 1000;    // kg
+    // Kesma (blank) o'lchamlari — RSC quti
+    const scoringFlap = 0.030; // 30mm yelim chok
+    const topFlap = W * 0.75;
+    const bottomFlap = W * 0.75;
 
-    // Qog'oz narxi
-    const paperCost = totalPaperKg * paperPrice;     // so'm
+    const blankLength = 2 * (L + W) + scoringFlap;
+    const blankWidth = H + topFlap + bottomFlap;
 
-    // Kraska narxi
-    const paintCost = totalSurface * paintPrice;     // so'm
+    // Maydon
+    const netArea = blankLength * blankWidth;
+    const grossArea = netArea * (1 + waste / 100);
 
-    // Jami xarajat
-    const totalCost = paperCost + paintCost;
+    // Qog'oz
+    const paperWeightGram = grossArea * pw;
+    const paperWeightKg = paperWeightGram / 1000;
+    const paperCost = paperWeightKg * paperPrice;
 
-    // 1 dona uchun
-    const onePaperCost = oneSurface * paperWeightPerM2 / 1000 * paperPrice;
-    const onePaintCost = oneSurface * paintPrice;
-    const oneTotalCost = onePaperCost + onePaintCost;
+    // Bosma
+    const printArea = grossArea;
+    const printCost = printArea * printPrice * printColorsN;
+
+    // Yelim + kesish
+    const glueCost = gluePrice;
+    const cuttingCost = cuttingPrice;
+
+    // Jami
+    const totalPerBox = paperCost + printCost + glueCost + cuttingCost;
 
     return {
-      oneSurface: oneSurface.toFixed(4),
-      totalSurface: totalSurface.toFixed(2),
-      totalPaperWeight: Math.round(totalPaperWeight),
-      totalPaperKg: totalPaperKg.toFixed(2),
-      paperCost: Math.round(paperCost),
-      paintCost: Math.round(paintCost),
-      totalCost: Math.round(totalCost),
-      onePaperCost: Math.round(onePaperCost),
-      onePaintCost: Math.round(onePaintCost),
-      oneTotalCost: Math.round(oneTotalCost),
-      hasData: w > 0 && h > 0 && l > 0 && pw > 0 && qty > 0,
+      blank: {
+        lengthMM: Math.round(blankLength * 1000),
+        widthMM: Math.round(blankWidth * 1000),
+        area: +netArea.toFixed(4),
+        grossArea: +grossArea.toFixed(4),
+      },
+      paper: {
+        weightGram: Math.round(paperWeightGram),
+        weightKg: +paperWeightKg.toFixed(4),
+        costPerBox: Math.round(paperCost),
+      },
+      printing: {
+        area: +printArea.toFixed(4),
+        colors: printColorsN,
+        costPerBox: Math.round(printCost),
+      },
+      glue: { costPerBox: Math.round(glueCost) },
+      cutting: { costPerBox: Math.round(cuttingCost) },
+      perBox: {
+        paper: Math.round(paperCost),
+        printing: Math.round(printCost),
+        glue: Math.round(glueCost),
+        cutting: Math.round(cuttingCost),
+        total: Math.round(totalPerBox),
+      },
+      total: {
+        quantity: qty,
+        paper: Math.round(paperCost * qty),
+        printing: Math.round(printCost * qty),
+        glue: Math.round(glueCost * qty),
+        cutting: Math.round(cuttingCost * qty),
+        grandTotal: Math.round(totalPerBox * qty),
+      },
     };
   }, [inputs]);
 
@@ -86,115 +134,182 @@ export default function ProductionCalcScreen() {
       <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Sarlavha */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>🧮 Kalkulyatsiya</Text>
-          <Text style={styles.headerSub}>Mahsulot ishlab chiqarish xarajatlari</Text>
+          <Text style={styles.headerTitle}>🧮 Ishlab chiqarish kalkulyatsiyasi</Text>
+          <Text style={styles.headerSub}>Quti ishlab chiqarish xarajatlarini hisoblang</Text>
         </View>
 
-        {/* Mahsulot o'lchamlari */}
+        {/* Quti o'lchamlari */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>📐 Mahsulot o'lchamlari (mm)</Text>
+          <Text style={styles.cardTitle}>📐 Quti o'lchamlari (ichki)</Text>
+          <Text style={styles.hint}>Eni, bo'yi, uzunligi — mm da kiriting</Text>
           <View style={styles.row}>
             <View style={styles.field}>
-              <Text style={styles.label}>Eni</Text>
-              <TextInput style={styles.input} value={inputs.width} onChangeText={v => set("width", v)} keyboardType="numeric" placeholder="0" placeholderTextColor={colors.textMuted} />
+              <Text style={styles.label}>Bo'yi (L)</Text>
+              <TextInput style={styles.input} value={inputs.boxLength} onChangeText={v => set("boxLength", v)} keyboardType="numeric" placeholder="300" placeholderTextColor={colors.textMuted} />
               <Text style={styles.unit}>mm</Text>
             </View>
             <View style={styles.field}>
-              <Text style={styles.label}>Bo'yi</Text>
-              <TextInput style={styles.input} value={inputs.height} onChangeText={v => set("height", v)} keyboardType="numeric" placeholder="0" placeholderTextColor={colors.textMuted} />
+              <Text style={styles.label}>Eni (W)</Text>
+              <TextInput style={styles.input} value={inputs.boxWidth} onChangeText={v => set("boxWidth", v)} keyboardType="numeric" placeholder="200" placeholderTextColor={colors.textMuted} />
               <Text style={styles.unit}>mm</Text>
             </View>
             <View style={styles.field}>
-              <Text style={styles.label}>Uzunligi</Text>
-              <TextInput style={styles.input} value={inputs.length} onChangeText={v => set("length", v)} keyboardType="numeric" placeholder="0" placeholderTextColor={colors.textMuted} />
+              <Text style={styles.label}>Bo'yi (H)</Text>
+              <TextInput style={styles.input} value={inputs.boxHeight} onChangeText={v => set("boxHeight", v)} keyboardType="numeric" placeholder="150" placeholderTextColor={colors.textMuted} />
               <Text style={styles.unit}>mm</Text>
             </View>
           </View>
         </View>
 
-        {/* Materiallar */}
+        {/* Qog'oz */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>📄 Materiallar</Text>
+          <Text style={styles.cardTitle}>📄 Qog'oz</Text>
           <View style={styles.row}>
             <View style={styles.field}>
-              <Text style={styles.label}>Qog'oz og'irligi</Text>
+              <Text style={styles.label}>Og'irligi</Text>
               <TextInput style={styles.input} value={inputs.paperWeight} onChangeText={v => set("paperWeight", v)} keyboardType="numeric" placeholder="250" placeholderTextColor={colors.textMuted} />
               <Text style={styles.unit}>g/m²</Text>
             </View>
             <View style={styles.field}>
-              <Text style={styles.label}>Miqdori</Text>
-              <TextInput style={styles.input} value={inputs.quantity} onChangeText={v => set("quantity", v)} keyboardType="numeric" placeholder="1" placeholderTextColor={colors.textMuted} />
-              <Text style={styles.unit}>dona</Text>
-            </View>
-          </View>
-          <View style={styles.row}>
-            <View style={styles.field}>
-              <Text style={styles.label}>Qog'oz narxi</Text>
-              <TextInput style={styles.input} value={inputs.paperPrice} onChangeText={v => set("paperPrice", v)} keyboardType="numeric" placeholder="0" placeholderTextColor={colors.textMuted} />
+              <Text style={styles.label}>Narxi</Text>
+              <TextInput style={styles.input} value={inputs.paperPriceKg} onChangeText={v => set("paperPriceKg", v)} keyboardType="numeric" placeholder="12000" placeholderTextColor={colors.textMuted} />
               <Text style={styles.unit}>so'm/kg</Text>
-            </View>
-            <View style={styles.field}>
-              <Text style={styles.label}>Kraska narxi</Text>
-              <TextInput style={styles.input} value={inputs.paintPrice} onChangeText={v => set("paintPrice", v)} keyboardType="numeric" placeholder="0" placeholderTextColor={colors.textMuted} />
-              <Text style={styles.unit}>so'm/m²</Text>
             </View>
           </View>
         </View>
 
-        {/* Natija — 1 dona */}
-        {calc.hasData && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>📦 1 dona uchun</Text>
-            <View style={styles.resultRow}>
-              <Text style={styles.resultLabel}>Yuzasi:</Text>
-              <Text style={styles.resultValue}>{calc.oneSurface} m²</Text>
+        {/* Bosma */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>🖨️ Bosma (chop etish)</Text>
+          <View style={styles.row}>
+            <View style={styles.field}>
+              <Text style={styles.label}>Ranglar soni</Text>
+              <TextInput style={styles.input} value={inputs.printColors} onChangeText={v => set("printColors", v)} keyboardType="numeric" placeholder="1" placeholderTextColor={colors.textMuted} />
+              <Text style={styles.unit}>dona</Text>
             </View>
-            <View style={styles.resultRow}>
-              <Text style={styles.resultLabel}>Qog'oz:</Text>
-              <Text style={styles.resultValue}>{fmt(calc.onePaperCost)} so'm</Text>
-            </View>
-            <View style={styles.resultRow}>
-              <Text style={styles.resultLabel}>Kraska:</Text>
-              <Text style={styles.resultValue}>{fmt(calc.onePaintCost)} so'm</Text>
-            </View>
-            <View style={[styles.resultRow, styles.resultTotal]}>
-              <Text style={[styles.resultLabel, styles.totalLabel]}>Jami:</Text>
-              <Text style={[styles.resultValue, styles.totalValue]}>{fmt(calc.oneTotalCost)} so'm</Text>
+            <View style={styles.field}>
+              <Text style={styles.label}>Narxi</Text>
+              <TextInput style={styles.input} value={inputs.printPriceM2} onChangeText={v => set("printPriceM2", v)} keyboardType="numeric" placeholder="500" placeholderTextColor={colors.textMuted} />
+              <Text style={styles.unit}>so'm/m²</Text>
             </View>
           </View>
-        )}
+          <Text style={styles.hint}>0 = bosmasiz (oddiy quti)</Text>
+        </View>
 
-        {/* Natija — jami */}
-        {calc.hasData && (
-          <View style={[styles.card, styles.totalCard]}>
-            <Text style={styles.cardTitle}>💰 Jami xarajat ({n(inputs.quantity)} dona)</Text>
-            <View style={styles.bigTotal}>
-              <Text style={styles.bigTotalValue}>{fmt(calc.totalCost)}</Text>
-              <Text style={styles.bigTotalUnit}>so'm</Text>
+        {/* Qo'shimcha xarajatlar */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>🔧 Qo'shimcha xarajatlar</Text>
+          <View style={styles.row}>
+            <View style={styles.field}>
+              <Text style={styles.label}>Yelim</Text>
+              <TextInput style={styles.input} value={inputs.gluePricePerBox} onChangeText={v => set("gluePricePerBox", v)} keyboardType="numeric" placeholder="50" placeholderTextColor={colors.textMuted} />
+              <Text style={styles.unit}>so'm/dona</Text>
             </View>
-            <View style={styles.divider} />
-            <View style={styles.resultRow}>
-              <Text style={styles.resultLabel}>Jami yuzasi:</Text>
-              <Text style={styles.resultValue}>{calc.totalSurface} m²</Text>
-            </View>
-            <View style={styles.resultRow}>
-              <Text style={styles.resultLabel}>Qog'oz og'irligi:</Text>
-              <Text style={styles.resultValue}>{calc.totalPaperWeight.toLocaleString()} g ({calc.totalPaperKg} kg)</Text>
-            </View>
-            <View style={styles.resultRow}>
-              <Text style={styles.resultLabel}>Qog'oz xarajati:</Text>
-              <Text style={styles.resultValue}>{fmt(calc.paperCost)} so'm</Text>
-            </View>
-            <View style={styles.resultRow}>
-              <Text style={styles.resultLabel}>Kraska xarajati:</Text>
-              <Text style={styles.resultValue}>{fmt(calc.paintCost)} so'm</Text>
+            <View style={styles.field}>
+              <Text style={styles.label}>Kesish</Text>
+              <TextInput style={styles.input} value={inputs.cuttingPricePerBox} onChangeText={v => set("cuttingPricePerBox", v)} keyboardType="numeric" placeholder="30" placeholderTextColor={colors.textMuted} />
+              <Text style={styles.unit}>so'm/dona</Text>
             </View>
           </View>
-        )}
+          <View style={styles.row}>
+            <View style={styles.field}>
+              <Text style={styles.label}>Chiqindi %</Text>
+              <TextInput style={styles.input} value={inputs.wastePercent} onChangeText={v => set("wastePercent", v)} keyboardType="numeric" placeholder="10" placeholderTextColor={colors.textMuted} />
+              <Text style={styles.unit}>%</Text>
+            </View>
+            <View style={styles.field}>
+              <Text style={styles.label}>Miqdori</Text>
+              <TextInput style={styles.input} value={inputs.quantity} onChangeText={v => set("quantity", v)} keyboardType="numeric" placeholder="1000" placeholderTextColor={colors.textMuted} />
+              <Text style={styles.unit}>dona</Text>
+            </View>
+          </View>
+        </View>
 
-        {!calc.hasData && (
+        {/* NATIJA */}
+        {calc ? (
+          <>
+            {/* Kesma o'lchamlari */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>✂️ Kesma (blank) o'lchamlari</Text>
+              <View style={styles.resultRow}>
+                <Text style={styles.resultLabel}>Uzunligi:</Text>
+                <Text style={styles.resultValue}>{calc.blank.lengthMM} mm</Text>
+              </View>
+              <View style={styles.resultRow}>
+                <Text style={styles.resultLabel}>Kengligi:</Text>
+                <Text style={styles.resultValue}>{calc.blank.widthMM} mm</Text>
+              </View>
+              <View style={styles.resultRow}>
+                <Text style={styles.resultLabel}>Sof maydon:</Text>
+                <Text style={styles.resultValue}>{calc.blank.area} m²</Text>
+              </View>
+              <View style={styles.resultRow}>
+                <Text style={styles.resultLabel}>Chiqindi bilan:</Text>
+                <Text style={styles.resultValue}>{calc.blank.grossArea} m²</Text>
+              </View>
+            </View>
+
+            {/* 1 dona uchun */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>📦 1 dona uchun xarajat</Text>
+              <View style={styles.resultRow}>
+                <Text style={styles.resultLabel}>📄 Qog'oz ({calc.paper.weightGram}g = {calc.paper.weightKg}kg):</Text>
+                <Text style={styles.resultValue}>{fmt(calc.perBox.paper)} so'm</Text>
+              </View>
+              <View style={styles.resultRow}>
+                <Text style={styles.resultLabel}>🖨️ Bosma ({calc.printing.colors} rang):</Text>
+                <Text style={styles.resultValue}>{fmt(calc.perBox.printing)} so'm</Text>
+              </View>
+              <View style={styles.resultRow}>
+                <Text style={styles.resultLabel}>🧴 Yelim:</Text>
+                <Text style={styles.resultValue}>{fmt(calc.perBox.glue)} so'm</Text>
+              </View>
+              <View style={styles.resultRow}>
+                <Text style={styles.resultLabel}>✂️ Kesish:</Text>
+                <Text style={styles.resultValue}>{fmt(calc.perBox.cutting)} so'm</Text>
+              </View>
+              <View style={[styles.resultRow, styles.resultTotal]}>
+                <Text style={[styles.resultLabel, styles.totalLabel]}>1 dona jami:</Text>
+                <Text style={[styles.resultValue, styles.totalValue]}>{fmt(calc.perBox.total)} so'm</Text>
+              </View>
+            </View>
+
+            {/* Jami xarajat */}
+            <View style={[styles.card, styles.totalCard]}>
+              <Text style={styles.cardTitle}>💰 Jami xarajat ({fmt(calc.total.quantity)} dona)</Text>
+              <View style={styles.bigTotal}>
+                <Text style={styles.bigTotalValue}>{fmt(calc.total.grandTotal)}</Text>
+                <Text style={styles.bigTotalUnit}>so'm</Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.resultRow}>
+                <Text style={styles.resultLabel}>📄 Qog'oz:</Text>
+                <Text style={styles.resultValue}>{fmt(calc.total.paper)} so'm</Text>
+              </View>
+              <View style={styles.resultRow}>
+                <Text style={styles.resultLabel}>🖨️ Bosma:</Text>
+                <Text style={styles.resultValue}>{fmt(calc.total.printing)} so'm</Text>
+              </View>
+              <View style={styles.resultRow}>
+                <Text style={styles.resultLabel}>🧴 Yelim:</Text>
+                <Text style={styles.resultValue}>{fmt(calc.total.glue)} so'm</Text>
+              </View>
+              <View style={styles.resultRow}>
+                <Text style={styles.resultLabel}>✂️ Kesish:</Text>
+                <Text style={styles.resultValue}>{fmt(calc.total.cutting)} so'm</Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.resultRow}>
+                <Text style={[styles.resultLabel, { fontWeight: "700" }]}>1 dona o'rtacha:</Text>
+                <Text style={[styles.resultValue, { color: colors.primary, fontWeight: "800" }]}>
+                  {fmt(calc.perBox.total)} so'm
+                </Text>
+              </View>
+            </View>
+          </>
+        ) : (
           <View style={styles.emptyState}>
-            <Text style={{ fontSize: 40, marginBottom: 8 }}>🧮</Text>
+            <Text style={{ fontSize: 48, marginBottom: 12 }}>📦</Text>
             <Text style={styles.emptyText}>O'lchamlarni kiriting</Text>
             <Text style={styles.emptySub}>Natija avtomatik hisoblanadi</Text>
           </View>
@@ -212,14 +327,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl, borderBottomLeftRadius: 24, borderBottomRightRadius: 24,
     marginBottom: spacing.lg,
   },
-  headerTitle: { fontSize: 20, fontWeight: "800", color: "#fff" },
-  headerSub: { fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 4 },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: "#fff" },
+  headerSub: { fontSize: 12, color: "rgba(255,255,255,0.8)", marginTop: 4 },
   card: {
     backgroundColor: colors.surface, borderRadius: radius.xl,
     padding: spacing.lg, marginHorizontal: spacing.lg,
     marginBottom: spacing.md, ...shadows.sm,
   },
-  cardTitle: { fontSize: 14, fontWeight: "700", color: colors.text, marginBottom: spacing.md },
+  cardTitle: { fontSize: 14, fontWeight: "700", color: colors.text, marginBottom: spacing.sm },
+  hint: { fontSize: 11, color: colors.textMuted, marginBottom: spacing.sm },
   row: { flexDirection: "row", gap: 10, marginBottom: 10 },
   field: { flex: 1 },
   label: { fontSize: 11, fontWeight: "600", color: colors.textSecondary, marginBottom: 4 },
@@ -234,8 +350,8 @@ const styles = StyleSheet.create({
     flexDirection: "row", justifyContent: "space-between",
     paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: colors.border,
   },
-  resultLabel: { fontSize: 13, color: colors.textSecondary, fontWeight: "500" },
-  resultValue: { fontSize: 13, color: colors.text, fontWeight: "700" },
+  resultLabel: { fontSize: 13, color: colors.textSecondary, fontWeight: "500", flex: 1 },
+  resultValue: { fontSize: 13, color: colors.text, fontWeight: "700", textAlign: "right" },
   resultTotal: { borderBottomWidth: 0, paddingTop: 10 },
   totalLabel: { fontSize: 14, fontWeight: "700", color: colors.text },
   totalValue: { fontSize: 16, fontWeight: "800", color: colors.primary },

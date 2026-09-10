@@ -244,4 +244,102 @@ router.get("/transactions", authMiddleware, async (_req, res) => {
   })));
 });
 
+// Ishlab chiqarish kalkulyatsiya
+router.post("/calculate", authMiddleware, async (req, res) => {
+  const {
+    boxLength, boxWidth, boxHeight,
+    paperWeight, paperPriceKg,
+    printingType, printColors, printPriceM2,
+    gluePricePerBox, cuttingPricePerBox,
+    wastePercent, quantity,
+  } = req.body;
+
+  const L = parseFloat(boxLength) || 0;
+  const W = parseFloat(boxWidth) || 0;
+  const H = parseFloat(boxHeight) || 0;
+  const pw = parseFloat(paperWeight) || 0;
+  const paperPrice = parseFloat(paperPriceKg) || 0;
+  const printColorsN = parseInt(printColors) || 0;
+  const printPrice = parseFloat(printPriceM2) || 0;
+  const gluePrice = parseFloat(gluePricePerBox) || 0;
+  const cuttingPrice = parseFloat(cuttingPricePerBox) || 0;
+  const waste = parseFloat(wastePercent) || 10;
+  const qty = parseInt(quantity) || 1;
+
+  // Kesma (blank) o'lchamlari — RSC quti uchun
+  const scoringFlap = 0.030; // 30mm yelim chok
+  const topFlap = W * 0.75;   // tepa qanot
+  const bottomFlap = W * 0.75; // past qanot
+
+  const blankLength = 2 * (L + W) + scoringFlap; // m
+  const blankWidth = H + topFlap + bottomFlap;    // m
+
+  // Maydon (m²)
+  const netArea = blankLength * blankWidth;
+  const grossArea = netArea * (1 + waste / 100); // chiqindi bilan
+
+  // Qog'oz og'irligi
+  const paperWeightGram = grossArea * pw;          // gram (1 dona)
+  const paperWeightKg = paperWeightGram / 1000;    // kg (1 dona)
+
+  // Qog'oz narxi (1 dona)
+  const paperCost = paperWeightKg * paperPrice;
+
+  // Bosma narxi (1 dona)
+  const printArea = grossArea; // m²
+  const printCost = printArea * printPrice * printColorsN;
+
+  // Yelim (1 dona)
+  const glueCost = gluePrice;
+
+  // Kesish (1 dona)
+  const cuttingCost = cuttingPrice;
+
+  // Jami (1 dona)
+  const totalPerBox = paperCost + printCost + glueCost + cuttingCost;
+
+  // Jami (miqdor bo'yicha)
+  const totalPaperCost = paperCost * qty;
+  const totalPrintCost = printCost * qty;
+  const totalGlueCost = glueCost * qty;
+  const totalCuttingCost = cuttingCost * qty;
+  const totalCost = totalPerBox * qty;
+
+  res.json({
+    blank: {
+      length: Math.round(blankLength * 1000),   // mm
+      width: Math.round(blankWidth * 1000),     // mm
+      area: +netArea.toFixed(4),                // m²
+      grossArea: +grossArea.toFixed(4),         // m² (chiqindi bilan)
+    },
+    paper: {
+      weightPerBox: Math.round(paperWeightGram), // gram
+      weightPerBoxKg: +paperWeightKg.toFixed(4), // kg
+      costPerBox: Math.round(paperCost),         // so'm
+    },
+    printing: {
+      area: +printArea.toFixed(4),               // m²
+      colors: printColorsN,
+      costPerBox: Math.round(printCost),         // so'm
+    },
+    glue: { costPerBox: Math.round(glueCost) },
+    cutting: { costPerBox: Math.round(cuttingCost) },
+    perBox: {
+      paper: Math.round(paperCost),
+      printing: Math.round(printCost),
+      glue: Math.round(glueCost),
+      cutting: Math.round(cuttingCost),
+      total: Math.round(totalPerBox),
+    },
+    total: {
+      quantity: qty,
+      paper: Math.round(totalPaperCost),
+      printing: Math.round(totalPrintCost),
+      glue: Math.round(totalGlueCost),
+      cutting: Math.round(totalCuttingCost),
+      grandTotal: Math.round(totalCost),
+    },
+  });
+});
+
 export default router;
