@@ -313,13 +313,13 @@ export default function ProductionCalc() {
                 </div>
               </div>
 
-              {/* O'NG: 3D ko'rinish — katta */}
-              <div style={{ width: "260px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <BoxTemplate boxLength={bl} boxWidth={bw} boxHeight={bh} showFlat={false} show3D={true} showTitle={false} />
+              {/* O'NG: 3D ko'rinish — katta, chegara oldisiz */}
+              <div style={{ width: "280px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <BoxTemplate boxLength={bl} boxWidth={bw} boxHeight={bh} showFlat={false} show3D={true} showTitle={false} printMode={true} />
               </div>
             </div>
 
-            {/* ESKIZ — to'liq kenglikda, katta */}
+            {/* ESKIZ — to'liq kenglikda, chegara oldisiz */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "10px" }}>
               <BoxTemplate boxLength={bl} boxWidth={bw} boxHeight={bh} showFlat={true} show3D={false} />
             </div>

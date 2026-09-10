@@ -4,12 +4,13 @@ interface BoxTemplateProps {
   boxLength: number;  // cm
   boxWidth: number;   // cm
   boxHeight: number;  // cm
-  showFlat?: boolean;  // eskizni ko'rsatish
-  show3D?: boolean;    // 3D ni ko'rsatish
-  showTitle?: boolean; // sarlavha ko'rsatish
+  showFlat?: boolean;
+  show3D?: boolean;
+  showTitle?: boolean;
+  printMode?: boolean;  // chop etish uchun — rangsiz, katta o'lchamlar
 }
 
-export default function BoxTemplate({ boxLength, boxWidth, boxHeight, showFlat = true, show3D = true, showTitle = true }: BoxTemplateProps) {
+export default function BoxTemplate({ boxLength, boxWidth, boxHeight, showFlat = true, show3D = true, showTitle = true, printMode = false }: BoxTemplateProps) {
   const L = boxLength;
   const W = boxWidth;
   const H = boxHeight;
@@ -218,63 +219,63 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight, showFlat =
 
       {/* 3D QUTI CHIZMASI */}
       {show3D && (
-      <div className="mt-4 border-t border-border/50 pt-4">
+      <div className={printMode ? "" : "mt-4 border-t border-border/50 pt-4"}>
         {showTitle && <p className="text-xs font-bold text-center text-muted-foreground mb-3">📦 3D ko'rinish — Yig'ilgan quti</p>}
         <svg
           viewBox={`0 0 ${box3dW + 40} ${box3dH + 40}`}
           className="w-full h-auto"
-          style={{ maxHeight: "260px" }}
+          style={{ maxHeight: printMode ? "none" : "260px" }}
         >
           <rect x={0} y={0} width={box3dW + 40} height={box3dH + 40} fill="white" />
 
           {/* Old tomon (W × H) */}
           <rect x={bx} y={by} width={bw} height={bh}
-            fill="#fef3c7" stroke="#d97706" strokeWidth={2} />
+            fill={printMode ? "white" : "#fef3c7"} stroke="black" strokeWidth={2} />
 
           {/* Ong tomon (L × H) — oblique */}
           <polygon
             points={`${bx + bw},${by} ${bx + bw + d},${by - d * 0.6} ${bx + bw + d},${by + bh - d * 0.6} ${bx + bw},${by + bh}`}
-            fill="#fed7aa" stroke="#ea580c" strokeWidth={2} />
+            fill={printMode ? "#f0f0f0" : "#fed7aa"} stroke="black" strokeWidth={2} />
           <line x1={bx + bw} y1={by} x2={bx + bw + d} y2={by - d * 0.6}
-            stroke="#ea580c" strokeWidth={1} strokeDasharray="4 2" />
+            stroke="black" strokeWidth={1} strokeDasharray="4 2" />
 
           {/* Tepa tomon (W × L) — oblique */}
           <polygon
             points={`${bx},${by} ${bx + d},${by - d * 0.6} ${bx + bw + d},${by - d * 0.6} ${bx + bw},${by}`}
-            fill="#dbeafe" stroke="#3b82f6" strokeWidth={2} />
+            fill={printMode ? "#e0e0e0" : "#dbeafe"} stroke="black" strokeWidth={2} />
 
           {/* Tepa qanot chizig'i (yelim) */}
           <line x1={bx + bw * 0.6} y1={by} x2={bx + bw * 0.6 + d} y2={by - d * 0.6}
-            stroke="#10b981" strokeWidth={1.5} strokeDasharray="3 2" />
+            stroke="black" strokeWidth={1.5} strokeDasharray="3 2" />
 
-          {/* O'lchamlar — W (pastda) */}
-          <line x1={bx} y1={by + bh + 15} x2={bx + bw} y2={by + bh + 15}
-            stroke="#d97706" strokeWidth={1.5} markerEnd="url(#aR3d)" markerStart="url(#aL3d)" />
-          <text x={bx + bw / 2} y={by + bh + 30} textAnchor="middle" fontSize={10} fill="#d97706" fontWeight="bold">
+          {/* O'lchamlar — W (pastda) — KATTA */}
+          <line x1={bx} y1={by + bh + 18} x2={bx + bw} y2={by + bh + 18}
+            stroke="black" strokeWidth={1.5} markerEnd="url(#aR3d)" markerStart="url(#aL3d)" />
+          <text x={bx + bw / 2} y={by + bh + 35} textAnchor="middle" fontSize={printMode ? 14 : 10} fill="black" fontWeight="bold">
             W = {W}
           </text>
 
-          {/* O'lchamlar — H (chapda vertikal) */}
-          <line x1={bx - 15} y1={by} x2={bx - 15} y2={by + bh}
-            stroke="#d97706" strokeWidth={1.5} markerEnd="url(#aD3d)" markerStart="url(#aU3d)" />
-          <text x={bx - 22} y={by + bh / 2 + 4} textAnchor="end" fontSize={10} fill="#d97706" fontWeight="bold">
+          {/* O'lchamlar — H (chapda vertikal) — KATTA */}
+          <line x1={bx - 18} y1={by} x2={bx - 18} y2={by + bh}
+            stroke="black" strokeWidth={1.5} markerEnd="url(#aD3d)" markerStart="url(#aU3d)" />
+          <text x={bx - 26} y={by + bh / 2 + 5} textAnchor="end" fontSize={printMode ? 14 : 10} fill="black" fontWeight="bold">
             H = {H}
           </text>
 
-          {/* O'lchamlar — L (pastda diagonal) */}
-          <line x1={bx + bw} y1={by + bh + 15} x2={bx + bw + d} y2={by + bh + 15 - d * 0.6}
-            stroke="#ea580c" strokeWidth={1.5} />
-          <line x1={bx + bw + d} y1={by + bh + 15 - d * 0.6 + 10} x2={bx + bw + d} y2={by + bh + 15 - d * 0.6 - 10}
-            stroke="#ea580c" strokeWidth={1.5} markerEnd="url(#aD3d)" markerStart="url(#aU3d)" />
-          <text x={bx + bw + d + 10} y={by + bh + 15 - d * 0.3 + 4} textAnchor="start" fontSize={10} fill="#ea580c" fontWeight="bold">
+          {/* O'lchamlar — L (pastda diagonal) — KATTA */}
+          <line x1={bx + bw} y1={by + bh + 18} x2={bx + bw + d} y2={by + bh + 18 - d * 0.6}
+            stroke="black" strokeWidth={1.5} />
+          <line x1={bx + bw + d} y1={by + bh + 18 - d * 0.6 + 12} x2={bx + bw + d} y2={by + bh + 18 - d * 0.6 - 12}
+            stroke="black" strokeWidth={1.5} markerEnd="url(#aD3d)" markerStart="url(#aU3d)" />
+          <text x={bx + bw + d + 12} y={by + bh + 18 - d * 0.3 + 5} textAnchor="start" fontSize={printMode ? 14 : 10} fill="black" fontWeight="bold">
             L = {L}
           </text>
 
-          {/* Label */}
-          <text x={bx + bw / 2} y={by + bh / 2 - 6} textAnchor="middle" fontSize={12} fill="#92400e" fontWeight="bold">
+          {/* Label — KATTA */}
+          <text x={bx + bw / 2} y={by + bh / 2 - 8} textAnchor="middle" fontSize={printMode ? 16 : 12} fill="black" fontWeight="bold">
             {W} × {H} × {L}
           </text>
-          <text x={bx + bw / 2} y={by + bh / 2 + 10} textAnchor="middle" fontSize={8} fill="#92400e">
+          <text x={bx + bw / 2} y={by + bh / 2 + 10} textAnchor="middle" fontSize={printMode ? 11 : 8} fill="black">
             W × H × L
           </text>
 
