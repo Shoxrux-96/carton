@@ -4,9 +4,11 @@ interface BoxTemplateProps {
   boxLength: number;  // cm
   boxWidth: number;   // cm
   boxHeight: number;  // cm
+  showFlat?: boolean;  // eskizni ko'rsatish
+  show3D?: boolean;    // 3D ni ko'rsatish
 }
 
-export default function BoxTemplate({ boxLength, boxWidth, boxHeight }: BoxTemplateProps) {
+export default function BoxTemplate({ boxLength, boxWidth, boxHeight, showFlat = true, show3D = true }: BoxTemplateProps) {
   const L = boxLength;
   const W = boxWidth;
   const H = boxHeight;
@@ -54,6 +56,7 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight }: BoxTempl
   return (
     <div className="relative">
       {/* FLAT SKETCH */}
+      {showFlat && (
       <svg
         width={svgW + pad * 2 + 30}
         height={svgH + pad * 2 + 20}
@@ -210,8 +213,10 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight }: BoxTempl
           <marker id="aL" markerWidth={8} markerHeight={8} refX={0} refY={4} orient="auto"><path d="M8,0 L0,4 L8,8 Z" fill="#374151" /></marker>
         </defs>
       </svg>
+      )}
 
       {/* 3D QUTI CHIZMASI */}
+      {show3D && (
       <div className="mt-4 border-t border-border/50 pt-4">
         <p className="text-xs font-bold text-center text-muted-foreground mb-3">📦 3D ko'rinish — Yig'ilgan quti</p>
         <svg
@@ -280,6 +285,7 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight }: BoxTempl
           </defs>
         </svg>
       </div>
+      )}
     </div>
   );
 }
