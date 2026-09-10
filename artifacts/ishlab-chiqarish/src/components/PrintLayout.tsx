@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 
 interface Props {
   boxLength: number;
@@ -24,12 +24,6 @@ export default function PrintLayout({
   const blankLen = 2 * W + 2 * L + 6;
   const flapH = L / 2;
   const blankW = 1 + flapH + H + flapH + 1;
-
-  // Avtomatik chop etish
-  useEffect(() => {
-    const t = setTimeout(() => window.print(), 500);
-    return () => clearTimeout(t);
-  }, []);
 
   // SVG eskiz — 1 sm = 8px (katta)
   const S = 8;

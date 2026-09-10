@@ -249,21 +249,21 @@ export default function ProductionCalc() {
                       </div>
                     </div>
 
-                    {/* Narxlar — kichik card'lar */}
-                    <div className="lg:w-48 flex flex-row lg:flex-col gap-2">
+                    {/* Narxlar — jadval balandligida */}
+                    <div className="lg:w-44 flex flex-row lg:flex-col gap-2">
                       {/* Ishlab chiqarish narxi */}
-                      <div className="flex-1 lg:flex-none bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
-                        <p className="text-[9px] font-bold text-blue-600 uppercase mb-1">Ishlab chiqarish</p>
-                        <div className="text-xl font-extrabold text-blue-600">{fmt(calc.perBox.total)}</div>
-                        <div className="text-[10px] text-blue-500">so'm / dona</div>
+                      <div className="flex-1 lg:flex-none bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800 flex flex-col items-center justify-center">
+                        <p className="text-[10px] font-bold text-blue-700 uppercase mb-1">Ishlab chiqarish</p>
+                        <div className="text-2xl font-extrabold text-blue-600 leading-none">{fmt(calc.perBox.total)}</div>
+                        <div className="text-[11px] text-blue-500 mt-1">so'm / dona</div>
                       </div>
 
                       {/* Sotish narxi */}
-                      <div className="flex-1 lg:flex-none bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 border-2 border-emerald-400 dark:border-emerald-600">
-                        <p className="text-[9px] font-bold text-emerald-700 uppercase mb-1">Sotish narxi</p>
-                        <div className="text-xl font-extrabold text-emerald-600">{fmt(calc.sellingPrice)}</div>
-                        <div className="text-[10px] text-emerald-500">so'm / dona</div>
-                        <div className="text-[9px] text-emerald-600 mt-1 bg-emerald-100 dark:bg-emerald-900 px-1.5 py-0.5 rounded inline-block">
+                      <div className="flex-1 lg:flex-none bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 border-2 border-emerald-400 dark:border-emerald-600 flex flex-col items-center justify-center">
+                        <p className="text-[10px] font-bold text-emerald-700 uppercase mb-1">Sotish narxi</p>
+                        <div className="text-2xl font-extrabold text-emerald-600 leading-none">{fmt(calc.sellingPrice)}</div>
+                        <div className="text-[11px] text-emerald-500 mt-1">so'm / dona</div>
+                        <div className="text-[10px] text-emerald-700 mt-1 bg-emerald-200 dark:bg-emerald-800 px-2 py-0.5 rounded-full font-bold">
                           × {calc.coefficient}
                         </div>
                       </div>
