@@ -336,12 +336,6 @@ export default function ProductionCalc() {
                 <span><b>Sof maydon:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(calc.netAreaM2)} m²</span></span>
                 <span style={{ color: "#ccc" }}>|</span>
                 <span><b>Umumiy og'irlik:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(calc.totalWeight)} kg</span></span>
-                <span style={{ color: "#ccc" }}>|</span>
-                <span><b>Miqdor:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(calc.total.quantity)} dona</span></span>
-                <span style={{ color: "#ccc" }}>|</span>
-                <span><b>Daromad:</b> <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#4f46e5" }}>{fmt(calc.revenue)} so'm</span></span>
-                <span style={{ color: "#ccc" }}>|</span>
-                <span><b>Sof foyda:</b> <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#e11d48" }}>{fmt(calc.profit)} so'm</span></span>
               </div>
             </div>
 

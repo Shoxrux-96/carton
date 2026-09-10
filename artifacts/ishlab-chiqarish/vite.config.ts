@@ -50,8 +50,9 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        target: process.env.API_URL || `http://127.0.0.1:${process.env.API_PORT || 3003}`,
+        target: process.env.API_URL || `https://shovotcarton.uz`,
         changeOrigin: true,
+        secure: false,
       },
     },
     fs: {
