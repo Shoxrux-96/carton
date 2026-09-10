@@ -9,28 +9,13 @@ const fmt = (n: number) => n.toLocaleString("uz-UZ");
 const fmtD = (n: number, d = 2) => n.toFixed(d);
 
 export default function ProductionCalc() {
-  // Quti o'lchamlari (sm)
   const [boxL, setBoxL] = useState("");
   const [boxW, setBoxW] = useState("");
   const [boxH, setBoxH] = useState("");
-
-  // Qog'oz og'irligi (har 3 qatlam uchun umumiy)
-  const [paperWeightKg, setPaperWeightKg] = useState("0.125"); // kg/m²
-
-  // Har bir qatlam uchun alohida NARX (so'm/kg)
-  const [priceLayer1, setPriceLayer1] = useState(""); // tashqi qog'oz
-  const [priceLayer2, setPriceLayer2] = useState(""); // gofra qog'oz
-  const [priceLayer3, setPriceLayer3] = useState(""); // ichki qog'oz
-
-  // Bosma
-  const [printColors, setPrintColors] = useState("1");
-  const [printPriceM2, setPrintPriceM2] = useState("");
-
-  // Xarajatlar
-  const [gluePerBox, setGluePerBox] = useState("");
-  const [cuttingPerBox, setCuttingPerBox] = useState("");
-
-  // Miqdor
+  const [paperWeightKg, setPaperWeightKg] = useState("0.125");
+  const [priceLayer1, setPriceLayer1] = useState("");
+  const [priceLayer2, setPriceLayer2] = useState("");
+  const [priceLayer3, setPriceLayer3] = useState("");
   const [wastePercent, setWastePercent] = useState("10");
   const [quantity, setQuantity] = useState("1000");
 
@@ -40,62 +25,39 @@ export default function ProductionCalc() {
   const calc = useMemo(() => {
     const L = n(boxL), W = n(boxW), H = n(boxH);
     const pwKg = n(paperWeightKg);
-    const p1 = n(priceLayer1);
-    const p2 = n(priceLayer2);
-    const p3 = n(priceLayer3);
-    const pc = parseInt(printColors) || 0;
-    const prp = n(printPriceM2);
-    const gl = n(gluePerBox);
-    const cu = n(cuttingPerBox);
-    const w = n(wastePercent);
-    const q = n(quantity);
+    const p1 = n(priceLayer1), p2 = n(priceLayer2), p3 = n(priceLayer3);
+    const w = n(wastePercent), q = n(quantity);
 
     if (L <= 0 || W <= 0 || H <= 0 || pwKg <= 0 || q <= 0) return null;
 
-    // Kesma o'lchamlari (sm)
-    const blankLen = 2 * (W + L) + 6;           // 2(W+L) + 6sm (5 yelim + 1 chiqindi)
-    const flapH = L / 2;                         // kanot = bo'yi / 2
-    const blankW = 1 + flapH + H + flapH + 1;   // 1 + L/2 + H + L/2 + 1 = H + L + 2
+    const blankLen = 2 * (W + L) + 6;
+    const flapH = L / 2;
+    const blankW = 1 + flapH + H + flapH + 1;
 
-    // Maydon (m²)
     const netAreaM2 = (blankLen * blankW) / 10000;
     const grossAreaM2 = netAreaM2 * (1 + w / 100);
 
-    // ===== 3 QATLAMLI QOG'OZ =====
-    // 1-qatlam: tashqi qog'oz (×1.0)
     const l1Weight = grossAreaM2 * pwKg;
     const l1Cost = l1Weight * p1;
-
-    // 2-qatlam: gofra qog'oz (÷0.7 — kamroq qalinlik, ko'proq miqdor)
     const l2Weight = grossAreaM2 * pwKg / 0.7;
     const l2Cost = l2Weight * p2;
-
-    // 3-qatlam: ichki qog'oz (×1.0)
     const l3Weight = grossAreaM2 * pwKg;
     const l3Cost = l3Weight * p3;
 
-    // Jami
     const totalWeight = l1Weight + l2Weight + l3Weight;
     const totalPaperCost = l1Cost + l2Cost + l3Cost;
-    const printCost = grossAreaM2 * prp * pc;
-    const totalPerBox = totalPaperCost + printCost + gl + cu;
 
     return {
       blankLen: +fmtD(blankLen, 1), blankW: +fmtD(blankW, 1),
       netAreaM2: +fmtD(netAreaM2, 4), grossAreaM2: +fmtD(grossAreaM2, 4),
-      // 1-qatlam
       l1: { weight: +fmtD(l1Weight, 4), price: p1, cost: Math.round(l1Cost) },
-      // 2-qatlam
       l2: { weight: +fmtD(l2Weight, 4), price: p2, cost: Math.round(l2Cost) },
-      // 3-qatlam
       l3: { weight: +fmtD(l3Weight, 4), price: p3, cost: Math.round(l3Cost) },
-      // Jami
       totalWeight: +fmtD(totalWeight, 4), totalPaperCost: Math.round(totalPaperCost),
-      printCost: Math.round(printCost),
-      perBox: { paper: Math.round(totalPaperCost), printing: Math.round(printCost), glue: Math.round(gl), cutting: Math.round(cu), total: Math.round(totalPerBox) },
-      total: { quantity: q, paper: Math.round(totalPaperCost * q), printing: Math.round(printCost * q), glue: Math.round(gl * q), cutting: Math.round(cu * q), grandTotal: Math.round(totalPerBox * q) },
+      perBox: { paper: Math.round(totalPaperCost), total: Math.round(totalPaperCost) },
+      total: { quantity: q, paper: Math.round(totalPaperCost * q), grandTotal: Math.round(totalPaperCost * q) },
     };
-  }, [boxL, boxW, boxH, paperWeightKg, priceLayer1, priceLayer2, priceLayer3, printColors, printPriceM2, gluePerBox, cuttingPerBox, wastePercent, quantity]);
+  }, [boxL, boxW, boxH, paperWeightKg, priceLayer1, priceLayer2, priceLayer3, wastePercent, quantity]);
 
   const hasBox = n(boxL) > 0 && n(boxW) > 0 && n(boxH) > 0;
 
@@ -138,7 +100,6 @@ export default function ProductionCalc() {
       <div className="flex flex-col lg:flex-row">
         {/* Chap — inputlar */}
         <div className="lg:w-80 p-3 space-y-2 border-r border-border/50">
-          {/* Quti */}
           <div className="bg-muted/30 rounded-lg p-2">
             <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">📦 Quti (sm)</p>
             <div className="space-y-1">
@@ -148,7 +109,6 @@ export default function ProductionCalc() {
             </div>
           </div>
 
-          {/* Qog'oz og'irligi */}
           <div className="bg-muted/30 rounded-lg p-2">
             <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">📄 Qog'oz og'irligi</p>
             <div className="space-y-1">
@@ -156,7 +116,6 @@ export default function ProductionCalc() {
             </div>
           </div>
 
-          {/* 3 qatlam narxlari */}
           <div className="bg-muted/30 rounded-lg p-2">
             <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">💰 Har bir qatlam narxi (so'm/kg)</p>
             <div className="space-y-1">
@@ -166,25 +125,6 @@ export default function ProductionCalc() {
             </div>
           </div>
 
-          {/* Bosma */}
-          <div className="bg-muted/30 rounded-lg p-2">
-            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">🖨️ Bosma</p>
-            <div className="space-y-1">
-              {sm("Ranglar", printColors, setPrintColors, "1", "dona")}
-              {sm("Bosma narxi", printPriceM2, setPrintPriceM2, "", "so'm/m²")}
-            </div>
-          </div>
-
-          {/* Xarajatlar */}
-          <div className="bg-muted/30 rounded-lg p-2">
-            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">🔧 Xarajatlar</p>
-            <div className="space-y-1">
-              {sm("Yelim", gluePerBox, setGluePerBox, "", "so'm/dona")}
-              {sm("Kesish", cuttingPerBox, setCuttingPerBox, "", "so'm/dona")}
-            </div>
-          </div>
-
-          {/* Miqdor */}
           <div className="bg-muted/30 rounded-lg p-2">
             <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">📊 Miqdor</p>
             <div className="space-y-1">
@@ -204,7 +144,6 @@ export default function ProductionCalc() {
 
               {calc && (
                 <>
-                  {/* Kesma + maydon */}
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                     <div className="text-center p-2 bg-violet-50 dark:bg-violet-950/30 rounded-lg">
                       <div className="text-base font-bold text-violet-600">{calc.blankLen} sm</div>
@@ -276,15 +215,12 @@ export default function ProductionCalc() {
                     </div>
                   </div>
 
-                  {/* 1 dona + Jami */}
+                  {/* Natija */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                     <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3">
                       <p className="text-[9px] font-bold text-blue-600 uppercase mb-1.5">📦 1 dona uchun</p>
                       <div className="space-y-1 text-xs">
                         <div className="flex justify-between"><span className="text-muted-foreground">📄 Qog'oz (3 qatlam)</span><span className="font-semibold">{fmt(calc.perBox.paper)} so'm</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">🖨️ Bosma</span><span className="font-semibold">{fmt(calc.perBox.printing)} so'm</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">🧴 Yelim</span><span className="font-semibold">{fmt(calc.perBox.glue)} so'm</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">✂️ Kesish</span><span className="font-semibold">{fmt(calc.perBox.cutting)} so'm</span></div>
                         <div className="border-t border-blue-200 dark:border-blue-800 pt-1 flex justify-between font-bold">
                           <span>Jami:</span><span className="text-primary">{fmt(calc.perBox.total)} so'm</span>
                         </div>
@@ -298,10 +234,7 @@ export default function ProductionCalc() {
                         <div className="text-[10px] opacity-80">so'm</div>
                       </div>
                       <div className="space-y-0.5 text-[10px] opacity-90 mt-2">
-                        <div className="flex justify-between"><span>📄 Qog'oz</span><span>{fmt(calc.total.paper)}</span></div>
-                        <div className="flex justify-between"><span>🖨️ Bosma</span><span>{fmt(calc.total.printing)}</span></div>
-                        <div className="flex justify-between"><span>🧴 Yelim</span><span>{fmt(calc.total.glue)}</span></div>
-                        <div className="flex justify-between"><span>✂️ Kesish</span><span>{fmt(calc.total.cutting)}</span></div>
+                        <div className="flex justify-between"><span>📄 Qog'oz</span><span>{fmt(calc.total.paper)} so'm</span></div>
                         <div className="border-t border-white/20 pt-0.5 flex justify-between font-bold">
                           <span>1 dona</span><span>{fmt(calc.perBox.total)} so'm</span>
                         </div>
