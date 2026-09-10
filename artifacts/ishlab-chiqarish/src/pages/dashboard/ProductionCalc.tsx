@@ -290,38 +290,36 @@ export default function ProductionCalc() {
         return (
         <div className="print-only" style={{ display: "none" }}>
           <div style={{ fontFamily: "Arial", padding: "10mm", width: "297mm", minHeight: "210mm" }}>
-            {/* TEPA: Narida — chap: matn, o'ng: 3D */}
-            <div style={{ display: "flex", gap: "20px", borderBottom: "2px solid black", paddingBottom: "10px", marginBottom: "8px", height: "150px", alignItems: "flex-end" }}>
-              {/* CHAP: korxona + quti + o'lchamlar */}
-              <div style={{ flex: "1", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            {/* SARLAVHA: korxona + quti + o'lchamlar */}
+            <div style={{ borderBottom: "2px solid black", paddingBottom: "8px", marginBottom: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                 <div>
                   <h1 style={{ fontSize: "18px", fontWeight: 900, textTransform: "uppercase", margin: 0 }}>{companyName}</h1>
                   <p style={{ fontSize: "13px", fontWeight: 700, margin: "2px 0 0 0" }}>{boxName}</p>
-                  <p style={{ fontSize: "10px", color: "#666", margin: "2px 0 0 0" }}>Sana: {new Date().toLocaleDateString("uz-UZ")}</p>
                 </div>
-                {/* O'lchamlar — 2 qator */}
-                <div style={{ fontSize: "11px", lineHeight: "1.8", background: "#f5f5f5", padding: "6px 10px", borderRadius: "4px", border: "1px solid #ddd", marginTop: "6px" }}>
-                  <div style={{ display: "flex", gap: "20px" }}>
-                    <span><b>Eni (W):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bw} sm</span></span>
-                    <span><b>Balandligi (H):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bh} sm</span></span>
-                    <span><b>Bo'yi (L):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bl} sm</span></span>
-                  </div>
-                  <div style={{ display: "flex", gap: "20px" }}>
-                    <span><b>Kesma:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(blankLen)} × {fmt(blankW)} sm</span></span>
-                    <span><b>Kanot:</b> <span style={{ fontFamily: "monospace" }}>{fmt(flapH)} sm</span></span>
-                  </div>
+                <span style={{ color: "#ccc" }}>|</span>
+                <div style={{ fontSize: "11px", display: "flex", gap: "16px" }}>
+                  <span><b>Eni (W):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bw} sm</span></span>
+                  <span><b>Balandligi (H):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bh} sm</span></span>
+                  <span><b>Bo'yi (L):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bl} sm</span></span>
                 </div>
-              </div>
-
-              {/* O'NG: 3D ko'rinish — katta, 30px pastga */}
-              <div style={{ width: "280px", flexShrink: 0, display: "flex", alignItems: "flex-end", justifyContent: "center", paddingTop: "30px" }}>
-                <BoxTemplate boxLength={bl} boxWidth={bw} boxHeight={bh} showFlat={false} show3D={true} showTitle={false} printMode={true} />
+                <span style={{ color: "#ccc" }}>|</span>
+                <div style={{ fontSize: "11px", display: "flex", gap: "16px" }}>
+                  <span><b>Kesma:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(blankLen)} × {fmt(blankW)} sm</span></span>
+                  <span><b>Kanot:</b> <span style={{ fontFamily: "monospace" }}>{fmt(flapH)} sm</span></span>
+                </div>
+                <span style={{ fontSize: "10px", color: "#666", marginLeft: "auto" }}>Sana: {new Date().toLocaleDateString("uz-UZ")}</span>
               </div>
             </div>
 
-            {/* ESKIZ — to'liq kenglikda, pastroq */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", flex: 1, paddingTop: "8px" }}>
+            {/* ESKIZ — to'liq kenglikda */}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
               <BoxTemplate boxLength={bl} boxWidth={bw} boxHeight={bh} showFlat={true} show3D={false} />
+            </div>
+
+            {/* 3D — eskiz pastida */}
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <BoxTemplate boxLength={bl} boxWidth={bw} boxHeight={bh} showFlat={false} show3D={true} showTitle={false} printMode={true} />
             </div>
           </div>
         </div>
