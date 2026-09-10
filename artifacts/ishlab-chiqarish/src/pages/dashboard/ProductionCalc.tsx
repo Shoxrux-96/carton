@@ -199,49 +199,49 @@ export default function ProductionCalc() {
                     <div className="flex-1">
                       <div className="bg-card rounded-lg border border-border/50 overflow-hidden">
                         <div className="p-2.5 border-b border-border/50 bg-muted/30 flex items-center gap-2">
-                          <Layers className="w-3.5 h-3.5 text-primary" />
-                          <span className="text-xs font-bold">3 qatlamli qog'oz (1 dona uchun)</span>
+                          <Layers className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-bold">3 qatlamli qog'oz (1 dona uchun)</span>
                         </div>
-                        <div className="p-2.5">
-                          <table className="w-full text-[11px]">
+                        <div className="p-3">
+                          <table className="w-full text-sm">
                             <thead>
                               <tr className="text-muted-foreground border-b border-border/50">
-                                <th className="text-left py-1.5 font-semibold">Qatlam</th>
-                                <th className="text-left py-1.5 font-semibold">Turi</th>
-                                <th className="text-right py-1.5 font-semibold">Og'irlik</th>
-                                <th className="text-right py-1.5 font-semibold">Narx</th>
-                                <th className="text-right py-1.5 font-semibold">Summa</th>
+                                <th className="text-left py-2 font-semibold">Qatlam</th>
+                                <th className="text-left py-2 font-semibold">Turi</th>
+                                <th className="text-right py-2 font-semibold">Og'irlik</th>
+                                <th className="text-right py-2 font-semibold">Narx</th>
+                                <th className="text-right py-2 font-semibold">Summa</th>
                               </tr>
                             </thead>
                             <tbody>
                               <tr className="border-b border-border/30">
-                                <td className="py-1.5 font-bold text-blue-600">1</td>
-                                <td className="py-1.5 text-muted-foreground">Tashqi</td>
-                                <td className="py-1.5 text-right font-mono font-bold">{calc.l1.weight} kg</td>
-                                <td className="py-1.5 text-right font-mono text-muted-foreground">{fmt(calc.l1.price)}</td>
-                                <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.l1.cost)}</td>
+                                <td className="py-2 font-bold text-blue-600 text-base">1</td>
+                                <td className="py-2 text-muted-foreground">Tashqi</td>
+                                <td className="py-2 text-right font-mono font-bold">{calc.l1.weight} kg</td>
+                                <td className="py-2 text-right font-mono text-muted-foreground">{fmt(calc.l1.price)}</td>
+                                <td className="py-2 text-right font-mono font-bold text-base">{fmt(calc.l1.cost)}</td>
                               </tr>
                               <tr className="border-b border-border/30 bg-amber-50/50 dark:bg-amber-950/20">
-                                <td className="py-1.5 font-bold text-amber-600">2</td>
-                                <td className="py-1.5 text-muted-foreground">Gofra ÷0.7</td>
-                                <td className="py-1.5 text-right font-mono font-bold">{calc.l2.weight} kg</td>
-                                <td className="py-1.5 text-right font-mono text-amber-600">{fmt(calc.l2.price)}</td>
-                                <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.l2.cost)}</td>
+                                <td className="py-2 font-bold text-amber-600 text-base">2</td>
+                                <td className="py-2 text-muted-foreground">Gofra ÷0.7</td>
+                                <td className="py-2 text-right font-mono font-bold">{calc.l2.weight} kg</td>
+                                <td className="py-2 text-right font-mono text-amber-600">{fmt(calc.l2.price)}</td>
+                                <td className="py-2 text-right font-mono font-bold text-base">{fmt(calc.l2.cost)}</td>
                               </tr>
                               <tr className="border-b border-border/50">
-                                <td className="py-1.5 font-bold text-green-600">3</td>
-                                <td className="py-1.5 text-muted-foreground">Ichki</td>
-                                <td className="py-1.5 text-right font-mono font-bold">{calc.l3.weight} kg</td>
-                                <td className="py-1.5 text-right font-mono text-muted-foreground">{fmt(calc.l3.price)}</td>
-                                <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.l3.cost)}</td>
+                                <td className="py-2 font-bold text-green-600 text-base">3</td>
+                                <td className="py-2 text-muted-foreground">Ichki</td>
+                                <td className="py-2 text-right font-mono font-bold">{calc.l3.weight} kg</td>
+                                <td className="py-2 text-right font-mono text-muted-foreground">{fmt(calc.l3.price)}</td>
+                                <td className="py-2 text-right font-mono font-bold text-base">{fmt(calc.l3.cost)}</td>
                               </tr>
                             </tbody>
                             <tfoot>
                               <tr className="bg-primary/5 font-bold">
-                                <td className="py-1.5" colSpan={2}>JAMI</td>
-                                <td className="py-1.5 text-right font-mono">{calc.totalWeight} kg</td>
+                                <td className="py-2 text-base" colSpan={2}>JAMI</td>
+                                <td className="py-2 text-right font-mono text-base">{calc.totalWeight} kg</td>
                                 <td></td>
-                                <td className="py-1.5 text-right font-mono text-primary">{fmt(calc.totalPaperCost)} so'm</td>
+                                <td className="py-2 text-right font-mono text-primary text-lg">{fmt(calc.totalPaperCost)} so'm</td>
                               </tr>
                             </tfoot>
                           </table>
@@ -292,12 +292,20 @@ export default function ProductionCalc() {
             companyName={companyName}
             boxName={boxName}
           />
-          <button
-            onClick={() => setShowPrint(false)}
-            className="no-print fixed top-4 left-4 z-[60] bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-gray-700 text-sm font-bold"
-          >
-            ← Orqaga
-          </button>
+          <div className="no-print fixed top-4 left-4 z-[60] flex gap-2">
+            <button
+              onClick={() => setShowPrint(false)}
+              className="bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-gray-700 text-sm font-bold"
+            >
+              ← Orqaga
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg hover:bg-primary/90 text-sm font-bold"
+            >
+              🖨️ Qayta chop etish
+            </button>
+          </div>
         </div>
       )}
     </Card>
