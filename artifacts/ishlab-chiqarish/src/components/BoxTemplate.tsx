@@ -19,8 +19,8 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight, showFlat =
   const flapH = L / 2;                          // kanot: bo'yi/2
   const blankW = 1 + flapH + H + flapH + 1;    // eni: 1 + L/2 + H + L/2 + 1
 
-  // SVG — 1 sm = 6px (katta eskiz)
-  const S = 6;
+  // SVG — 1 sm = 7px (katta eskiz)
+  const S = 7;
   const svgW = blankLen * S;
   const svgH = blankW * S;
   const pad = 50;
@@ -44,13 +44,13 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight, showFlat =
   const yEnd = (1 + flapH + H + flapH + 1) * S;         // yakun
 
   // 3D box SVG dimensions
-  const box3dW = 280;
-  const box3dH = 250;
+  const box3dW = 320;
+  const box3dH = 280;
   const bx = 40;  // box x offset
   const by = 50;  // box y offset (pastga siljitildi)
-  const bw = 160; // box width
-  const bh = 100; // box height
-  const d = 50;   // depth (oblique projection)
+  const bw = 180; // box width
+  const bh = 120; // box height
+  const d = 60;   // depth (oblique projection)
 
   const f = (n: number) => Math.round(n * 10) / 10;
 

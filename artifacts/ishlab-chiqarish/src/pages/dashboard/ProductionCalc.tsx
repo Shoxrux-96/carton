@@ -291,7 +291,7 @@ export default function ProductionCalc() {
         <div className="print-only" style={{ display: "none" }}>
           <div style={{ fontFamily: "Arial", padding: "10mm", width: "297mm", minHeight: "210mm" }}>
             {/* TEPA: Narida — chap: matn, o'ng: 3D */}
-            <div style={{ display: "flex", gap: "20px", borderBottom: "2px solid black", paddingBottom: "10px", marginBottom: "10px", height: "140px" }}>
+            <div style={{ display: "flex", gap: "20px", borderBottom: "2px solid black", paddingBottom: "10px", marginBottom: "10px", height: "160px" }}>
               {/* CHAP: korxona + quti + o'lchamlar */}
               <div style={{ flex: "1", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                 <div>
@@ -314,13 +314,13 @@ export default function ProductionCalc() {
               </div>
 
               {/* O'NG: 3D ko'rinish — katta */}
-              <div style={{ width: "220px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: "260px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <BoxTemplate boxLength={bl} boxWidth={bw} boxHeight={bh} showFlat={false} show3D={true} showTitle={false} />
               </div>
             </div>
 
             {/* ESKIZ — to'liq kenglikda, katta */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1 }}>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "10px" }}>
               <BoxTemplate boxLength={bl} boxWidth={bw} boxHeight={bh} showFlat={true} show3D={false} />
             </div>
           </div>
