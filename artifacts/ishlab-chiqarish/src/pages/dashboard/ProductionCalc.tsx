@@ -291,16 +291,16 @@ export default function ProductionCalc() {
         <div className="print-only" style={{ display: "none" }}>
           <div style={{ fontFamily: "Arial", padding: "10mm", width: "297mm", minHeight: "210mm" }}>
             {/* TEPA: Narida — chap: matn, o'ng: 3D */}
-            <div style={{ display: "flex", gap: "20px", borderBottom: "2px solid black", paddingBottom: "10px", marginBottom: "10px", height: "160px" }}>
+            <div style={{ display: "flex", gap: "20px", borderBottom: "2px solid black", paddingBottom: "10px", marginBottom: "8px", height: "150px", alignItems: "flex-end" }}>
               {/* CHAP: korxona + quti + o'lchamlar */}
-              <div style={{ flex: "1", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div style={{ flex: "1", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
                 <div>
                   <h1 style={{ fontSize: "18px", fontWeight: 900, textTransform: "uppercase", margin: 0 }}>{companyName}</h1>
                   <p style={{ fontSize: "13px", fontWeight: 700, margin: "2px 0 0 0" }}>{boxName}</p>
                   <p style={{ fontSize: "10px", color: "#666", margin: "2px 0 0 0" }}>Sana: {new Date().toLocaleDateString("uz-UZ")}</p>
                 </div>
                 {/* O'lchamlar — 2 qator */}
-                <div style={{ fontSize: "11px", lineHeight: "1.8", background: "#f5f5f5", padding: "6px 10px", borderRadius: "4px", border: "1px solid #ddd" }}>
+                <div style={{ fontSize: "11px", lineHeight: "1.8", background: "#f5f5f5", padding: "6px 10px", borderRadius: "4px", border: "1px solid #ddd", marginTop: "6px" }}>
                   <div style={{ display: "flex", gap: "20px" }}>
                     <span><b>Eni (W):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bw} sm</span></span>
                     <span><b>Balandligi (H):</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{bh} sm</span></span>
@@ -313,14 +313,14 @@ export default function ProductionCalc() {
                 </div>
               </div>
 
-              {/* O'NG: 3D ko'rinish — katta, chegara oldisiz */}
-              <div style={{ width: "280px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {/* O'NG: 3D ko'rinish — katta, pastroq */}
+              <div style={{ width: "280px", flexShrink: 0, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
                 <BoxTemplate boxLength={bl} boxWidth={bw} boxHeight={bh} showFlat={false} show3D={true} showTitle={false} printMode={true} />
               </div>
             </div>
 
-            {/* ESKIZ — to'liq kenglikda, chegara oldisiz */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "10px" }}>
+            {/* ESKIZ — to'liq kenglikda, pastroq */}
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", flex: 1, paddingTop: "8px" }}>
               <BoxTemplate boxLength={bl} boxWidth={bw} boxHeight={bh} showFlat={true} show3D={false} />
             </div>
           </div>
@@ -335,15 +335,6 @@ export default function ProductionCalc() {
           body * { visibility: hidden !important; }
           .print-only, .print-only * { visibility: visible !important; color: black !important; }
           .print-only { display: block !important; position: absolute; left: 0; top: 0; background: white !important; }
-          .print-only svg text { fill: black !important; }
-          .print-only svg rect, .print-only svg polygon, .print-only svg line { stroke: black !important; }
-          .print-only svg rect[fill="#dbeafe"],
-          .print-only svg rect[fill="#fef3c7"],
-          .print-only svg rect[fill="#fed7aa"],
-          .print-only svg rect[fill="#d1fae5"],
-          .print-only svg rect[fill="#fee2e2"] { fill: white !important; stroke: black !important; }
-          .print-only svg polygon[fill="#e5e5e5"],
-          .print-only svg polygon[fill="#d5d5d5"] { fill: white !important; stroke: black !important; }
           @page { margin: 5mm; size: A4 landscape; }
         }
       `}</style>
