@@ -37,11 +37,17 @@ export default function ProductionCalc() {
     const netAreaM2 = (blankLen * blankW) / 10000;
     const grossAreaM2 = netAreaM2 * (1 + w / 100);
 
-    const l1Weight = grossAreaM2 * pwKg;
+    // Har bir qatlam og'irligi = sof maydon × kg/m²
+    // 1-qatlam: tashqi qog'oz
+    const l1Weight = netAreaM2 * pwKg;
     const l1Cost = l1Weight * p1;
-    const l2Weight = grossAreaM2 * pwKg / 0.7;
+
+    // 2-qatlam: gofra qog'oz (÷0.7 — kamroq qalinlik, ko'proq miqdor)
+    const l2Weight = netAreaM2 * pwKg / 0.7;
     const l2Cost = l2Weight * p2;
-    const l3Weight = grossAreaM2 * pwKg;
+
+    // 3-qatlam: ichki qog'oz
+    const l3Weight = netAreaM2 * pwKg;
     const l3Cost = l3Weight * p3;
 
     const totalWeight = l1Weight + l2Weight + l3Weight;
