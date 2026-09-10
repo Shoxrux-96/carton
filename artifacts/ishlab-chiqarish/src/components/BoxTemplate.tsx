@@ -14,10 +14,10 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight }: BoxTempl
 
   // Kesma o'lchamlari (mm)
   const blankLen = 2 * W + 2 * L + 50;    // 4 panel + 5cm yelim chok
-  const flapH = H / 2;
+  const flapH = L / 2;                     // kanot = bo'yi / 2
   const cutTop = 10;    // 1 sm tepadan
   const cutBottom = 10; // 1 sm pastdan
-  const blankW = cutTop + H + flapH + flapH + cutBottom; // 2H + 20mm
+  const blankW = cutTop + H + flapH + flapH + cutBottom; // H + L + 20mm
 
   // SVG масштаб — 1mm = 0.35px
   const scale = 0.35;
@@ -112,7 +112,35 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight }: BoxTempl
         <text x={glueX + 25 * scale} y={centerY + H * scale / 2 + 6} textAnchor="middle" fontSize={6} fill="#065f46">5 sm</text>
 
         {/* Top flap labels */}
-        <text x={p1x + W * scale / 2} y={topFlapY + flapH * scale / 2 + 3} textAnchor="middle" fontSize={6} fill="#1e40af">H/2</text>
+        <text x={p1x + W * scale / 2} y={topFlapY + flapH * scale / 2 + 3} textAnchor="middle" fontSize={6} fill="#1e40af">L/2</text>
+        <text x={p2x + L * scale / 2} y={topFlapY + flapH * scale / 2 + 3} textAnchor="middle" fontSize={6} fill="#1e40af">L/2</text>
+        <text x={p3x + W * scale / 2} y={topFlapY + flapH * scale / 2 + 3} textAnchor="middle" fontSize={6} fill="#1e40af">L/2</text>
+        <text x={p4x + L * scale / 2} y={topFlapY + flapH * scale / 2 + 3} textAnchor="middle" fontSize={6} fill="#1e40af">L/2</text>
+
+        {/* Bottom flap labels */}
+        <text x={p1x + W * scale / 2} y={bottomFlapY + flapH * scale / 2 + 3} textAnchor="middle" fontSize={6} fill="#1e40af">L/2</text>
+        <text x={p2x + L * scale / 2} y={bottomFlapY + flapH * scale / 2 + 3} textAnchor="middle" fontSize={6} fill="#1e40af">L/2</text>
+
+        {/* ===== CHAP TOMONDA VERTIKAL O'LCHAMLAR ===== */}
+        {/* 1 sm chiqindi (tepa) */}
+        <line x1={-12} y1={cutTopY} x2={-12} y2={topFlapY} stroke="#ef4444" strokeWidth={0.8} />
+        <text x={-18} y={(cutTopY + topFlapY) / 2 + 3} textAnchor="end" fontSize={6} fill="#ef4444" fontWeight="bold">1</text>
+
+        {/* L/2 (tep kanot) */}
+        <line x1={-12} y1={topFlapY} x2={-12} y2={centerY} stroke="#3b82f6" strokeWidth={0.8} />
+        <text x={-18} y={(topFlapY + centerY) / 2 + 3} textAnchor="end" fontSize={6} fill="#3b82f6" fontWeight="bold">{fmtSm(L / 2)}</text>
+
+        {/* H (markaz) */}
+        <line x1={-12} y1={centerY} x2={-12} y2={bottomFlapY} stroke="#d97706" strokeWidth={0.8} />
+        <text x={-18} y={(centerY + bottomFlapY) / 2 + 3} textAnchor="end" fontSize={7} fill="#d97706" fontWeight="bold">{fmtSm(H)}</text>
+
+        {/* L/2 (past kanot) */}
+        <line x1={-12} y1={bottomFlapY} x2={-12} y2={cutBottomY} stroke="#3b82f6" strokeWidth={0.8} />
+        <text x={-18} y={(bottomFlapY + cutBottomY) / 2 + 3} textAnchor="end" fontSize={6} fill="#3b82f6" fontWeight="bold">{fmtSm(L / 2)}</text>
+
+        {/* 1 sm chiqindi (past) */}
+        <line x1={-12} y1={cutBottomY} x2={-12} y2={svgH} stroke="#ef4444" strokeWidth={0.8} />
+        <text x={-18} y={(cutBottomY + svgH) / 2 + 3} textAnchor="end" fontSize={6} fill="#ef4444" fontWeight="bold">1</text>
 
         {/* ===== O'LCHAM CHIZIQLARI ===== */}
         {/* Pastki umumiy uzunlik */}

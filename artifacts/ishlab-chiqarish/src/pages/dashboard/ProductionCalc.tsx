@@ -53,9 +53,9 @@ export default function ProductionCalc() {
     if (L <= 0 || W <= 0 || H <= 0 || pwKg <= 0 || q <= 0) return null;
 
     // Kesma o'lchamlari (sm)
-    const blankLen = 2 * W + 2 * L + 5;
-    const flapH = H / 2;
-    const blankW = 1 + H + flapH + flapH + 1;
+    const blankLen = 2 * W + 2 * L + 5;         // 4 panel + 5sm yelim
+    const flapH = L / 2;                         // kanot = bo'yi / 2
+    const blankW = 1 + flapH + H + flapH + 1;   // 1 + L/2 + H + L/2 + 1 = H + L + 2
 
     // Maydon (m²)
     const netAreaM2 = (blankLen * blankW) / 10000;
