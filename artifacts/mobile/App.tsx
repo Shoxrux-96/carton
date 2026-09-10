@@ -40,6 +40,7 @@ import DeliveryScreen from "./src/screens/DeliveryScreen";
 import DeliveryMapScreen from "./src/screens/DeliveryMapScreen";
 import ProductionScreen from "./src/screens/ProductionScreen";
 import StockViewScreen from "./src/screens/StockViewScreen";
+import ProductionCalcScreen from "./src/screens/ProductionCalcScreen";
 import FinanceScreen from "./src/screens/FinanceScreen";
 import ClientsScreen from "./src/screens/ClientsScreen";
 import EmployeesScreen from "./src/screens/EmployeesScreen";
@@ -131,7 +132,7 @@ const HomeStackNavigator = React.memo(function HomeStackNavigator() {
 
 const AdminProductionScreen = React.memo(() => {
   const S = createNativeStackNavigator();
-  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="ProdMain" component={ProductionScreen} options={{ title: "🏭 Ishlab chiqarish" }} /><S.Screen name="Products" component={ProductsScreen} options={{ title: "📦 Mahsulotlar" }} /><S.Screen name="Stock" component={StockViewScreen} options={{ title: "📦 Ombor" }} /></S.Navigator>);
+  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="ProdMain" component={ProductionScreen} options={{ title: "🏭 Ishlab chiqarish" }} /><S.Screen name="Products" component={ProductsScreen} options={{ title: "📦 Mahsulotlar" }} /><S.Screen name="Stock" component={StockViewScreen} options={{ title: "📦 Ombor" }} /><S.Screen name="ProdCalc" component={ProductionCalcScreen} options={{ title: "🧮 Kalkulyatsiya" }} /></S.Navigator>);
 });
 
 const AdminHRScreen = React.memo(() => {

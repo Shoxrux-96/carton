@@ -16,7 +16,7 @@ const periods = [
   { key: "year", label: "Yil" },
 ];
 
-export default function ProductionScreen() {
+export default function ProductionScreen({ navigation }: any) {
   const [summary, setSummary] = useState<any>(null);
   const [byProduct, setByProduct] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -195,6 +195,9 @@ export default function ProductionScreen() {
       </ScrollView>
 
       {/* FAB */}
+      <TouchableOpacity style={[styles.fab, { bottom: 100 }]} onPress={() => navigation.navigate("ProdCalc")} activeOpacity={0.8}>
+        <Text style={styles.fabText}>🧮</Text>
+      </TouchableOpacity>
       <TouchableOpacity style={styles.fab} onPress={() => setShowModal(true)} activeOpacity={0.8}>
         <Text style={styles.fabText}>＋</Text>
       </TouchableOpacity>

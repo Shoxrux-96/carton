@@ -40,6 +40,7 @@ const driverMenu = [
 
 const employeeMenu: any[] = [
   { title: "Face ID Davomat", tab: "Davomat", screen: "FaceAtt", icon: "🤳", desc: "Yuz orqali belgilash", color: "#f97316", bg: "#fff7ed" },
+  { title: "Kalkulyatsiya", tab: "Ishlab chiq.", screen: "ProdCalc", icon: "🧮", desc: "Xarajat hisoblash", color: "#2563eb", bg: "#dbeafe" },
 ];
 
 function LineChart({ labels, data, unit }: { labels: string[]; data: number[]; unit?: string }) {
