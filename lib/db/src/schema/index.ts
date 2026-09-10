@@ -180,3 +180,28 @@ export const tasksTable = pgTable("tasks", {
 });
 
 export type Task = typeof tasksTable.$inferSelect;
+
+export const calculationsTable = pgTable("calculations", {
+  id: serial("id").primaryKey(),
+  companyName: text("company_name").notNull().default(""),
+  boxName: text("box_name").notNull().default(""),
+  boxWidth: numeric("box_width", { precision: 10, scale: 2 }).notNull().default("0"),
+  boxHeight: numeric("box_height", { precision: 10, scale: 2 }).notNull().default("0"),
+  boxLength: numeric("box_length", { precision: 10, scale: 2 }).notNull().default("0"),
+  l1Weight: numeric("l1_weight", { precision: 10, scale: 4 }).notNull().default("0"),
+  l1Price: numeric("l1_price", { precision: 12, scale: 2 }).notNull().default("0"),
+  l2Weight: numeric("l2_weight", { precision: 10, scale: 4 }).notNull().default("0"),
+  l2Price: numeric("l2_price", { precision: 12, scale: 2 }).notNull().default("0"),
+  l3Weight: numeric("l3_weight", { precision: 10, scale: 4 }).notNull().default("0"),
+  l3Price: numeric("l3_price", { precision: 12, scale: 2 }).notNull().default("0"),
+  blankLen: numeric("blank_len", { precision: 10, scale: 2 }).notNull().default("0"),
+  blankW: numeric("blank_w", { precision: 10, scale: 2 }).notNull().default("0"),
+  netAreaM2: numeric("net_area_m2", { precision: 10, scale: 4 }).notNull().default("0"),
+  totalWeight: numeric("total_weight", { precision: 10, scale: 4 }).notNull().default("0"),
+  totalPaperCost: numeric("total_paper_cost", { precision: 12, scale: 2 }).notNull().default("0"),
+  salePrice: numeric("sale_price", { precision: 12, scale: 2 }).notNull().default("0"),
+  coefficient: numeric("coefficient", { precision: 6, scale: 2 }).notNull().default("1.50"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Calculation = typeof calculationsTable.$inferSelect;

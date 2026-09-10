@@ -18,6 +18,7 @@ import socialLinksRouter from "./social-links.js";
 import settingsRouter from "./settings.js";
 import clientLogRouter from "./client-log.js";
 import tasksRouter from "./tasks.js";
+import calculationsRouter from "./calculations.js";
 
 const router: IRouter = Router();
 
@@ -42,5 +43,6 @@ router.use("/social-links", socialLinksRouter);
 router.use("/settings", settingsRouter);
 router.use("/client-log", clientLogRouter);
 router.use("/tasks", tasksRouter);
+router.use("/calculations", calculationsRouter);
 
 export default router;
