@@ -6,9 +6,10 @@ interface BoxTemplateProps {
   boxHeight: number;  // cm
   showFlat?: boolean;  // eskizni ko'rsatish
   show3D?: boolean;    // 3D ni ko'rsatish
+  showTitle?: boolean; // sarlavha ko'rsatish
 }
 
-export default function BoxTemplate({ boxLength, boxWidth, boxHeight, showFlat = true, show3D = true }: BoxTemplateProps) {
+export default function BoxTemplate({ boxLength, boxWidth, boxHeight, showFlat = true, show3D = true, showTitle = true }: BoxTemplateProps) {
   const L = boxLength;
   const W = boxWidth;
   const H = boxHeight;
@@ -218,7 +219,7 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight, showFlat =
       {/* 3D QUTI CHIZMASI */}
       {show3D && (
       <div className="mt-4 border-t border-border/50 pt-4">
-        <p className="text-xs font-bold text-center text-muted-foreground mb-3">📦 3D ko'rinish — Yig'ilgan quti</p>
+        {showTitle && <p className="text-xs font-bold text-center text-muted-foreground mb-3">📦 3D ko'rinish — Yig'ilgan quti</p>}
         <svg
           viewBox={`0 0 ${box3dW + 40} ${box3dH + 40}`}
           className="w-full h-auto"

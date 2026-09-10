@@ -305,13 +305,11 @@ export default function ProductionCalc() {
             <div style={{ display: "flex", gap: "16px" }}>
               {/* 3D — 30% */}
               <div style={{ flex: "3", border: "1px solid #ccc", borderRadius: "4px", padding: "8px" }}>
-                <p style={{ fontSize: "9px", fontWeight: 700, textAlign: "center", color: "#666", marginBottom: "4px" }}>3D ko'rinish</p>
-                <BoxTemplate boxLength={n(boxL)} boxWidth={n(boxW)} boxHeight={n(boxH)} showFlat={false} show3D={true} />
+                <BoxTemplate boxLength={n(boxL)} boxWidth={n(boxW)} boxHeight={n(boxH)} showFlat={false} show3D={true} showTitle={false} />
               </div>
 
               {/* Eskiz — 70% */}
               <div style={{ flex: "7", border: "1px solid #ccc", borderRadius: "4px", padding: "8px" }}>
-                <p style={{ fontSize: "9px", fontWeight: 700, textAlign: "center", color: "#666", marginBottom: "4px" }}>Kesma eskizi</p>
                 <BoxTemplate boxLength={n(boxL)} boxWidth={n(boxW)} boxHeight={n(boxH)} showFlat={true} show3D={false} />
               </div>
             </div>
