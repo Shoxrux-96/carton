@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
-import { Plus, Wrench, TrendingUp, CalendarDays, Clock, Infinity, Search, FileDown, Calculator } from "lucide-react";
+import { Plus, Wrench, TrendingUp, CalendarDays, Clock, Infinity, Search, FileDown } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,7 +56,6 @@ export default function Production() {
   const [period, setPeriod] = useState("day");
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
   const [productNameFilter, setProductNameFilter] = useState("");
-  const [activeTab, setActiveTab] = useState<"overview" | "calc">("overview");
 
   const byProductQueryKey = ["/api/production/by-product", period, filterDate, productNameFilter];
   const { data: byProduct } = useQuery({
@@ -137,30 +136,7 @@ export default function Production() {
         }
       />
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setActiveTab("overview")}
-          className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-            activeTab === "overview" ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-muted hover:bg-muted/80 text-muted-foreground"
-          }`}
-        >
-          <TrendingUp className="w-4 h-4 inline mr-2" /> Ishlab chiqarish
-        </button>
-        <button
-          onClick={() => setActiveTab("calc")}
-          className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-            activeTab === "calc" ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-muted hover:bg-muted/80 text-muted-foreground"
-          }`}
-        >
-          <Calculator className="w-4 h-4 inline mr-2" /> Kalkulyatsiya
-        </button>
-      </div>
-
-      {activeTab === "calc" ? (
-        <ProductionCalc />
-      ) : (
-      <>
+      {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {summaryCards.map(({ key, label, icon: Icon, color }) => {
           const data = summary?.[key] || { totalQuantity: 0, totalSum: 0, count: 0 };
@@ -262,7 +238,7 @@ export default function Production() {
       </Card>
 
       {/* Barcha kirim-chiqim yozuvlar */}
-      <Card className="overflow-hidden border-0 shadow-lg">
+      <Card className="overflow-hidden border-0 shadow-lg mb-8">
         <div className="p-5 border-b border-border/50">
           <h3 className="text-lg font-bold">{t('all_records')}</h3>
         </div>
@@ -304,8 +280,9 @@ export default function Production() {
           </table>
         </div>
       </Card>
-      </>
-      )}
+
+      {/* Kalkulyatsiya — ishlab chiqarish sahifasi pastida */}
+      <ProductionCalc />
 
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen} title={t('enter_production_dialog')}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
