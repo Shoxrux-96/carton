@@ -28,8 +28,8 @@ export default function PrintLayout({
   const flapH = L / 2;
   const blankW = 1 + flapH + H + flapH + 1;
 
-  // SVG — 1 sm = 5px (katta eskiz)
-  const S = 5;
+  // SVG — 1 sm = 7px (katta eskiz, landscape uchun)
+  const S = 7;
   const svgW = blankLen * S;
   const svgH = blankW * S;
   const pad = 40;
@@ -317,7 +317,7 @@ export default function PrintLayout({
           .print-layout { position: absolute; left: 0; top: 0; width: 100%; }
           .no-print { display: none !important; }
           .page-break-before { page-break-before: always; }
-          @page { margin: 10mm; size: A4 portrait; }
+          @page { margin: 8mm; size: A4 landscape; }
         }
       `}</style>
     </div>

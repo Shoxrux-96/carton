@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calculator, Printer, Layers, TrendingUp } from "lucide-react";
+import { Calculator, Printer, Layers, TrendingUp, Building2, Package } from "lucide-react";
 import BoxTemplate from "@/components/BoxTemplate";
 import PrintLayout from "@/components/PrintLayout";
 
@@ -20,6 +20,8 @@ export default function ProductionCalc() {
   const [wastePercent, setWastePercent] = useState("10");
   const [quantity, setQuantity] = useState("1000");
   const [coefficient, setCoefficient] = useState("1.5");
+  const [companyName, setCompanyName] = useState("Shovot Carton");
+  const [boxName, setBoxName] = useState("RSC quti");
   const [showPrint, setShowPrint] = useState(false);
 
   const printRef = useRef<HTMLDivElement>(null);
@@ -106,6 +108,24 @@ export default function ProductionCalc() {
       <div className="flex flex-col lg:flex-row">
         {/* Chap — inputlar */}
         <div className="lg:w-80 p-3 space-y-2 border-r border-border/50">
+          <div className="bg-muted/30 rounded-lg p-2">
+            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5 flex items-center gap-1">
+              <Building2 className="w-3 h-3" /> Korxona & quti nomi
+            </p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-muted-foreground w-16 shrink-0 text-right">Korxona</span>
+                <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Shovot Carton"
+                  className="h-8 text-xs px-2 bg-background/50 border-border/50" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-muted-foreground w-16 shrink-0 text-right">Quti nomi</span>
+                <Input value={boxName} onChange={e => setBoxName(e.target.value)} placeholder="RSC quti"
+                  className="h-8 text-xs px-2 bg-background/50 border-border/50" />
+              </div>
+            </div>
+          </div>
+
           <div className="bg-muted/30 rounded-lg p-2">
             <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">📦 Quti (sm)</p>
             <div className="space-y-1">
@@ -269,8 +289,8 @@ export default function ProductionCalc() {
             boxLength={n(boxL)}
             boxWidth={n(boxW)}
             boxHeight={n(boxH)}
-            companyName="Shovot Carton"
-            boxName="RSC quti"
+            companyName={companyName}
+            boxName={boxName}
             sellingPrice={calc.sellingPrice}
             productionPrice={calc.perBox.total}
           />

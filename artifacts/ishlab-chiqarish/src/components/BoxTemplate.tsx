@@ -42,9 +42,9 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight }: BoxTempl
 
   // 3D box SVG dimensions
   const box3dW = 280;
-  const box3dH = 220;
+  const box3dH = 250;
   const bx = 40;  // box x offset
-  const by = 20;  // box y offset
+  const by = 50;  // box y offset (pastga siljitildi)
   const bw = 160; // box width
   const bh = 100; // box height
   const d = 50;   // depth (oblique projection)
