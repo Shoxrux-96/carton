@@ -28,8 +28,8 @@ export default function PrintLayout({
   const flapH = L / 2;
   const blankW = 1 + flapH + H + flapH + 1;
 
-  // SVG — 1 sm = 3.5px (print uchun kichikroq)
-  const S = 3.5;
+  // SVG — 1 sm = 5px (katta eskiz)
+  const S = 5;
   const svgW = blankLen * S;
   const svgH = blankW * S;
   const pad = 40;
@@ -53,11 +53,11 @@ export default function PrintLayout({
   const yEnd = (1 + flapH + H + flapH + 1) * S;
 
   // 3D box
-  const bx3d = 30;
-  const by3d = 15;
-  const bw3d = 140;
-  const bh3d = 90;
-  const d3d = 45;
+  const bx3d = 50;
+  const by3d = 20;
+  const bw3d = 200;
+  const bh3d = 130;
+  const d3d = 70;
 
   const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
@@ -83,71 +83,27 @@ export default function PrintLayout({
           </div>
         </div>
 
-        {/* QUTI O'LCHAMLARI JADVALI */}
-        <div className="mb-6">
-          <h2 className="text-sm font-bold mb-2 uppercase border-b border-gray-400 pb-1">
+        {/* QUTI O'LCHAMLARI JADVALI — kichik */}
+        <div className="mb-4">
+          <h2 className="text-xs font-bold mb-1 uppercase border-b border-gray-400 pb-0.5">
             1. Quti o'lchamlari
           </h2>
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border border-gray-400 px-3 py-2 text-left">Parametr</th>
-                <th className="border border-gray-400 px-3 py-2 text-center">Qiymat</th>
-                <th className="border border-gray-400 px-3 py-2 text-left">Izoh</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="border border-gray-400 px-3 py-1.5 font-bold">Eni (W)</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-center font-mono">{W} sm</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-gray-600">Asosiy panel eni</td>
-              </tr>
-              <tr>
-                <td className="border border-gray-400 px-3 py-1.5 font-bold">Bo'yi (L)</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-center font-mono">{L} sm</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-gray-600">Asosiy panel bo'yi</td>
-              </tr>
-              <tr>
-                <td className="border border-gray-400 px-3 py-1.5 font-bold">Balandligi (H)</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-center font-mono">{H} sm</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-gray-600">Quti balandligi</td>
-              </tr>
-              <tr className="bg-gray-50">
-                <td className="border border-gray-400 px-3 py-1.5 font-bold">Kesma uzunligi</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-center font-mono font-bold">{fmt(blankLen)} sm</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-gray-600">2×(W+L) + 6</td>
-              </tr>
-              <tr className="bg-gray-50">
-                <td className="border border-gray-400 px-3 py-1.5 font-bold">Kesma eni</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-center font-mono font-bold">{fmt(blankW)} sm</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-gray-600">1 + L/2 + H + L/2 + 1</td>
-              </tr>
-              <tr className="bg-gray-100">
-                <td className="border border-gray-400 px-3 py-1.5 font-bold">Kanot (L/2)</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-center font-mono">{fmt(flapH)} sm</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-gray-600">Tepa/past qanot</td>
-              </tr>
-              <tr className="bg-gray-100">
-                <td className="border border-gray-400 px-3 py-1.5 font-bold">Yelim maydoni</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-center font-mono">5 sm</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-gray-600">Yelim uchun</td>
-              </tr>
-              <tr className="bg-gray-100">
-                <td className="border border-gray-400 px-3 py-1.5 font-bold">Chiqindi</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-center font-mono">1 sm</td>
-                <td className="border border-gray-400 px-3 py-1.5 text-gray-600">Tepa + past</td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="flex gap-4 text-[10px]">
+            <div className="flex items-center gap-1"><span className="font-bold">W =</span> <span className="font-mono">{W} sm</span></div>
+            <div className="flex items-center gap-1"><span className="font-bold">H =</span> <span className="font-mono">{H} sm</span></div>
+            <div className="flex items-center gap-1"><span className="font-bold">L =</span> <span className="font-mono">{L} sm</span></div>
+            <div className="flex items-center gap-1"><span className="font-bold">Kesma:</span> <span className="font-mono">{fmt(blankLen)} × {fmt(blankW)} sm</span></div>
+            <div className="flex items-center gap-1"><span className="font-bold">Kanot:</span> <span className="font-mono">{fmt(flapH)} sm</span></div>
+          </div>
         </div>
 
         {/* 3D CHIZMA */}
-        <div className="mb-6">
-          <h2 className="text-sm font-bold mb-2 uppercase border-b border-gray-400 pb-1">
+        <div className="mb-4">
+          <h2 className="text-xs font-bold mb-1 uppercase border-b border-gray-400 pb-0.5">
             2. Qutining 3D ko'rinishi
           </h2>
           <div className="flex justify-center">
-            <svg viewBox={`0 0 ${bx3d + bw3d + d3d + 60} ${by3d + bh3d + 50}`} width="320" height="220">
+            <svg viewBox={`0 0 ${bx3d + bw3d + d3d + 80} ${by3d + bh3d + 60}`} width="500" height="320">
               {/* Old tomon (W × H) */}
               <rect x={bx3d} y={by3d} width={bw3d} height={bh3d}
                 fill="#f5f5f5" stroke="#000" strokeWidth={2} />
@@ -166,45 +122,49 @@ export default function PrintLayout({
               <line x1={bx3d + bw3d * 0.65} y1={by3d} x2={bx3d + bw3d * 0.65 + d3d} y2={by3d - d3d * 0.6}
                 stroke="#666" strokeWidth={1} strokeDasharray="4 2" />
 
-              {/* O'lchamlar — W */}
-              <line x1={bx3d} y1={by3d + bh3d + 12} x2={bx3d + bw3d} y2={by3d + bh3d + 12}
+              {/* O'lchamlar — W (pastda) */}
+              <line x1={bx3d} y1={by3d + bh3d + 15} x2={bx3d + bw3d} y2={by3d + bh3d + 15}
                 stroke="#000" strokeWidth={1} markerEnd="url(#arrowR)" markerStart="url(#arrowL)" />
-              <text x={bx3d + bw3d / 2} y={by3d + bh3d + 24} textAnchor="middle" fontSize={10} fontWeight="bold">
+              <text x={bx3d + bw3d / 2} y={by3d + bh3d + 30} textAnchor="middle" fontSize={12} fontWeight="bold">
                 W = {W} sm
               </text>
 
-              {/* O'lchamlar — H */}
-              <line x1={bx3d - 12} y1={by3d} x2={bx3d - 12} y2={by3d + bh3d}
+              {/* O'lchamlar — H (chapda) */}
+              <line x1={bx3d - 15} y1={by3d} x2={bx3d - 15} y2={by3d + bh3d}
                 stroke="#000" strokeWidth={1} markerEnd="url(#arrowD)" markerStart="url(#arrowU)" />
-              <text x={bx3d - 18} y={by3d + bh3d / 2 + 4} textAnchor="end" fontSize={10} fontWeight="bold">
+              <text x={bx3d - 22} y={by3d + bh3d / 2 + 4} textAnchor="end" fontSize={12} fontWeight="bold">
                 H = {H}
               </text>
 
-              {/* O'lchamlar — L */}
-              <line x1={bx3d + bw3d + d3d + 8} y1={by3d - d3d * 0.6} x2={bx3d + bw3d + d3d + 8} y2={by3d + bh3d - d3d * 0.6}
-                stroke="#000" strokeWidth={1} markerEnd="url(#arrowD)" markerStart="url(#arrowU)" />
-              <text x={bx3d + bw3d + d3d + 14} y={by3d + (bh3d - d3d * 0.6) / 2 + 4} textAnchor="start" fontSize={10} fontWeight="bold">
-                L = {L}
+              {/* O'lchamlar — L (pastda diagonaldan) */}
+              <line x1={bx3d + bw3d} y1={by3d + bh3d + 15} x2={bx3d + bw3d + d3d} y2={by3d + bh3d + 15 - d3d * 0.6}
+                stroke="#000" strokeWidth={1} />
+              <line x1={bx3d + bw3d + d3d} y1={by3d + bh3d + 15 - d3d * 0.6 + 10} x2={bx3d + bw3d + d3d} y2={by3d + bh3d + 15 - d3d * 0.6 - 10}
+                stroke="#000" strokeWidth={1} markerEnd="url(#arrowD3d)" markerStart="url(#arrowU3d)" />
+              <text x={bx3d + bw3d + d3d + 12} y={by3d + bh3d + 15 - d3d * 0.3 + 4} textAnchor="start" fontSize={12} fontWeight="bold">
+                L = {L} sm
               </text>
 
               {/* Markaz label */}
-              <text x={bx3d + bw3d / 2} y={by3d + bh3d / 2 + 4} textAnchor="middle" fontSize={11} fontWeight="bold">
+              <text x={bx3d + bw3d / 2} y={by3d + bh3d / 2 + 5} textAnchor="middle" fontSize={14} fontWeight="bold">
                 {W} × {H} × {L}
               </text>
 
               <defs>
-                <marker id="arrowR" markerWidth={7} markerHeight={7} refX={7} refY={3.5} orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#000" /></marker>
-                <marker id="arrowL" markerWidth={7} markerHeight={7} refX={0} refY={3.5} orient="auto"><path d="M7,0 L0,3.5 L7,7 Z" fill="#000" /></marker>
-                <marker id="arrowD" markerWidth={7} markerHeight={7} refX={3.5} refY={7} orient="auto"><path d="M0,0 L7,0 L3.5,7 Z" fill="#000" /></marker>
-                <marker id="arrowU" markerWidth={7} markerHeight={7} refX={3.5} refY={0} orient="auto"><path d="M0,7 L7,7 L3.5,0 Z" fill="#000" /></marker>
+                <marker id="arrowR" markerWidth={8} markerHeight={8} refX={8} refY={4} orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#000" /></marker>
+                <marker id="arrowL" markerWidth={8} markerHeight={8} refX={0} refY={4} orient="auto"><path d="M8,0 L0,4 L8,8 Z" fill="#000" /></marker>
+                <marker id="arrowD" markerWidth={8} markerHeight={8} refX={4} refY={8} orient="auto"><path d="M0,0 L8,0 L4,8 Z" fill="#000" /></marker>
+                <marker id="arrowU" markerWidth={8} markerHeight={8} refX={4} refY={0} orient="auto"><path d="M0,8 L8,8 L4,0 Z" fill="#000" /></marker>
+                <marker id="arrowD3d" markerWidth={8} markerHeight={8} refX={4} refY={8} orient="auto"><path d="M0,0 L8,0 L4,8 Z" fill="#000" /></marker>
+                <marker id="arrowU3d" markerWidth={8} markerHeight={8} refX={4} refY={0} orient="auto"><path d="M0,8 L8,8 L4,0 Z" fill="#000" /></marker>
               </defs>
             </svg>
           </div>
         </div>
 
-        {/* ESKIZ — TO'LIQ */}
-        <div className="mb-6 page-break-before">
-          <h2 className="text-sm font-bold mb-2 uppercase border-b border-gray-400 pb-1">
+        {/* ESKIZ — TO'LIQ, KATTA */}
+        <div className="mb-4">
+          <h2 className="text-xs font-bold mb-1 uppercase border-b border-gray-400 pb-0.5">
             3. Kesma eskizi (to'liq)
           </h2>
           <div className="flex justify-center overflow-hidden">
