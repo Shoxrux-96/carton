@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calculator, Printer, Layers } from "lucide-react";
+import { Calculator, Printer, Layers, TrendingUp } from "lucide-react";
 import BoxTemplate from "@/components/BoxTemplate";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
@@ -18,6 +18,7 @@ export default function ProductionCalc() {
   const [priceLayer3, setPriceLayer3] = useState("");
   const [wastePercent, setWastePercent] = useState("10");
   const [quantity, setQuantity] = useState("1000");
+  const [coefficient, setCoefficient] = useState("1.5");
 
   const printRef = useRef<HTMLDivElement>(null);
   const n = (s: string) => parseFloat(s) || 0;
@@ -27,43 +28,46 @@ export default function ProductionCalc() {
     const pwKg = n(paperWeightKg);
     const p1 = n(priceLayer1), p2 = n(priceLayer2), p3 = n(priceLayer3);
     const w = n(wastePercent), q = n(quantity);
+    const k = n(coefficient);
 
     if (L <= 0 || W <= 0 || H <= 0 || pwKg <= 0 || q <= 0) return null;
 
+    // Kesma o'lchamlari (sm)
     const blankLen = 2 * (W + L) + 6;
     const flapH = L / 2;
     const blankW = 1 + flapH + H + flapH + 1;
 
+    // Maydon (m²)
     const netAreaM2 = (blankLen * blankW) / 10000;
-    const grossAreaM2 = netAreaM2 * (1 + w / 100);
 
-    // Har bir qatlam og'irligi = sof maydon × kg/m²
-    // 1-qatlam: tashqi qog'oz
+    // 3 qatlam
     const l1Weight = netAreaM2 * pwKg;
     const l1Cost = l1Weight * p1;
-
-    // 2-qatlam: gofra qog'oz (÷0.7 — kamroq qalinlik, ko'proq miqdor)
     const l2Weight = netAreaM2 * pwKg / 0.7;
     const l2Cost = l2Weight * p2;
-
-    // 3-qatlam: ichki qog'oz
     const l3Weight = netAreaM2 * pwKg;
     const l3Cost = l3Weight * p3;
 
     const totalWeight = l1Weight + l2Weight + l3Weight;
     const totalPaperCost = l1Cost + l2Cost + l3Cost;
 
+    // Sotish narxi = ishlab chiqarish narxi × koeffitsient
+    const sellingPrice = Math.round(totalPaperCost * k);
+
     return {
       blankLen: +fmtD(blankLen, 1), blankW: +fmtD(blankW, 1),
-      netAreaM2: +fmtD(netAreaM2, 4), grossAreaM2: +fmtD(grossAreaM2, 4),
+      netAreaM2: +fmtD(netAreaM2, 4),
       l1: { weight: +fmtD(l1Weight, 4), price: p1, cost: Math.round(l1Cost) },
       l2: { weight: +fmtD(l2Weight, 4), price: p2, cost: Math.round(l2Cost) },
       l3: { weight: +fmtD(l3Weight, 4), price: p3, cost: Math.round(l3Cost) },
       totalWeight: +fmtD(totalWeight, 4), totalPaperCost: Math.round(totalPaperCost),
       perBox: { paper: Math.round(totalPaperCost), total: Math.round(totalPaperCost) },
       total: { quantity: q, paper: Math.round(totalPaperCost * q), grandTotal: Math.round(totalPaperCost * q) },
+      sellingPrice,
+      sellingTotal: Math.round(sellingPrice * q),
+      coefficient: k,
     };
-  }, [boxL, boxW, boxH, paperWeightKg, priceLayer1, priceLayer2, priceLayer3, wastePercent, quantity]);
+  }, [boxL, boxW, boxH, paperWeightKg, priceLayer1, priceLayer2, priceLayer3, wastePercent, quantity, coefficient]);
 
   const hasBox = n(boxL) > 0 && n(boxW) > 0 && n(boxH) > 0;
 
@@ -138,6 +142,13 @@ export default function ProductionCalc() {
               {sm("Miqdor", quantity, setQuantity, "1000", "dona")}
             </div>
           </div>
+
+          <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-2 border border-amber-200 dark:border-amber-800">
+            <p className="text-[9px] font-bold text-amber-700 dark:text-amber-400 uppercase mb-1.5">📈 Sotish narxi</p>
+            <div className="space-y-1">
+              {sm("Koeffitsient", coefficient, setCoefficient, "1.5", "×")}
+            </div>
+          </div>
         </div>
 
         {/* O'ng — eskiz + natija */}
@@ -150,7 +161,7 @@ export default function ProductionCalc() {
 
               {calc && (
                 <>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                     <div className="text-center p-2 bg-violet-50 dark:bg-violet-950/30 rounded-lg">
                       <div className="text-base font-bold text-violet-600">{calc.blankLen} sm</div>
                       <div className="text-[9px] text-muted-foreground">Kesma uzunligi</div>
@@ -162,10 +173,6 @@ export default function ProductionCalc() {
                     <div className="text-center p-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
                       <div className="text-base font-bold text-amber-500">{calc.netAreaM2} m²</div>
                       <div className="text-[9px] text-muted-foreground">Sof maydon</div>
-                    </div>
-                    <div className="text-center p-2 bg-orange-50 dark:bg-orange-950/30 rounded-lg">
-                      <div className="text-base font-bold text-orange-500">{calc.grossAreaM2} m²</div>
-                      <div className="text-[9px] text-muted-foreground">Chiqindi bilan</div>
                     </div>
                   </div>
 
@@ -221,28 +228,41 @@ export default function ProductionCalc() {
                     </div>
                   </div>
 
+                  {/* SOTISH NARXI — katta ko'rsatkich */}
+                  <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg p-4 text-white">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="w-5 h-5" />
+                      <span className="text-sm font-bold">📈 Sotish narxi</span>
+                      <span className="text-xs opacity-80 ml-auto">Ishlab chiqarish × {calc.coefficient}</span>
+                    </div>
+                    <div className="text-center py-3">
+                      <div className="text-4xl font-extrabold">{fmt(calc.sellingPrice)}</div>
+                      <div className="text-sm opacity-80 mt-1">so'm / dona</div>
+                    </div>
+                    <div className="flex justify-between text-xs opacity-90 mt-2 pt-2 border-t border-white/20">
+                      <span>Ishlab chiqarish: {fmt(calc.perBox.total)} so'm</span>
+                      <span>× {calc.coefficient}</span>
+                      <span className="font-bold">= {fmt(calc.sellingPrice)} so'm</span>
+                    </div>
+                  </div>
+
                   {/* Natija */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                     <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3">
                       <p className="text-[9px] font-bold text-blue-600 uppercase mb-1.5">📦 1 dona uchun</p>
                       <div className="space-y-1 text-xs">
-                        <div className="flex justify-between"><span className="text-muted-foreground">📄 Qog'oz (3 qatlam)</span><span className="font-semibold">{fmt(calc.perBox.paper)} so'm</span></div>
-                        <div className="border-t border-blue-200 dark:border-blue-800 pt-1 flex justify-between font-bold">
-                          <span>Jami:</span><span className="text-primary">{fmt(calc.perBox.total)} so'm</span>
-                        </div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">📄 Ishlab chiqarish</span><span className="font-semibold">{fmt(calc.perBox.paper)} so'm</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">📈 Sotish narxi</span><span className="font-bold text-emerald-600">{fmt(calc.sellingPrice)} so'm</span></div>
                       </div>
                     </div>
 
                     <div className="bg-gradient-to-br from-primary to-primary/80 rounded-lg p-3 text-white">
                       <p className="text-[9px] font-bold uppercase mb-1 opacity-80">💰 JAMI ({fmt(calc.total.quantity)} dona)</p>
-                      <div className="text-center py-1">
-                        <div className="text-2xl font-extrabold">{fmt(calc.total.grandTotal)}</div>
-                        <div className="text-[10px] opacity-80">so'm</div>
-                      </div>
-                      <div className="space-y-0.5 text-[10px] opacity-90 mt-2">
-                        <div className="flex justify-between"><span>📄 Qog'oz</span><span>{fmt(calc.total.paper)} so'm</span></div>
-                        <div className="border-t border-white/20 pt-0.5 flex justify-between font-bold">
-                          <span>1 dona</span><span>{fmt(calc.perBox.total)} so'm</span>
+                      <div className="space-y-1 text-[10px] opacity-90">
+                        <div className="flex justify-between"><span>📄 Ishlab chiqarish</span><span>{fmt(calc.total.paper)} so'm</span></div>
+                        <div className="flex justify-between"><span>📈 Sotish</span><span className="font-bold">{fmt(calc.sellingTotal)} so'm</span></div>
+                        <div className="border-t border-white/20 pt-1 flex justify-between font-bold text-sm">
+                          <span>Foyda:</span><span>{fmt(calc.sellingTotal - calc.total.paper)} so'm</span>
                         </div>
                       </div>
                     </div>
