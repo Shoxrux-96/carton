@@ -66,8 +66,8 @@ export default function ProductionCalc() {
     const l1Weight = grossAreaM2 * pwKg;
     const l1Cost = l1Weight * p1;
 
-    // 2-qatlam: gofra qog'oz (×0.7)
-    const l2Weight = grossAreaM2 * pwKg * 0.7;
+    // 2-qatlam: gofra qog'oz (÷0.7 — kamroq qalinlik, ko'proq miqdor)
+    const l2Weight = grossAreaM2 * pwKg / 0.7;
     const l2Cost = l2Weight * p2;
 
     // 3-qatlam: ichki qog'oz (×1.0)
@@ -251,7 +251,7 @@ export default function ProductionCalc() {
                           </tr>
                           <tr className="border-b border-border/30 bg-amber-50/50 dark:bg-amber-950/20">
                             <td className="py-1.5 font-bold text-amber-600">2-qatlam</td>
-                            <td className="py-1.5 text-muted-foreground">Gofra (×0.7)</td>
+                            <td className="py-1.5 text-muted-foreground">Gofra (÷0.7)</td>
                             <td className="py-1.5 text-right font-mono font-bold">{calc.l2.weight}</td>
                             <td className="py-1.5 text-right font-mono text-amber-600">{fmt(calc.l2.price)}</td>
                             <td className="py-1.5 text-right font-mono font-bold">{fmt(calc.l2.cost)} so'm</td>
