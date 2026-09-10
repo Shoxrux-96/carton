@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, tasksTable, employeesTable, productsTable } from "@workspace/db";
-import { eq, desc, lt } from "drizzle-orm";
+import { eq, desc, lt, sql } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
 import { paramInt } from "../lib/params.js";
 
@@ -10,8 +10,7 @@ async function cleanupOldTasks() {
   try {
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    const cutoff = oneMonthAgo.toISOString();
-    await db.delete(tasksTable).where(lt(tasksTable.createdAt, cutoff));
+    await db.delete(tasksTable).where(lt(tasksTable.createdAt, oneMonthAgo));
   } catch {}
 }
 
@@ -47,12 +46,11 @@ router.get("/mine", authMiddleware, async (req, res) => {
     const phone = (req as any).user.phone || "";
     const normalizedPhone = phone.replace(/\D/g, "");
 
-    const employees = await db.select({ id: employeesTable.id, phone: employeesTable.phone, loginPhone: employeesTable.loginPhone }).from(employeesTable);
-    const employee = employees.find(e => {
-      const ep = (e.phone || "").replace(/\D/g, "");
-      const elp = (e.loginPhone || "").replace(/\D/g, "");
-      return ep === normalizedPhone || elp === normalizedPhone;
-    });
+    const [employee] = await db
+      .select({ id: employeesTable.id })
+      .from(employeesTable)
+      .where(sql`(${employeesTable.loginPhone} = ${normalizedPhone} OR ${employeesTable.phone} = ${normalizedPhone})`)
+      .limit(1);
 
     if (!employee) {
       res.json([]);

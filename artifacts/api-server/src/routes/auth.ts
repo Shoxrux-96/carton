@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { db, usersTable, employeesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { signToken, authMiddleware } from "../lib/auth.js";
+import { hashPassword, verifyPassword } from "../lib/password.js";
 
 const router = Router();
 
@@ -18,15 +19,12 @@ function normalizePhone(phone?: string | null) {
 
 async function findEmployeeForUser(userPhone: string) {
   const clean = normalizePhone(userPhone);
-  const [byLogin] = await db
+  const [employee] = await db
     .select()
     .from(employeesTable)
-    .where(eq(employeesTable.loginPhone, clean))
+    .where(sql`(${employeesTable.loginPhone} = ${clean} OR ${employeesTable.phone} = ${clean})`)
     .limit(1);
-  if (byLogin) return byLogin;
-
-  const employees = await db.select().from(employeesTable);
-  return employees.find((e) => normalizePhone(e.phone) === clean) ?? null;
+  return employee ?? null;
 }
 
 router.post("/login", async (req, res) => {
@@ -42,7 +40,7 @@ router.post("/login", async (req, res) => {
 
   const users = await db.select().from(usersTable).where(eq(usersTable.phone, phone)).limit(1);
 
-  if (users.length === 0 || users[0].password !== password) {
+  if (users.length === 0 || !verifyPassword(password, users[0].password)) {
     res.status(401).json({ error: "Noto'g'ri telefon yoki parol" });
     return;
   }
@@ -80,7 +78,7 @@ router.post("/register", authMiddleware, async (req, res) => {
 
   const [user] = await db.insert(usersTable).values({
     phone,
-    password,
+    password: hashPassword(password),
     role: role || "employee",
   }).returning();
 
@@ -137,7 +135,7 @@ router.put("/profile", authMiddleware, async (req, res) => {
   }
 
   if (newPassword) {
-    if (!currentPassword || currentPassword !== user.password) {
+    if (!currentPassword || !verifyPassword(currentPassword, user.password)) {
       res.status(400).json({ error: "Joriy parol noto'g'ri" });
       return;
     }
@@ -149,7 +147,7 @@ router.put("/profile", authMiddleware, async (req, res) => {
 
   const updateData: Record<string, unknown> = {};
   if (phone) updateData.phone = phone;
-  if (newPassword) updateData.password = newPassword;
+  if (newPassword) updateData.password = hashPassword(newPassword);
 
   if (Object.keys(updateData).length === 0) {
     res.status(400).json({ error: "Hech qanday ma'lumot o'zgartirilmadi" });

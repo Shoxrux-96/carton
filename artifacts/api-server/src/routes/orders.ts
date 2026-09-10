@@ -110,8 +110,8 @@ router.put("/:id", authMiddleware, async (req, res) => {
 
   await db.update(ordersTable).set(updates).where(eq(ordersTable.id, id));
 
-  // Auto-create sale when delivery is completed
-  if (deliveryStatus === "delivered" && existing.productId) {
+  // Auto-create sale when delivery is completed (only if not already delivered)
+  if (deliveryStatus === "delivered" && existing.productId && existing.deliveryStatus !== "delivered") {
     try {
       await db.insert(salesTable).values({
         productId: existing.productId,
