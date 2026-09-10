@@ -262,10 +262,7 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight, showFlat =
             H = {H}
           </text>
 
-          {/* H — old tomon ichida */}
-          <text x={bx + bw / 2} y={by + bh / 2 + 5} textAnchor="middle" fontSize={printMode ? 14 : 10} fill="#d97706" fontWeight="bold">
-            H = {H}
-          </text>
+          {/* H — old tomon ichida — OLIB TASHLANDI */}
 
           {/* O'lchamlar — L (pastda diagonal) — KATTA */}
           <line x1={bx + bw} y1={by + bh + 18} x2={bx + bw + d} y2={by + bh + 18 - d * 0.6}
