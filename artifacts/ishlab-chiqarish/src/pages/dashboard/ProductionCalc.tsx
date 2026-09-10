@@ -160,6 +160,22 @@ export default function ProductionCalc() {
               {sm("Chiqindi", wastePercent, setWastePercent, "10", "%")}
               {sm("Miqdor", quantity, setQuantity, "1000", "dona")}
             </div>
+            {calc && (
+              <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-muted-foreground">Ishlab chiqarish:</span>
+                  <span className="font-bold">{fmt(calc.total.paper)} so'm</span>
+                </div>
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-muted-foreground">Daromad:</span>
+                  <span className="font-bold text-indigo-600">{fmt(calc.revenue)} so'm</span>
+                </div>
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-muted-foreground">Sof foyda:</span>
+                  <span className="font-bold text-rose-600">{fmt(calc.profit)} so'm</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-2 border border-amber-200 dark:border-amber-800">
@@ -269,24 +285,6 @@ export default function ProductionCalc() {
                         <div className="text-[10px] text-emerald-700 mt-1 bg-emerald-200 dark:bg-emerald-800 px-2 py-0.5 rounded-full font-bold">
                           × {calc.coefficient}
                         </div>
-                      </div>
-                    </div>
-
-                    {/* DAROMAD + SOF FOYDA — alohida qatorda */}
-                    <div className="flex flex-col lg:flex-row gap-2 mt-2">
-                      <div className="flex-1 flex items-center justify-between bg-indigo-50 dark:bg-indigo-950/30 rounded-lg px-4 py-2.5 border border-indigo-200 dark:border-indigo-800">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">💰</span>
-                          <span className="text-xs font-bold text-indigo-700">Daromad ({fmt(n(quantity))} dona)</span>
-                        </div>
-                        <div className="text-lg font-extrabold text-indigo-600">{fmt(calc.revenue)} so'm</div>
-                      </div>
-                      <div className="flex-1 flex items-center justify-between bg-rose-50 dark:bg-rose-950/30 rounded-lg px-4 py-2.5 border border-rose-200 dark:border-rose-800">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">📈</span>
-                          <span className="text-xs font-bold text-rose-700">Sof foyda ({fmt(n(quantity))} dona)</span>
-                        </div>
-                        <div className="text-lg font-extrabold text-rose-600">{fmt(calc.profit)} so'm</div>
                       </div>
                     </div>
                   </div>
