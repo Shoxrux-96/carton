@@ -230,19 +230,19 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight, showFlat =
 
           {/* Old tomon (W × H) */}
           <rect x={bx} y={by} width={bw} height={bh}
-            fill={printMode ? "white" : "#fef3c7"} stroke="black" strokeWidth={2} />
+            fill="#fef3c7" stroke="#d97706" strokeWidth={2} />
 
           {/* Ong tomon (L × H) — oblique */}
           <polygon
             points={`${bx + bw},${by} ${bx + bw + d},${by - d * 0.6} ${bx + bw + d},${by + bh - d * 0.6} ${bx + bw},${by + bh}`}
-            fill={printMode ? "#f0f0f0" : "#fed7aa"} stroke="black" strokeWidth={2} />
+            fill="#fed7aa" stroke="#ea580c" strokeWidth={2} />
           <line x1={bx + bw} y1={by} x2={bx + bw + d} y2={by - d * 0.6}
-            stroke="black" strokeWidth={1} strokeDasharray="4 2" />
+            stroke="#ea580c" strokeWidth={1} strokeDasharray="4 2" />
 
           {/* Tepa tomon (W × L) — oblique */}
           <polygon
             points={`${bx},${by} ${bx + d},${by - d * 0.6} ${bx + bw + d},${by - d * 0.6} ${bx + bw},${by}`}
-            fill={printMode ? "#e0e0e0" : "#dbeafe"} stroke="black" strokeWidth={2} />
+            fill="#dbeafe" stroke="#3b82f6" strokeWidth={2} />
 
           {/* Tepa qanot chizig'i (yelim) */}
           <line x1={bx + bw * 0.6} y1={by} x2={bx + bw * 0.6 + d} y2={by - d * 0.6}
@@ -250,32 +250,37 @@ export default function BoxTemplate({ boxLength, boxWidth, boxHeight, showFlat =
 
           {/* O'lchamlar — W (pastda) — KATTA */}
           <line x1={bx} y1={by + bh + 18} x2={bx + bw} y2={by + bh + 18}
-            stroke="black" strokeWidth={1.5} markerEnd="url(#aR3d)" markerStart="url(#aL3d)" />
-          <text x={bx + bw / 2} y={by + bh + 35} textAnchor="middle" fontSize={printMode ? 14 : 10} fill="black" fontWeight="bold">
+            stroke="#d97706" strokeWidth={1.5} markerEnd="url(#aR3d)" markerStart="url(#aL3d)" />
+          <text x={bx + bw / 2} y={by + bh + 35} textAnchor="middle" fontSize={printMode ? 14 : 10} fill="#d97706" fontWeight="bold">
             W = {W}
           </text>
 
           {/* O'lchamlar — H (chapda vertikal) — KATTA */}
           <line x1={bx - 18} y1={by} x2={bx - 18} y2={by + bh}
-            stroke="black" strokeWidth={1.5} markerEnd="url(#aD3d)" markerStart="url(#aU3d)" />
-          <text x={bx - 26} y={by + bh / 2 + 5} textAnchor="end" fontSize={printMode ? 14 : 10} fill="black" fontWeight="bold">
+            stroke="#d97706" strokeWidth={1.5} markerEnd="url(#aD3d)" markerStart="url(#aU3d)" />
+          <text x={bx - 26} y={by + bh / 2 + 5} textAnchor="end" fontSize={printMode ? 14 : 10} fill="#d97706" fontWeight="bold">
+            H = {H}
+          </text>
+
+          {/* H — old tomon ichida */}
+          <text x={bx + bw / 2} y={by + bh / 2 + 5} textAnchor="middle" fontSize={printMode ? 14 : 10} fill="#d97706" fontWeight="bold">
             H = {H}
           </text>
 
           {/* O'lchamlar — L (pastda diagonal) — KATTA */}
           <line x1={bx + bw} y1={by + bh + 18} x2={bx + bw + d} y2={by + bh + 18 - d * 0.6}
-            stroke="black" strokeWidth={1.5} />
+            stroke="#ea580c" strokeWidth={1.5} />
           <line x1={bx + bw + d} y1={by + bh + 18 - d * 0.6 + 12} x2={bx + bw + d} y2={by + bh + 18 - d * 0.6 - 12}
-            stroke="black" strokeWidth={1.5} markerEnd="url(#aD3d)" markerStart="url(#aU3d)" />
-          <text x={bx + bw + d + 12} y={by + bh + 18 - d * 0.3 + 5} textAnchor="start" fontSize={printMode ? 14 : 10} fill="black" fontWeight="bold">
+            stroke="#ea580c" strokeWidth={1.5} markerEnd="url(#aD3d)" markerStart="url(#aU3d)" />
+          <text x={bx + bw + d + 12} y={by + bh + 18 - d * 0.3 + 5} textAnchor="start" fontSize={printMode ? 14 : 10} fill="#ea580c" fontWeight="bold">
             L = {L}
           </text>
 
           {/* Label — KATTA */}
-          <text x={bx + bw / 2} y={by + bh / 2 - 8} textAnchor="middle" fontSize={printMode ? 16 : 12} fill="black" fontWeight="bold">
+          <text x={bx + bw / 2} y={by + bh / 2 - 18} textAnchor="middle" fontSize={printMode ? 16 : 12} fill="#374151" fontWeight="bold">
             {W} × {H} × {L}
           </text>
-          <text x={bx + bw / 2} y={by + bh / 2 + 10} textAnchor="middle" fontSize={printMode ? 11 : 8} fill="black">
+          <text x={bx + bw / 2} y={by + bh / 2} textAnchor="middle" fontSize={printMode ? 11 : 8} fill="#6b7280">
             W × H × L
           </text>
 

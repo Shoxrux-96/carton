@@ -315,8 +315,6 @@ export default function ProductionCalc() {
                 <span><b>Sof maydon:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(calc.netAreaM2)} m²</span></span>
                 <span style={{ color: "#ccc" }}>|</span>
                 <span><b>Umumiy og'irlik:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(calc.totalWeight)} kg</span></span>
-                <span style={{ color: "#ccc" }}>|</span>
-                <span><b>1 dona narxi:</b> <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{fmt(calc.totalPaperCost)} so'm</span></span>
               </div>
             </div>
 
