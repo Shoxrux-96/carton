@@ -32,6 +32,7 @@ const adminMenu = [
   { title: "Ombor", tab: "Ishlab chiq.", screen: "Stock", icon: "📦", desc: "Ombor qoldiqlari", color: "#64748b", bg: "#f1f5f9" },
   { title: "Topshiriqlar", tab: "HR", screen: "Tasks", icon: "📋", desc: "Topshiriqlar boshqaruvi", color: "#ea580c", bg: "#fff7ed" },
   { title: "Moliya", tab: "Moliya", screen: "Fin", icon: "💰", desc: "Kirim va chiqimlar", color: "#ca8a04", bg: "#fef9c3" },
+  { title: "Kalkulyatsiya", tab: "Ishlab chiq.", screen: "ProdCalc", icon: "🧮", desc: "Narx hisoblash", color: "#7c3aed", bg: "#f5f3ff" },
 ];
 
 const driverMenu = [
@@ -40,7 +41,7 @@ const driverMenu = [
 
 const employeeMenu: any[] = [
   { title: "Face ID Davomat", tab: "Davomat", screen: "FaceAtt", icon: "🤳", desc: "Yuz orqali belgilash", color: "#f97316", bg: "#fff7ed" },
-  { title: "Kalkulyatsiya", tab: "Ishlab chiq.", screen: "ProdCalc", icon: "🧮", desc: "Xarajat hisoblash", color: "#2563eb", bg: "#dbeafe" },
+  { title: "Kalkulyatsiya", screen: "ProdCalc", icon: "🧮", desc: "Xarajat hisoblash", color: "#7c3aed", bg: "#f5f3ff" },
 ];
 
 function LineChart({ labels, data, unit }: { labels: string[]; data: number[]; unit?: string }) {

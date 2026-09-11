@@ -127,6 +127,7 @@ const HomeStackNavigator = React.memo(function HomeStackNavigator() {
       <S.Screen name="Delivery" component={DeliveryScreen} options={{ title: "🚚 Yetkazish", headerShown: false }} />
       <S.Screen name="DeliveryMap" component={DeliveryMapScreen} options={{ title: "🗺️ Xarita" }} />
       <S.Screen name="Clients" component={ClientsScreen} options={{ title: "🏢 Mijozlar" }} />
+      <S.Screen name="ProdCalc" component={ProductionCalcScreen} options={{ title: "🧮 Kalkulyatsiya" }} />
     </S.Navigator>
   );
 });
@@ -162,7 +163,7 @@ const AdminTabs = React.memo(function AdminTabs() {
 const ManagerHomeScreen = React.memo(function ManagerHomeScreen() {
   const { onLogout } = useContext(AuthContext);
   const S = createNativeStackNavigator();
-  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="H" options={{ headerShown: false }}>{({ navigation }) => <HomeScreen navigation={navigation} onLogout={onLogout} />}</S.Screen><S.Screen name="Profile" options={{ title: "Profil", headerLeft: () => <HeaderLogo /> }}>{({ navigation }) => <ProfileScreen navigation={navigation} onLogout={onLogout} />}</S.Screen><S.Screen name="FaceAttendance" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} /></S.Navigator>);
+  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="H" options={{ headerShown: false }}>{({ navigation }) => <HomeScreen navigation={navigation} onLogout={onLogout} />}</S.Screen><S.Screen name="Profile" options={{ title: "Profil", headerLeft: () => <HeaderLogo /> }}>{({ navigation }) => <ProfileScreen navigation={navigation} onLogout={onLogout} />}</S.Screen><S.Screen name="FaceAttendance" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} /><S.Screen name="ProdCalc" component={ProductionCalcScreen} options={{ title: "🧮 Kalkulyatsiya" }} /></S.Navigator>);
 });
 const ManagerProductionScreen = React.memo(() => {
   const S = createNativeStackNavigator();
