@@ -2,8 +2,8 @@ import React, { useState, useMemo, useCallback, useRef } from "react";
 import {
   View, Text, ScrollView, StyleSheet, TextInput,
   TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions,
-  WebView as RNWebView,
 } from "react-native";
+import { WebView as RNWebView } from "react-native-webview";
 import { useFocusEffect } from "@react-navigation/native";
 import { colors, radius, shadows, spacing } from "../theme";
 
