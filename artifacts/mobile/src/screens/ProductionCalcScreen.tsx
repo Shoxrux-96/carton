@@ -12,13 +12,13 @@ const fmt = (n: number) => n.toLocaleString("uz-UZ");
 const fmtD = (n: number, d = 2) => n.toFixed(d);
 
 function BoxWebView({ boxW, boxH, boxL }: { boxW: number; boxH: number; boxL: number }) {
-  const S = 7;
+  const S = 5;
   const blankLen = 2 * (boxW + boxL) + 6;
   const flapH = boxL / 2;
   const blankW = 1 + flapH + boxH + flapH + 1;
   const svgW = blankLen * S;
   const svgH = blankW * S;
-  const pad = 40;
+  const pad = 30;
 
   const x0 = 0;
   const xW1 = boxW * S;
@@ -36,16 +36,23 @@ function BoxWebView({ boxW, boxH, boxL }: { boxW: number; boxH: number; boxL: nu
   const yCutBot = (1 + flapH + boxH + flapH) * S;
   const yEnd = (1 + flapH + boxH + flapH + 1) * S;
 
-  const box3dW = 280;
-  const box3dH = 240;
-  const bx = 30, by = 40, bw = 160, bh = 110, d = 55;
+  const totalSvgH = svgH + pad * 2 + 50;
+  const totalSvgW = svgW + pad * 2 + 30;
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>body{margin:0;padding:10px;background:#fff;font-family:Arial,sans-serif;}</style></head><body>
-<svg width="${svgW + pad * 2}" height="${svgH + pad * 2 + 50}" viewBox="${-pad} ${-pad} ${svgW + pad * 2} ${svgH + pad * 2 + 50}">
-<rect x="${-pad}" y="${-pad}" width="${svgW + pad * 2}" height="${svgH + pad * 2 + 50}" fill="white"/>
+  const box3dW = width - 40;
+  const box3dH = 220;
+  const bx = 30, by = 30;
+  const bw = box3dW * 0.45;
+  const bh = box3dH * 0.5;
+  const d = box3dH * 0.3;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<style>body{margin:0;padding:0;background:#fff;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+*{box-sizing:border-box}</style></head><body>
+<svg viewBox="${-pad} ${-pad} ${totalSvgW} ${totalSvgH}" width="100%" height="${Math.min(totalSvgH, 350)}">
+<rect x="${-pad}" y="${-pad}" width="${totalSvgW}" height="${totalSvgH}" fill="white"/>
 <rect x="0" y="${yCutTop}" width="${svgW}" height="${S}" fill="#fee2e2" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 2"/>
-<text x="${svgW / 2}" y="${yCutTop + 0.5 * S + 5}" text-anchor="middle" font-size="11" fill="#ef4444" font-weight="bold">1 sm — chiqindi</text>
+<text x="${svgW / 2}" y="${yCutTop + 0.5 * S + 4}" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="bold">1 sm chiqindi</text>
 <rect x="${x0}" y="${yFlapTop}" width="${xW1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
 <rect x="${xW1}" y="${yFlapTop}" width="${xL1 - xW1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
 <rect x="${xL1}" y="${yFlapTop}" width="${xW2 - xL1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
@@ -61,69 +68,69 @@ function BoxWebView({ boxW, boxH, boxL }: { boxW: number; boxH: number; boxL: nu
 <rect x="${xL1}" y="${yFlapBot}" width="${xW2 - xL1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
 <rect x="${xW2}" y="${yFlapBot}" width="${xL2 - xW2}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
 <rect x="0" y="${yCutBot}" width="${svgW}" height="${S}" fill="#fee2e2" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 2"/>
-<text x="${svgW / 2}" y="${yCutBot + 0.5 * S + 5}" text-anchor="middle" font-size="11" fill="#ef4444" font-weight="bold">1 sm — chiqindi</text>
-<text x="${xW1 / 2}" y="${yCenter + boxH * S / 2 - 10}" text-anchor="middle" font-size="14" font-weight="bold" fill="#92400e">W</text>
-<text x="${xW1 / 2}" y="${yCenter + boxH * S / 2 + 12}" text-anchor="middle" font-size="11" fill="#92400e">${boxW} sm</text>
-<text x="${(xW1 + xL1) / 2}" y="${yCenter + boxH * S / 2 - 10}" text-anchor="middle" font-size="14" font-weight="bold" fill="#9a3412">L</text>
-<text x="${(xW1 + xL1) / 2}" y="${yCenter + boxH * S / 2 + 12}" text-anchor="middle" font-size="11" fill="#9a3412">${boxL} sm</text>
-<text x="${(xL1 + xW2) / 2}" y="${yCenter + boxH * S / 2 - 10}" text-anchor="middle" font-size="14" font-weight="bold" fill="#92400e">W</text>
-<text x="${(xL1 + xW2) / 2}" y="${yCenter + boxH * S / 2 + 12}" text-anchor="middle" font-size="11" fill="#92400e">${boxW} sm</text>
-<text x="${(xW2 + xL2) / 2}" y="${yCenter + boxH * S / 2 - 10}" text-anchor="middle" font-size="14" font-weight="bold" fill="#9a3412">L</text>
-<text x="${(xW2 + xL2) / 2}" y="${yCenter + boxH * S / 2 + 12}" text-anchor="middle" font-size="11" fill="#9a3412">${boxL} sm</text>
-<text x="${xGlue + 2.5 * S}" y="${yCenter + boxH * S / 2}" text-anchor="middle" font-size="10" font-weight="bold" fill="#065f46">YELIM 5</text>
-<text x="${xCut + 0.5 * S}" y="${yCenter + boxH * S / 2 + 5}" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="bold">1</text>
-<text x="${xW1 / 2}" y="${yFlapTop + flapH * S / 2 + 5}" text-anchor="middle" font-size="10" fill="#1e40af" font-weight="bold">L/2</text>
-<text x="${(xW1 + xL1) / 2}" y="${yFlapTop + flapH * S / 2 + 5}" text-anchor="middle" font-size="10" fill="#1e40af" font-weight="bold">L/2</text>
-<text x="${xW1 / 2}" y="${yFlapBot + flapH * S / 2 + 5}" text-anchor="middle" font-size="10" fill="#1e40af" font-weight="bold">L/2</text>
-<text x="${(xW1 + xL1) / 2}" y="${yFlapBot + flapH * S / 2 + 5}" text-anchor="middle" font-size="10" fill="#1e40af" font-weight="bold">L/2</text>
+<text x="${svgW / 2}" y="${yCutBot + 0.5 * S + 4}" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="bold">1 sm chiqindi</text>
+<text x="${xW1 / 2}" y="${yCenter + boxH * S / 2 - 8}" text-anchor="middle" font-size="12" font-weight="bold" fill="#92400e">W</text>
+<text x="${xW1 / 2}" y="${yCenter + boxH * S / 2 + 10}" text-anchor="middle" font-size="10" fill="#92400e">${boxW}</text>
+<text x="${(xW1 + xL1) / 2}" y="${yCenter + boxH * S / 2 - 8}" text-anchor="middle" font-size="12" font-weight="bold" fill="#9a3412">L</text>
+<text x="${(xW1 + xL1) / 2}" y="${yCenter + boxH * S / 2 + 10}" text-anchor="middle" font-size="10" fill="#9a3412">${boxL}</text>
+<text x="${(xL1 + xW2) / 2}" y="${yCenter + boxH * S / 2 - 8}" text-anchor="middle" font-size="12" font-weight="bold" fill="#92400e">W</text>
+<text x="${(xL1 + xW2) / 2}" y="${yCenter + boxH * S / 2 + 10}" text-anchor="middle" font-size="10" fill="#92400e">${boxW}</text>
+<text x="${(xW2 + xL2) / 2}" y="${yCenter + boxH * S / 2 - 8}" text-anchor="middle" font-size="12" font-weight="bold" fill="#9a3412">L</text>
+<text x="${(xW2 + xL2) / 2}" y="${yCenter + boxH * S / 2 + 10}" text-anchor="middle" font-size="10" fill="#9a3412">${boxL}</text>
+<text x="${xGlue + 2.5 * S}" y="${yCenter + boxH * S / 2 + 3}" text-anchor="middle" font-size="8" font-weight="bold" fill="#065f46">YELIM 5</text>
+<text x="${xCut + 0.5 * S}" y="${yCenter + boxH * S / 2 + 3}" text-anchor="middle" font-size="7" fill="#ef4444" font-weight="bold">1</text>
+<text x="${xW1 / 2}" y="${yFlapTop + flapH * S / 2 + 4}" text-anchor="middle" font-size="9" fill="#1e40af" font-weight="bold">L/2</text>
+<text x="${(xW1 + xL1) / 2}" y="${yFlapTop + flapH * S / 2 + 4}" text-anchor="middle" font-size="9" fill="#1e40af" font-weight="bold">L/2</text>
+<text x="${xW1 / 2}" y="${yFlapBot + flapH * S / 2 + 4}" text-anchor="middle" font-size="9" fill="#1e40af" font-weight="bold">L/2</text>
+<text x="${(xW1 + xL1) / 2}" y="${yFlapBot + flapH * S / 2 + 4}" text-anchor="middle" font-size="9" fill="#1e40af" font-weight="bold">L/2</text>
 <line x1="0" y1="${svgH + 10}" x2="${svgW}" y2="${svgH + 10}" stroke="#374151" stroke-width="1.5"/>
 <line x1="${x0}" y1="${svgH + 4}" x2="${xW1}" y2="${svgH + 4}" stroke="#d97706" stroke-width="1"/>
-<text x="${xW1 / 2}" y="${svgH + 24}" text-anchor="middle" font-size="11" fill="#d97706" font-weight="bold">${boxW}</text>
+<text x="${xW1 / 2}" y="${svgH + 22}" text-anchor="middle" font-size="10" fill="#d97706" font-weight="bold">${boxW}</text>
 <line x1="${xW1}" y1="${svgH + 4}" x2="${xL1}" y2="${svgH + 4}" stroke="#ea580c" stroke-width="1"/>
-<text x="${(xW1 + xL1) / 2}" y="${svgH + 24}" text-anchor="middle" font-size="11" fill="#ea580c" font-weight="bold">${boxL}</text>
+<text x="${(xW1 + xL1) / 2}" y="${svgH + 22}" text-anchor="middle" font-size="10" fill="#ea580c" font-weight="bold">${boxL}</text>
 <line x1="${xL1}" y1="${svgH + 4}" x2="${xW2}" y2="${svgH + 4}" stroke="#d97706" stroke-width="1"/>
-<text x="${(xL1 + xW2) / 2}" y="${svgH + 24}" text-anchor="middle" font-size="11" fill="#d97706" font-weight="bold">${boxW}</text>
+<text x="${(xL1 + xW2) / 2}" y="${svgH + 22}" text-anchor="middle" font-size="10" fill="#d97706" font-weight="bold">${boxW}</text>
 <line x1="${xW2}" y1="${svgH + 4}" x2="${xL2}" y2="${svgH + 4}" stroke="#ea580c" stroke-width="1"/>
-<text x="${(xW2 + xL2) / 2}" y="${svgH + 24}" text-anchor="middle" font-size="11" fill="#ea580c" font-weight="bold">${boxL}</text>
+<text x="${(xW2 + xL2) / 2}" y="${svgH + 22}" text-anchor="middle" font-size="10" fill="#ea580c" font-weight="bold">${boxL}</text>
 <line x1="${xGlue}" y1="${svgH + 4}" x2="${xCut}" y2="${svgH + 4}" stroke="#10b981" stroke-width="1"/>
-<text x="${xGlue + 2.5 * S}" y="${svgH + 24}" text-anchor="middle" font-size="10" fill="#10b981" font-weight="bold">5</text>
+<text x="${xGlue + 2.5 * S}" y="${svgH + 22}" text-anchor="middle" font-size="9" fill="#10b981" font-weight="bold">5</text>
 <line x1="${xCut}" y1="${svgH + 4}" x2="${xEnd}" y2="${svgH + 4}" stroke="#ef4444" stroke-width="1"/>
-<text x="${xCut + 0.5 * S}" y="${svgH + 24}" text-anchor="middle" font-size="10" fill="#ef4444" font-weight="bold">1</text>
-<text x="${svgW / 2}" y="${svgH + 42}" text-anchor="middle" font-size="12" font-weight="bold" fill="#374151">Kesma: ${blankLen.toFixed(1)} sm × ${blankW.toFixed(1)} sm</text>
-<line x1="-12" y1="${yCutTop}" x2="-12" y2="${yFlapTop}" stroke="#ef4444" stroke-width="1"/>
-<text x="-18" y="${(yCutTop + yFlapTop) / 2 + 5}" text-anchor="end" font-size="10" fill="#ef4444" font-weight="bold">1</text>
-<line x1="-12" y1="${yFlapTop}" x2="-12" y2="${yCenter}" stroke="#3b82f6" stroke-width="1"/>
-<text x="-18" y="${(yFlapTop + yCenter) / 2 + 5}" text-anchor="end" font-size="10" fill="#3b82f6" font-weight="bold">${(boxL / 2).toFixed(1)}</text>
-<line x1="-12" y1="${yCenter}" x2="-12" y2="${yFlapBot}" stroke="#d97706" stroke-width="1.5"/>
-<text x="-18" y="${(yCenter + yFlapBot) / 2 + 5}" text-anchor="end" font-size="11" fill="#d97706" font-weight="bold">${boxH}</text>
-<line x1="-12" y1="${yFlapBot}" x2="-12" y2="${yCutBot}" stroke="#3b82f6" stroke-width="1"/>
-<text x="-18" y="${(yFlapBot + yCutBot) / 2 + 5}" text-anchor="end" font-size="10" fill="#3b82f6" font-weight="bold">${(boxL / 2).toFixed(1)}</text>
-<line x1="-12" y1="${yCutBot}" x2="-12" y2="${yEnd}" stroke="#ef4444" stroke-width="1"/>
-<text x="-18" y="${(yCutBot + yEnd) / 2 + 5}" text-anchor="end" font-size="10" fill="#ef4444" font-weight="bold">1</text>
+<text x="${xCut + 0.5 * S}" y="${svgH + 22}" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="bold">1</text>
+<text x="${svgW / 2}" y="${svgH + 40}" text-anchor="middle" font-size="11" font-weight="bold" fill="#374151">Kesma: ${blankLen.toFixed(1)} x ${blankW.toFixed(1)} sm</text>
+<line x1="-10" y1="${yCutTop}" x2="-10" y2="${yFlapTop}" stroke="#ef4444" stroke-width="1"/>
+<text x="-14" y="${(yCutTop + yFlapTop) / 2 + 4}" text-anchor="end" font-size="9" fill="#ef4444" font-weight="bold">1</text>
+<line x1="-10" y1="${yFlapTop}" x2="-10" y2="${yCenter}" stroke="#3b82f6" stroke-width="1"/>
+<text x="-14" y="${(yFlapTop + yCenter) / 2 + 4}" text-anchor="end" font-size="9" fill="#3b82f6" font-weight="bold">${(boxL / 2).toFixed(1)}</text>
+<line x1="-10" y1="${yCenter}" x2="-10" y2="${yFlapBot}" stroke="#d97706" stroke-width="1.5"/>
+<text x="-14" y="${(yCenter + yFlapBot) / 2 + 4}" text-anchor="end" font-size="10" fill="#d97706" font-weight="bold">${boxH}</text>
+<line x1="-10" y1="${yFlapBot}" x2="-10" y2="${yCutBot}" stroke="#3b82f6" stroke-width="1"/>
+<text x="-14" y="${(yFlapBot + yCutBot) / 2 + 4}" text-anchor="end" font-size="9" fill="#3b82f6" font-weight="bold">${(boxL / 2).toFixed(1)}</text>
+<line x1="-10" y1="${yCutBot}" x2="-10" y2="${yEnd}" stroke="#ef4444" stroke-width="1"/>
+<text x="-14" y="${(yCutBot + yEnd) / 2 + 4}" text-anchor="end" font-size="9" fill="#ef4444" font-weight="bold">1</text>
 </svg>
 
-<svg viewBox="0 0 ${box3dW + 40} ${box3dH + 40}" width="${box3dW + 40}" height="${box3dH + 40}">
+<svg viewBox="0 0 ${box3dW + 40} ${box3dH + 40}" width="100%" height="${box3dH + 40}" style="margin-top:16px">
 <rect x="0" y="0" width="${box3dW + 40}" height="${box3dH + 40}" fill="white"/>
 <rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
 <polygon points="${bx + bw},${by} ${bx + bw + d},${by - d * 0.6} ${bx + bw + d},${by + bh - d * 0.6} ${bx + bw},${by + bh}" fill="#fed7aa" stroke="#ea580c" stroke-width="2"/>
 <line x1="${bx + bw}" y1="${by}" x2="${bx + bw + d}" y2="${by - d * 0.6}" stroke="#ea580c" stroke-width="1" stroke-dasharray="4 2"/>
 <polygon points="${bx},${by} ${bx + d},${by - d * 0.6} ${bx + bw + d},${by - d * 0.6} ${bx + bw},${by}" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
 <line x1="${bx + bw * 0.6}" y1="${by}" x2="${bx + bw * 0.6 + d}" y2="${by - d * 0.6}" stroke="black" stroke-width="1.5" stroke-dasharray="3 2"/>
-<line x1="${bx}" y1="${by + bh + 18}" x2="${bx + bw}" y2="${by + bh + 18}" stroke="#d97706" stroke-width="1.5"/>
-<text x="${bx + bw / 2}" y="${by + bh + 35}" text-anchor="middle" font-size="14" fill="#d97706" font-weight="bold">W = ${boxW}</text>
-<line x1="${bx - 18}" y1="${by}" x2="${bx - 18}" y2="${by + bh}" stroke="#d97706" stroke-width="1.5"/>
-<text x="${bx - 26}" y="${by + bh / 2 + 5}" text-anchor="end" font-size="14" fill="#d97706" font-weight="bold">H = ${boxH}</text>
-<text x="${bx + bw / 2}" y="${by + bh / 2 - 12}" text-anchor="middle" font-size="16" fill="#374151" font-weight="bold">${boxW} × ${boxH} × ${boxL}</text>
-<text x="${bx + bw / 2}" y="${by + bh / 2 + 5}" text-anchor="middle" font-size="11" fill="#6b7280">W × H × L</text>
+<line x1="${bx}" y1="${by + bh + 14}" x2="${bx + bw}" y2="${by + bh + 14}" stroke="#d97706" stroke-width="1.5"/>
+<text x="${bx + bw / 2}" y="${by + bh + 30}" text-anchor="middle" font-size="12" fill="#d97706" font-weight="bold">W = ${boxW}</text>
+<line x1="${bx - 14}" y1="${by}" x2="${bx - 14}" y2="${by + bh}" stroke="#d97706" stroke-width="1.5"/>
+<text x="${bx - 22}" y="${by + bh / 2 + 5}" text-anchor="end" font-size="12" fill="#d97706" font-weight="bold">H = ${boxH}</text>
+<text x="${bx + bw / 2}" y="${by + bh / 2 - 8}" text-anchor="middle" font-size="14" fill="#374151" font-weight="bold">${boxW} x ${boxH} x ${boxL}</text>
+<text x="${bx + bw / 2}" y="${by + bh / 2 + 8}" text-anchor="middle" font-size="10" fill="#6b7280">W x H x L</text>
 </svg>
 </body></html>`;
 
   return (
     <RNWebView
       source={{ html }}
-      style={{ width: width - 32, height: 400, borderRadius: 8 }}
+      style={{ width: "100%", height: 520, backgroundColor: "#fff" }}
       originWhitelist={["*"]}
-      scrollEnabled={false}
+      scrollEnabled={true}
       javaScriptEnabled={false}
     />
   );
@@ -231,13 +238,14 @@ function ProductionCalcInner() {
           </View>
         </View>
 
-        {/* ESKIZ + 3D */}
+        {/* ESKIZ + 3D — to'liq ekran */}
         {hasBox && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>📐 Eskiz — {boxName}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <BoxWebView boxW={n(boxW)} boxH={n(boxH)} boxL={n(boxL)} />
-            </ScrollView>
+          <View style={styles.sketchSection}>
+            <View style={styles.sketchHeader}>
+              <Text style={styles.sketchTitle}>📐 {boxName}</Text>
+              <Text style={styles.sketchSub}>{n(boxW)} × {n(boxH)} × {n(boxL)} sm</Text>
+            </View>
+            <BoxWebView boxW={n(boxW)} boxH={n(boxH)} boxL={n(boxL)} />
           </View>
         )}
 
@@ -460,4 +468,15 @@ const styles = StyleSheet.create({
   emptyState: { padding: 60, alignItems: "center" },
   emptyText: { fontSize: 14, color: colors.textMuted, fontWeight: "600" },
   emptySub: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
+  sketchSection: {
+    marginHorizontal: spacing.lg, marginBottom: spacing.md,
+    backgroundColor: colors.surface, borderRadius: radius.xl,
+    overflow: "hidden", ...shadows.sm,
+  },
+  sketchHeader: {
+    paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm,
+    backgroundColor: "#f0fdf4", borderBottomWidth: 1, borderBottomColor: colors.border,
+  },
+  sketchTitle: { fontSize: 15, fontWeight: "700", color: colors.text },
+  sketchSub: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
 });
