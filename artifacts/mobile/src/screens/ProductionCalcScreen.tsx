@@ -18,7 +18,6 @@ function BoxWebView({ boxW, boxH, boxL }: { boxW: number; boxH: number; boxL: nu
   const blankW = 1 + flapH + boxH + flapH + 1;
   const svgW = blankLen * S;
   const svgH = blankW * S;
-  const pad = 30;
 
   const x0 = 0;
   const xW1 = boxW * S;
@@ -36,101 +35,129 @@ function BoxWebView({ boxW, boxH, boxL }: { boxW: number; boxH: number; boxL: nu
   const yCutBot = (1 + flapH + boxH + flapH) * S;
   const yEnd = (1 + flapH + boxH + flapH + 1) * S;
 
-  const totalSvgH = svgH + pad * 2 + 50;
-  const totalSvgW = svgW + pad * 2 + 30;
+  const padL = 50, padR = 30, padT = 30, padB = 60;
+  const totalSvgW = svgW + padL + padR;
+  const totalSvgH = svgH + padT + padB;
 
-  const box3dW = width - 40;
-  const box3dH = 220;
-  const bx = 30, by = 30;
-  const bw = box3dW * 0.45;
-  const bh = box3dH * 0.5;
-  const d = box3dH * 0.3;
+  const bx = 60, by = 50;
+  const bw = 180, bh = 120, d = 70;
+  const box3dPadL = 50, box3dPadR = 35, box3dPadT = 20, box3dPadB = 50;
+  const box3dTotalW = bx + bw + d + box3dPadL + box3dPadR;
+  const box3dTotalH = by + bh + box3dPadB + box3dPadT;
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<style>body{margin:0;padding:0;background:#fff;overflow-x:auto;-webkit-overflow-scrolling:touch;}
-*{box-sizing:border-box}</style></head><body>
-<svg viewBox="${-pad} ${-pad} ${totalSvgW} ${totalSvgH}" width="100%" height="${Math.min(totalSvgH, 350)}">
-<rect x="${-pad}" y="${-pad}" width="${totalSvgW}" height="${totalSvgH}" fill="white"/>
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=3">
+<style>body{margin:0;padding:0;background:#fff;}
+.s1{display:flex;justify-content:center;align-items:center;width:100%;padding:8px 0;}
+.s2{display:flex;justify-content:center;align-items:center;width:100%;padding:8px 0;border-top:1px solid #e5e7eb;margin-top:8px;}
+svg{display:block;max-width:100%;height:auto;}
+</style></head><body>
+
+<div class="s1">
+<svg viewBox="${-padL} ${-padT} ${totalSvgW} ${totalSvgH}" preserveAspectRatio="xMidYMid meet">
+<rect x="${-padL}" y="${-padT}" width="${totalSvgW}" height="${totalSvgH}" fill="white"/>
+
 <rect x="0" y="${yCutTop}" width="${svgW}" height="${S}" fill="#fee2e2" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 2"/>
-<text x="${svgW / 2}" y="${yCutTop + 0.5 * S + 4}" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="bold">1 sm chiqindi</text>
+<text x="${svgW / 2}" y="${yCutTop + S / 2 + 5}" text-anchor="middle" font-size="13" fill="#ef4444" font-weight="bold">1 sm chiqindi</text>
+
 <rect x="${x0}" y="${yFlapTop}" width="${xW1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
 <rect x="${xW1}" y="${yFlapTop}" width="${xL1 - xW1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
 <rect x="${xL1}" y="${yFlapTop}" width="${xW2 - xL1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
 <rect x="${xW2}" y="${yFlapTop}" width="${xL2 - xW2}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
+
 <rect x="${x0}" y="${yCenter}" width="${xW1}" height="${boxH * S}" fill="#fef3c7" stroke="#d97706" stroke-width="2.5"/>
 <rect x="${xW1}" y="${yCenter}" width="${xL1 - xW1}" height="${boxH * S}" fill="#fed7aa" stroke="#ea580c" stroke-width="2.5"/>
 <rect x="${xL1}" y="${yCenter}" width="${xW2 - xL1}" height="${boxH * S}" fill="#fef3c7" stroke="#d97706" stroke-width="2.5"/>
 <rect x="${xW2}" y="${yCenter}" width="${xL2 - xW2}" height="${boxH * S}" fill="#fed7aa" stroke="#ea580c" stroke-width="2.5"/>
 <rect x="${xGlue}" y="${yCenter}" width="${5 * S}" height="${boxH * S}" fill="#d1fae5" stroke="#10b981" stroke-width="1.5" stroke-dasharray="6 3"/>
 <rect x="${xCut}" y="${yCenter}" width="${1 * S}" height="${boxH * S}" fill="#fee2e2" stroke="#ef4444" stroke-width="1" stroke-dasharray="3 2"/>
+
 <rect x="${x0}" y="${yFlapBot}" width="${xW1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
 <rect x="${xW1}" y="${yFlapBot}" width="${xL1 - xW1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
 <rect x="${xL1}" y="${yFlapBot}" width="${xW2 - xL1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
 <rect x="${xW2}" y="${yFlapBot}" width="${xL2 - xW2}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
-<rect x="0" y="${yCutBot}" width="${svgW}" height="${S}" fill="#fee2e2" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 2"/>
-<text x="${svgW / 2}" y="${yCutBot + 0.5 * S + 4}" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="bold">1 sm chiqindi</text>
-<text x="${xW1 / 2}" y="${yCenter + boxH * S / 2 - 8}" text-anchor="middle" font-size="12" font-weight="bold" fill="#92400e">W</text>
-<text x="${xW1 / 2}" y="${yCenter + boxH * S / 2 + 10}" text-anchor="middle" font-size="10" fill="#92400e">${boxW}</text>
-<text x="${(xW1 + xL1) / 2}" y="${yCenter + boxH * S / 2 - 8}" text-anchor="middle" font-size="12" font-weight="bold" fill="#9a3412">L</text>
-<text x="${(xW1 + xL1) / 2}" y="${yCenter + boxH * S / 2 + 10}" text-anchor="middle" font-size="10" fill="#9a3412">${boxL}</text>
-<text x="${(xL1 + xW2) / 2}" y="${yCenter + boxH * S / 2 - 8}" text-anchor="middle" font-size="12" font-weight="bold" fill="#92400e">W</text>
-<text x="${(xL1 + xW2) / 2}" y="${yCenter + boxH * S / 2 + 10}" text-anchor="middle" font-size="10" fill="#92400e">${boxW}</text>
-<text x="${(xW2 + xL2) / 2}" y="${yCenter + boxH * S / 2 - 8}" text-anchor="middle" font-size="12" font-weight="bold" fill="#9a3412">L</text>
-<text x="${(xW2 + xL2) / 2}" y="${yCenter + boxH * S / 2 + 10}" text-anchor="middle" font-size="10" fill="#9a3412">${boxL}</text>
-<text x="${xGlue + 2.5 * S}" y="${yCenter + boxH * S / 2 + 3}" text-anchor="middle" font-size="8" font-weight="bold" fill="#065f46">YELIM 5</text>
-<text x="${xCut + 0.5 * S}" y="${yCenter + boxH * S / 2 + 3}" text-anchor="middle" font-size="7" fill="#ef4444" font-weight="bold">1</text>
-<text x="${xW1 / 2}" y="${yFlapTop + flapH * S / 2 + 4}" text-anchor="middle" font-size="9" fill="#1e40af" font-weight="bold">L/2</text>
-<text x="${(xW1 + xL1) / 2}" y="${yFlapTop + flapH * S / 2 + 4}" text-anchor="middle" font-size="9" fill="#1e40af" font-weight="bold">L/2</text>
-<text x="${xW1 / 2}" y="${yFlapBot + flapH * S / 2 + 4}" text-anchor="middle" font-size="9" fill="#1e40af" font-weight="bold">L/2</text>
-<text x="${(xW1 + xL1) / 2}" y="${yFlapBot + flapH * S / 2 + 4}" text-anchor="middle" font-size="9" fill="#1e40af" font-weight="bold">L/2</text>
-<line x1="0" y1="${svgH + 10}" x2="${svgW}" y2="${svgH + 10}" stroke="#374151" stroke-width="1.5"/>
-<line x1="${x0}" y1="${svgH + 4}" x2="${xW1}" y2="${svgH + 4}" stroke="#d97706" stroke-width="1"/>
-<text x="${xW1 / 2}" y="${svgH + 22}" text-anchor="middle" font-size="10" fill="#d97706" font-weight="bold">${boxW}</text>
-<line x1="${xW1}" y1="${svgH + 4}" x2="${xL1}" y2="${svgH + 4}" stroke="#ea580c" stroke-width="1"/>
-<text x="${(xW1 + xL1) / 2}" y="${svgH + 22}" text-anchor="middle" font-size="10" fill="#ea580c" font-weight="bold">${boxL}</text>
-<line x1="${xL1}" y1="${svgH + 4}" x2="${xW2}" y2="${svgH + 4}" stroke="#d97706" stroke-width="1"/>
-<text x="${(xL1 + xW2) / 2}" y="${svgH + 22}" text-anchor="middle" font-size="10" fill="#d97706" font-weight="bold">${boxW}</text>
-<line x1="${xW2}" y1="${svgH + 4}" x2="${xL2}" y2="${svgH + 4}" stroke="#ea580c" stroke-width="1"/>
-<text x="${(xW2 + xL2) / 2}" y="${svgH + 22}" text-anchor="middle" font-size="10" fill="#ea580c" font-weight="bold">${boxL}</text>
-<line x1="${xGlue}" y1="${svgH + 4}" x2="${xCut}" y2="${svgH + 4}" stroke="#10b981" stroke-width="1"/>
-<text x="${xGlue + 2.5 * S}" y="${svgH + 22}" text-anchor="middle" font-size="9" fill="#10b981" font-weight="bold">5</text>
-<line x1="${xCut}" y1="${svgH + 4}" x2="${xEnd}" y2="${svgH + 4}" stroke="#ef4444" stroke-width="1"/>
-<text x="${xCut + 0.5 * S}" y="${svgH + 22}" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="bold">1</text>
-<text x="${svgW / 2}" y="${svgH + 40}" text-anchor="middle" font-size="11" font-weight="bold" fill="#374151">Kesma: ${blankLen.toFixed(1)} x ${blankW.toFixed(1)} sm</text>
-<line x1="-10" y1="${yCutTop}" x2="-10" y2="${yFlapTop}" stroke="#ef4444" stroke-width="1"/>
-<text x="-14" y="${(yCutTop + yFlapTop) / 2 + 4}" text-anchor="end" font-size="9" fill="#ef4444" font-weight="bold">1</text>
-<line x1="-10" y1="${yFlapTop}" x2="-10" y2="${yCenter}" stroke="#3b82f6" stroke-width="1"/>
-<text x="-14" y="${(yFlapTop + yCenter) / 2 + 4}" text-anchor="end" font-size="9" fill="#3b82f6" font-weight="bold">${(boxL / 2).toFixed(1)}</text>
-<line x1="-10" y1="${yCenter}" x2="-10" y2="${yFlapBot}" stroke="#d97706" stroke-width="1.5"/>
-<text x="-14" y="${(yCenter + yFlapBot) / 2 + 4}" text-anchor="end" font-size="10" fill="#d97706" font-weight="bold">${boxH}</text>
-<line x1="-10" y1="${yFlapBot}" x2="-10" y2="${yCutBot}" stroke="#3b82f6" stroke-width="1"/>
-<text x="-14" y="${(yFlapBot + yCutBot) / 2 + 4}" text-anchor="end" font-size="9" fill="#3b82f6" font-weight="bold">${(boxL / 2).toFixed(1)}</text>
-<line x1="-10" y1="${yCutBot}" x2="-10" y2="${yEnd}" stroke="#ef4444" stroke-width="1"/>
-<text x="-14" y="${(yCutBot + yEnd) / 2 + 4}" text-anchor="end" font-size="9" fill="#ef4444" font-weight="bold">1</text>
-</svg>
 
-<svg viewBox="0 0 ${box3dW + 40} ${box3dH + 40}" width="100%" height="${box3dH + 40}" style="margin-top:16px">
-<rect x="0" y="0" width="${box3dW + 40}" height="${box3dH + 40}" fill="white"/>
+<rect x="0" y="${yCutBot}" width="${svgW}" height="${S}" fill="#fee2e2" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 2"/>
+<text x="${svgW / 2}" y="${yCutBot + S / 2 + 5}" text-anchor="middle" font-size="13" fill="#ef4444" font-weight="bold">1 sm chiqindi</text>
+
+<text x="${xW1 / 2}" y="${yCenter + boxH * S / 2 - 10}" text-anchor="middle" font-size="16" font-weight="bold" fill="#92400e">W</text>
+<text x="${xW1 / 2}" y="${yCenter + boxH * S / 2 + 14}" text-anchor="middle" font-size="14" fill="#92400e">${boxW} sm</text>
+<text x="${(xW1 + xL1) / 2}" y="${yCenter + boxH * S / 2 - 10}" text-anchor="middle" font-size="16" font-weight="bold" fill="#9a3412">L</text>
+<text x="${(xW1 + xL1) / 2}" y="${yCenter + boxH * S / 2 + 14}" text-anchor="middle" font-size="14" fill="#9a3412">${boxL} sm</text>
+<text x="${(xL1 + xW2) / 2}" y="${yCenter + boxH * S / 2 - 10}" text-anchor="middle" font-size="16" font-weight="bold" fill="#92400e">W</text>
+<text x="${(xL1 + xW2) / 2}" y="${yCenter + boxH * S / 2 + 14}" text-anchor="middle" font-size="14" fill="#92400e">${boxW} sm</text>
+<text x="${(xW2 + xL2) / 2}" y="${yCenter + boxH * S / 2 - 10}" text-anchor="middle" font-size="16" font-weight="bold" fill="#9a3412">L</text>
+<text x="${(xW2 + xL2) / 2}" y="${yCenter + boxH * S / 2 + 14}" text-anchor="middle" font-size="14" fill="#9a3412">${boxL} sm</text>
+<text x="${xGlue + 2.5 * S}" y="${yCenter + boxH * S / 2 + 4}" text-anchor="middle" font-size="12" font-weight="bold" fill="#065f46">YELIM</text>
+<text x="${xGlue + 2.5 * S}" y="${yCenter + boxH * S / 2 + 18}" text-anchor="middle" font-size="11" fill="#065f46">5 sm</text>
+<text x="${xCut + 0.5 * S}" y="${yCenter + boxH * S / 2 + 5}" text-anchor="middle" font-size="12" fill="#ef4444" font-weight="bold">1</text>
+
+<text x="${xW1 / 2}" y="${yFlapTop + flapH * S / 2 + 6}" text-anchor="middle" font-size="13" fill="#1e40af" font-weight="bold">L/2</text>
+<text x="${(xW1 + xL1) / 2}" y="${yFlapTop + flapH * S / 2 + 6}" text-anchor="middle" font-size="13" fill="#1e40af" font-weight="bold">L/2</text>
+<text x="${xW1 / 2}" y="${yFlapBot + flapH * S / 2 + 6}" text-anchor="middle" font-size="13" fill="#1e40af" font-weight="bold">L/2</text>
+<text x="${(xW1 + xL1) / 2}" y="${yFlapBot + flapH * S / 2 + 6}" text-anchor="middle" font-size="13" fill="#1e40af" font-weight="bold">L/2</text>
+
+<line x1="0" y1="${svgH + 14}" x2="${svgW}" y2="${svgH + 14}" stroke="#374151" stroke-width="1.5"/>
+<line x1="${x0}" y1="${svgH + 8}" x2="${xW1}" y2="${svgH + 8}" stroke="#d97706" stroke-width="1"/>
+<text x="${xW1 / 2}" y="${svgH + 30}" text-anchor="middle" font-size="14" fill="#d97706" font-weight="bold">${boxW}</text>
+<line x1="${xW1}" y1="${svgH + 8}" x2="${xL1}" y2="${svgH + 8}" stroke="#ea580c" stroke-width="1"/>
+<text x="${(xW1 + xL1) / 2}" y="${svgH + 30}" text-anchor="middle" font-size="14" fill="#ea580c" font-weight="bold">${boxL}</text>
+<line x1="${xL1}" y1="${svgH + 8}" x2="${xW2}" y2="${svgH + 8}" stroke="#d97706" stroke-width="1"/>
+<text x="${(xL1 + xW2) / 2}" y="${svgH + 30}" text-anchor="middle" font-size="14" fill="#d97706" font-weight="bold">${boxW}</text>
+<line x1="${xW2}" y1="${svgH + 8}" x2="${xL2}" y2="${svgH + 8}" stroke="#ea580c" stroke-width="1"/>
+<text x="${(xW2 + xL2) / 2}" y="${svgH + 30}" text-anchor="middle" font-size="14" fill="#ea580c" font-weight="bold">${boxL}</text>
+<line x1="${xGlue}" y1="${svgH + 8}" x2="${xCut}" y2="${svgH + 8}" stroke="#10b981" stroke-width="1"/>
+<text x="${xGlue + 2.5 * S}" y="${svgH + 30}" text-anchor="middle" font-size="13" fill="#10b981" font-weight="bold">5</text>
+<line x1="${xCut}" y1="${svgH + 8}" x2="${xEnd}" y2="${svgH + 8}" stroke="#ef4444" stroke-width="1"/>
+<text x="${xCut + 0.5 * S}" y="${svgH + 30}" text-anchor="middle" font-size="13" fill="#ef4444" font-weight="bold">1</text>
+<text x="${svgW / 2}" y="${svgH + 50}" text-anchor="middle" font-size="15" font-weight="bold" fill="#374151">Kesma: ${blankLen.toFixed(1)} x ${blankW.toFixed(1)} sm</text>
+
+<line x1="-16" y1="${yCutTop}" x2="-16" y2="${yFlapTop}" stroke="#ef4444" stroke-width="1"/>
+<text x="-22" y="${(yCutTop + yFlapTop) / 2 + 5}" text-anchor="end" font-size="13" fill="#ef4444" font-weight="bold">1</text>
+<line x1="-16" y1="${yFlapTop}" x2="-16" y2="${yCenter}" stroke="#3b82f6" stroke-width="1"/>
+<text x="-22" y="${(yFlapTop + yCenter) / 2 + 5}" text-anchor="end" font-size="13" fill="#3b82f6" font-weight="bold">${(boxL / 2).toFixed(1)}</text>
+<line x1="-16" y1="${yCenter}" x2="-16" y2="${yFlapBot}" stroke="#d97706" stroke-width="2"/>
+<text x="-22" y="${(yCenter + yFlapBot) / 2 + 6}" text-anchor="end" font-size="15" fill="#d97706" font-weight="bold">${boxH}</text>
+<line x1="-16" y1="${yFlapBot}" x2="-16" y2="${yCutBot}" stroke="#3b82f6" stroke-width="1"/>
+<text x="-22" y="${(yFlapBot + yCutBot) / 2 + 5}" text-anchor="end" font-size="13" fill="#3b82f6" font-weight="bold">${(boxL / 2).toFixed(1)}</text>
+<line x1="-16" y1="${yCutBot}" x2="-16" y2="${yEnd}" stroke="#ef4444" stroke-width="1"/>
+<text x="-22" y="${(yCutBot + yEnd) / 2 + 5}" text-anchor="end" font-size="13" fill="#ef4444" font-weight="bold">1</text>
+</svg>
+</div>
+
+<div class="s2">
+<svg viewBox="${-box3dPadL} ${-box3dPadT} ${box3dTotalW} ${box3dTotalH}" preserveAspectRatio="xMidYMid meet">
+<rect x="${-box3dPadL}" y="${-box3dPadT}" width="${box3dTotalW}" height="${box3dTotalH}" fill="white"/>
+
 <rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
 <polygon points="${bx + bw},${by} ${bx + bw + d},${by - d * 0.6} ${bx + bw + d},${by + bh - d * 0.6} ${bx + bw},${by + bh}" fill="#fed7aa" stroke="#ea580c" stroke-width="2"/>
 <line x1="${bx + bw}" y1="${by}" x2="${bx + bw + d}" y2="${by - d * 0.6}" stroke="#ea580c" stroke-width="1" stroke-dasharray="4 2"/>
 <polygon points="${bx},${by} ${bx + d},${by - d * 0.6} ${bx + bw + d},${by - d * 0.6} ${bx + bw},${by}" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
 <line x1="${bx + bw * 0.6}" y1="${by}" x2="${bx + bw * 0.6 + d}" y2="${by - d * 0.6}" stroke="black" stroke-width="1.5" stroke-dasharray="3 2"/>
-<line x1="${bx}" y1="${by + bh + 14}" x2="${bx + bw}" y2="${by + bh + 14}" stroke="#d97706" stroke-width="1.5"/>
-<text x="${bx + bw / 2}" y="${by + bh + 30}" text-anchor="middle" font-size="12" fill="#d97706" font-weight="bold">W = ${boxW}</text>
-<line x1="${bx - 14}" y1="${by}" x2="${bx - 14}" y2="${by + bh}" stroke="#d97706" stroke-width="1.5"/>
-<text x="${bx - 22}" y="${by + bh / 2 + 5}" text-anchor="end" font-size="12" fill="#d97706" font-weight="bold">H = ${boxH}</text>
-<text x="${bx + bw / 2}" y="${by + bh / 2 - 8}" text-anchor="middle" font-size="14" fill="#374151" font-weight="bold">${boxW} x ${boxH} x ${boxL}</text>
-<text x="${bx + bw / 2}" y="${by + bh / 2 + 8}" text-anchor="middle" font-size="10" fill="#6b7280">W x H x L</text>
+
+<line x1="${bx}" y1="${by + bh + 16}" x2="${bx + bw}" y2="${by + bh + 16}" stroke="#d97706" stroke-width="1.5"/>
+<line x1="${bx}" y1="${by + bh + 12}" x2="${bx}" y2="${by + bh + 20}" stroke="#d97706" stroke-width="1"/>
+<line x1="${bx + bw}" y1="${by + bh + 12}" x2="${bx + bw}" y2="${by + bh + 20}" stroke="#d97706" stroke-width="1"/>
+<text x="${bx + bw / 2}" y="${by + bh + 38}" text-anchor="middle" font-size="17" fill="#d97706" font-weight="bold">W = ${boxW}</text>
+
+<line x1="${bx - 18}" y1="${by}" x2="${bx - 18}" y2="${by + bh}" stroke="#d97706" stroke-width="1.5"/>
+<line x1="${bx - 22}" y1="${by}" x2="${bx - 14}" y2="${by}" stroke="#d97706" stroke-width="1"/>
+<line x1="${bx - 22}" y1="${by + bh}" x2="${bx - 14}" y2="${by + bh}" stroke="#d97706" stroke-width="1"/>
+<text x="${bx - 26}" y="${by + bh / 2 + 6}" text-anchor="end" font-size="17" fill="#d97706" font-weight="bold">H = ${boxH}</text>
+
+<text x="${bx + bw / 2}" y="${by + bh / 2 - 16}" text-anchor="middle" font-size="22" fill="#374151" font-weight="bold">${boxW} x ${boxH} x ${boxL}</text>
+<text x="${bx + bw / 2}" y="${by + bh / 2 + 4}" text-anchor="middle" font-size="14" fill="#6b7280">W x H x L</text>
 </svg>
+</div>
+
 </body></html>`;
 
   return (
     <RNWebView
       source={{ html }}
-      style={{ width: "100%", height: 520, backgroundColor: "#fff" }}
+      style={{ width: "100%", height: 580, backgroundColor: "#fff" }}
       originWhitelist={["*"]}
-      scrollEnabled={true}
+      scrollEnabled={false}
       javaScriptEnabled={false}
     />
   );

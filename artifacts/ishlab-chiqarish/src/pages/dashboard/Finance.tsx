@@ -611,11 +611,9 @@ export default function Finance() {
                         {tx.type === "income" ? "+" : "-"}{formatSum(tx.amount)}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        {!isAuto && (
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(tx.id)} className="text-destructive hover:bg-destructive/10">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(tx.id)} className="text-destructive hover:bg-destructive/10">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </td>
                     </tr>
                   );

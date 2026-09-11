@@ -95,9 +95,10 @@ function TI({ emoji, focused }: { emoji: string; focused: boolean }) {
 }
 
 const tabStyle = { height: 90, paddingBottom: 30, paddingTop: 8, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#f5f5f4", elevation: 20, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.06, shadowRadius: 16 };
-const tabOpts = { headerShown: false, tabBarStyle: tabStyle, tabBarLabelStyle: { fontSize: 10, fontWeight: "700" as const, marginTop: -2 }, tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: "#94a3b8" };
 
-// Stable profile stack — reused across all roles
+// unmountOnBlur: true — har bir tab o'tganda stack tozalanadi
+const tabOpts = { headerShown: false, tabBarStyle: tabStyle, tabBarLabelStyle: { fontSize: 10, fontWeight: "700" as const, marginTop: -2 }, tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: "#94a3b8", unmountOnBlur: true };
+
 const ProfileStackNavigator = React.memo(function ProfileStackNavigator() {
   const { onLogout } = useContext(AuthContext);
   const S = createNativeStackNavigator();
@@ -110,7 +111,6 @@ const ProfileStackNavigator = React.memo(function ProfileStackNavigator() {
   );
 });
 
-// Stable home stack — reused across all roles
 const HomeStackNavigator = React.memo(function HomeStackNavigator() {
   const { onLogout } = useContext(AuthContext);
   const S = createNativeStackNavigator();
@@ -132,19 +132,40 @@ const HomeStackNavigator = React.memo(function HomeStackNavigator() {
   );
 });
 
-const AdminProductionScreen = React.memo(() => {
+const AdminProductionScreen = React.memo(function AdminProductionScreen() {
   const S = createNativeStackNavigator();
-  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="ProdMain" component={ProductionScreen} options={{ title: "🏭 Ishlab chiqarish" }} /><S.Screen name="Products" component={ProductsScreen} options={{ title: "📦 Mahsulotlar" }} /><S.Screen name="Stock" component={StockViewScreen} options={{ title: "📦 Ombor" }} /><S.Screen name="ProdCalc" component={ProductionCalcScreen} options={{ title: "🧮 Kalkulyatsiya" }} /><S.Screen name="Calculations" component={CalculationsScreen} options={{ title: "📋 Saqlangan hisoblashlar" }} /></S.Navigator>);
+  return (
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="ProdMain" component={ProductionScreen} options={{ title: "🏭 Ishlab chiqarish" }} />
+      <S.Screen name="Products" component={ProductsScreen} options={{ title: "📦 Mahsulotlar" }} />
+      <S.Screen name="Stock" component={StockViewScreen} options={{ title: "📦 Ombor" }} />
+      <S.Screen name="ProdCalc" component={ProductionCalcScreen} options={{ title: "🧮 Kalkulyatsiya" }} />
+      <S.Screen name="Calculations" component={CalculationsScreen} options={{ title: "📋 Saqlangan hisoblashlar" }} />
+    </S.Navigator>
+  );
 });
 
-const AdminHRScreen = React.memo(() => {
+const AdminHRScreen = React.memo(function AdminHRScreen() {
   const S = createNativeStackNavigator();
-  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="Employees" component={EmployeesScreen} options={{ title: "👥 Hodimlar" }} /><S.Screen name="Attendance" component={AttendanceScreen} options={{ title: "✅ Davomat" }} /><S.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} /><S.Screen name="Tasks" component={AdminTasksScreen} options={{ title: "📋 Topshiriqlar" }} /><S.Screen name="FaceAttendance" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} /><S.Screen name="FaceRegister" component={FaceRegisterScreen} options={{ title: "📸 Yuz ro'yxati" }} /></S.Navigator>);
+  return (
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="Employees" component={EmployeesScreen} options={{ title: "👥 Hodimlar" }} />
+      <S.Screen name="Attendance" component={AttendanceScreen} options={{ title: "✅ Davomat" }} />
+      <S.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} />
+      <S.Screen name="Tasks" component={AdminTasksScreen} options={{ title: "📋 Topshiriqlar" }} />
+      <S.Screen name="FaceAttendance" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} />
+      <S.Screen name="FaceRegister" component={FaceRegisterScreen} options={{ title: "📸 Yuz ro'yxati" }} />
+    </S.Navigator>
+  );
 });
 
-const AdminFinanceScreen = React.memo(() => {
+const AdminFinanceScreen = React.memo(function AdminFinanceScreen() {
   const S = createNativeStackNavigator();
-  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="Fin" component={FinanceScreen} options={{ title: "💰 Moliya" }} /></S.Navigator>);
+  return (
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="Fin" component={FinanceScreen} options={{ title: "💰 Moliya" }} />
+    </S.Navigator>
+  );
 });
 
 const AdminTabs = React.memo(function AdminTabs() {
@@ -163,19 +184,51 @@ const AdminTabs = React.memo(function AdminTabs() {
 const ManagerHomeScreen = React.memo(function ManagerHomeScreen() {
   const { onLogout } = useContext(AuthContext);
   const S = createNativeStackNavigator();
-  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="H" options={{ headerShown: false }}>{({ navigation }) => <HomeScreen navigation={navigation} onLogout={onLogout} />}</S.Screen><S.Screen name="Profile" options={{ title: "Profil", headerLeft: () => <HeaderLogo /> }}>{({ navigation }) => <ProfileScreen navigation={navigation} onLogout={onLogout} />}</S.Screen><S.Screen name="FaceAttendance" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} /><S.Screen name="ProdCalc" component={ProductionCalcScreen} options={{ title: "🧮 Kalkulyatsiya" }} /></S.Navigator>);
+  return (
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="H" options={{ headerShown: false }}>
+        {({ navigation }) => <HomeScreen navigation={navigation} onLogout={onLogout} />}
+      </S.Screen>
+      <S.Screen name="Profile" options={{ title: "Profil", headerLeft: () => <HeaderLogo /> }}>
+        {({ navigation }) => <ProfileScreen navigation={navigation} onLogout={onLogout} />}
+      </S.Screen>
+      <S.Screen name="FaceAttendance" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} />
+      <S.Screen name="ProdCalc" component={ProductionCalcScreen} options={{ title: "🧮 Kalkulyatsiya" }} />
+    </S.Navigator>
+  );
 });
-const ManagerProductionScreen = React.memo(() => {
+
+const ManagerProductionScreen = React.memo(function ManagerProductionScreen() {
   const S = createNativeStackNavigator();
-  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="ProdMain" component={ProductionScreen} options={{ title: "🏭 Ishlab chiqarish" }} /><S.Screen name="Products" component={ProductsScreen} options={{ title: "📦 Mahsulotlar" }} /><S.Screen name="Stock" component={StockViewScreen} options={{ title: "📦 Ombor" }} /></S.Navigator>);
+  return (
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="ProdMain" component={ProductionScreen} options={{ title: "🏭 Ishlab chiqarish" }} />
+      <S.Screen name="Products" component={ProductsScreen} options={{ title: "📦 Mahsulotlar" }} />
+      <S.Screen name="Stock" component={StockViewScreen} options={{ title: "📦 Ombor" }} />
+      <S.Screen name="ProdCalc" component={ProductionCalcScreen} options={{ title: "🧮 Kalkulyatsiya" }} />
+      <S.Screen name="Calculations" component={CalculationsScreen} options={{ title: "📋 Saqlangan hisoblashlar" }} />
+    </S.Navigator>
+  );
 });
-const ManagerAttendanceScreen = React.memo(() => {
+
+const ManagerAttendanceScreen = React.memo(function ManagerAttendanceScreen() {
   const S = createNativeStackNavigator();
-  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="FaceAtt" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID Davomat" }} /><S.Screen name="Attendance" component={AttendanceScreen} options={{ title: "✅ Davomat" }} /><S.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} /></S.Navigator>);
+  return (
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="FaceAtt" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID Davomat" }} />
+      <S.Screen name="Attendance" component={AttendanceScreen} options={{ title: "✅ Davomat" }} />
+      <S.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} />
+    </S.Navigator>
+  );
 });
-const ManagerTasksScreen = React.memo(() => {
+
+const ManagerTasksScreen = React.memo(function ManagerTasksScreen() {
   const S = createNativeStackNavigator();
-  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="MyTasks" component={EmployeeTasksScreen} options={{ title: "📋 Topshiriqlarim" }} /></S.Navigator>);
+  return (
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="MyTasks" component={EmployeeTasksScreen} options={{ title: "📋 Topshiriqlarim" }} />
+    </S.Navigator>
+  );
 });
 
 const ManagerTabs = React.memo(function ManagerTabs() {
@@ -191,17 +244,32 @@ const ManagerTabs = React.memo(function ManagerTabs() {
 });
 
 // Employee
-const EmployeeDavomatScreen = React.memo(() => {
+const EmployeeDavomatScreen = React.memo(function EmployeeDavomatScreen() {
   const S = createNativeStackNavigator();
-  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="FaceAtt" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID Davomat" }} /><S.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} /></S.Navigator>);
+  return (
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="FaceAtt" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID Davomat" }} />
+      <S.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} />
+    </S.Navigator>
+  );
 });
-const EmployeeTasksScreenNav = React.memo(() => {
+
+const EmployeeTasksScreenNav = React.memo(function EmployeeTasksScreenNav() {
   const S = createNativeStackNavigator();
-  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="MyTasks" component={EmployeeTasksScreen} options={{ title: "📋 Topshiriqlarim" }} /></S.Navigator>);
+  return (
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="MyTasks" component={EmployeeTasksScreen} options={{ title: "📋 Topshiriqlarim" }} />
+    </S.Navigator>
+  );
 });
-const EmployeeReportScreen = React.memo(() => {
+
+const EmployeeReportScreen = React.memo(function EmployeeReportScreen() {
   const S = createNativeStackNavigator();
-  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="Report" component={AttendanceReportScreen} options={{ title: "📊 Davomat hisoboti" }} /></S.Navigator>);
+  return (
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="Report" component={AttendanceReportScreen} options={{ title: "📊 Davomat hisoboti" }} />
+    </S.Navigator>
+  );
 });
 
 const EmployeeTabs = React.memo(function EmployeeTabs() {
@@ -231,17 +299,34 @@ const DriverHomeScreen = React.memo(function DriverHomeScreen() {
     </S.Navigator>
   );
 });
-const DriverDeliveryScreen = React.memo(() => {
+
+const DriverDeliveryScreen = React.memo(function DriverDeliveryScreen() {
   const S = createNativeStackNavigator();
-  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="Delivery" component={DeliveryScreen} options={{ title: "🚚 Yetkazish", headerShown: false }} /><S.Screen name="DeliveryMap" component={DeliveryMapScreen} options={{ title: "🗺️ Xarita" }} /></S.Navigator>);
+  return (
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="Delivery" component={DeliveryScreen} options={{ title: "🚚 Yetkazish", headerShown: false }} />
+      <S.Screen name="DeliveryMap" component={DeliveryMapScreen} options={{ title: "🗺️ Xarita" }} />
+    </S.Navigator>
+  );
 });
-const DriverDavomatScreen = React.memo(() => {
+
+const DriverDavomatScreen = React.memo(function DriverDavomatScreen() {
   const S = createNativeStackNavigator();
-  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="FaceAtt" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} /><S.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} /></S.Navigator>);
+  return (
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="FaceAtt" component={FaceAttendanceScreen} options={{ title: "🤳 Face ID" }} />
+      <S.Screen name="AttendanceReport" component={AttendanceReportScreen} options={{ title: "📊 Hisobot" }} />
+    </S.Navigator>
+  );
 });
-const DriverOrdersScreen = React.memo(() => {
+
+const DriverOrdersScreen = React.memo(function DriverOrdersScreen() {
   const S = createNativeStackNavigator();
-  return (<S.Navigator screenOptions={hdrOpts}><S.Screen name="Orders" component={OrdersScreen} options={{ title: "📋 Buyurtmalar" }} /></S.Navigator>);
+  return (
+    <S.Navigator screenOptions={hdrOpts}>
+      <S.Screen name="Orders" component={OrdersScreen} options={{ title: "📋 Buyurtmalar" }} />
+    </S.Navigator>
+  );
 });
 
 const DriverTabs = React.memo(function DriverTabs() {
