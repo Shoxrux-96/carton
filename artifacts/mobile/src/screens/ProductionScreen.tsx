@@ -195,12 +195,6 @@ export default function ProductionScreen({ navigation }: any) {
       </ScrollView>
 
       {/* FAB */}
-      <TouchableOpacity style={[styles.fab, { bottom: 170 }]} onPress={() => navigation.navigate("Calculations")} activeOpacity={0.8}>
-        <Text style={styles.fabText}>📋</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={[styles.fab, { bottom: 100 }]} onPress={() => navigation.navigate("ProdCalc")} activeOpacity={0.8}>
-        <Text style={styles.fabText}>🧮</Text>
-      </TouchableOpacity>
       <TouchableOpacity style={styles.fab} onPress={() => setShowModal(true)} activeOpacity={0.8}>
         <Text style={styles.fabText}>＋</Text>
       </TouchableOpacity>

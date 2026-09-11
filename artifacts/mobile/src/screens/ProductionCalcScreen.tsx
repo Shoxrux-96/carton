@@ -1,15 +1,145 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import {
   View, Text, ScrollView, StyleSheet, TextInput,
   TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions,
+  WebView as RNWebView,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { colors, radius, shadows, spacing } from "../theme";
 
 const { width } = Dimensions.get("window");
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 const fmtD = (n: number, d = 2) => n.toFixed(d);
 
+function BoxWebView({ boxW, boxH, boxL }: { boxW: number; boxH: number; boxL: number }) {
+  const S = 7;
+  const blankLen = 2 * (boxW + boxL) + 6;
+  const flapH = boxL / 2;
+  const blankW = 1 + flapH + boxH + flapH + 1;
+  const svgW = blankLen * S;
+  const svgH = blankW * S;
+  const pad = 40;
+
+  const x0 = 0;
+  const xW1 = boxW * S;
+  const xL1 = (boxW + boxL) * S;
+  const xW2 = (2 * boxW + boxL) * S;
+  const xL2 = (2 * boxW + 2 * boxL) * S;
+  const xGlue = xL2;
+  const xCut = xL2 + 5 * S;
+  const xEnd = xCut + 1 * S;
+
+  const yCutTop = 0;
+  const yFlapTop = 1 * S;
+  const yCenter = (1 + flapH) * S;
+  const yFlapBot = (1 + flapH + boxH) * S;
+  const yCutBot = (1 + flapH + boxH + flapH) * S;
+  const yEnd = (1 + flapH + boxH + flapH + 1) * S;
+
+  const box3dW = 280;
+  const box3dH = 240;
+  const bx = 30, by = 40, bw = 160, bh = 110, d = 55;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{margin:0;padding:10px;background:#fff;font-family:Arial,sans-serif;}</style></head><body>
+<svg width="${svgW + pad * 2}" height="${svgH + pad * 2 + 50}" viewBox="${-pad} ${-pad} ${svgW + pad * 2} ${svgH + pad * 2 + 50}">
+<rect x="${-pad}" y="${-pad}" width="${svgW + pad * 2}" height="${svgH + pad * 2 + 50}" fill="white"/>
+<rect x="0" y="${yCutTop}" width="${svgW}" height="${S}" fill="#fee2e2" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 2"/>
+<text x="${svgW / 2}" y="${yCutTop + 0.5 * S + 5}" text-anchor="middle" font-size="11" fill="#ef4444" font-weight="bold">1 sm — chiqindi</text>
+<rect x="${x0}" y="${yFlapTop}" width="${xW1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
+<rect x="${xW1}" y="${yFlapTop}" width="${xL1 - xW1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
+<rect x="${xL1}" y="${yFlapTop}" width="${xW2 - xL1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
+<rect x="${xW2}" y="${yFlapTop}" width="${xL2 - xW2}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
+<rect x="${x0}" y="${yCenter}" width="${xW1}" height="${boxH * S}" fill="#fef3c7" stroke="#d97706" stroke-width="2.5"/>
+<rect x="${xW1}" y="${yCenter}" width="${xL1 - xW1}" height="${boxH * S}" fill="#fed7aa" stroke="#ea580c" stroke-width="2.5"/>
+<rect x="${xL1}" y="${yCenter}" width="${xW2 - xL1}" height="${boxH * S}" fill="#fef3c7" stroke="#d97706" stroke-width="2.5"/>
+<rect x="${xW2}" y="${yCenter}" width="${xL2 - xW2}" height="${boxH * S}" fill="#fed7aa" stroke="#ea580c" stroke-width="2.5"/>
+<rect x="${xGlue}" y="${yCenter}" width="${5 * S}" height="${boxH * S}" fill="#d1fae5" stroke="#10b981" stroke-width="1.5" stroke-dasharray="6 3"/>
+<rect x="${xCut}" y="${yCenter}" width="${1 * S}" height="${boxH * S}" fill="#fee2e2" stroke="#ef4444" stroke-width="1" stroke-dasharray="3 2"/>
+<rect x="${x0}" y="${yFlapBot}" width="${xW1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
+<rect x="${xW1}" y="${yFlapBot}" width="${xL1 - xW1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
+<rect x="${xL1}" y="${yFlapBot}" width="${xW2 - xL1}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
+<rect x="${xW2}" y="${yFlapBot}" width="${xL2 - xW2}" height="${flapH * S}" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3"/>
+<rect x="0" y="${yCutBot}" width="${svgW}" height="${S}" fill="#fee2e2" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 2"/>
+<text x="${svgW / 2}" y="${yCutBot + 0.5 * S + 5}" text-anchor="middle" font-size="11" fill="#ef4444" font-weight="bold">1 sm — chiqindi</text>
+<text x="${xW1 / 2}" y="${yCenter + boxH * S / 2 - 10}" text-anchor="middle" font-size="14" font-weight="bold" fill="#92400e">W</text>
+<text x="${xW1 / 2}" y="${yCenter + boxH * S / 2 + 12}" text-anchor="middle" font-size="11" fill="#92400e">${boxW} sm</text>
+<text x="${(xW1 + xL1) / 2}" y="${yCenter + boxH * S / 2 - 10}" text-anchor="middle" font-size="14" font-weight="bold" fill="#9a3412">L</text>
+<text x="${(xW1 + xL1) / 2}" y="${yCenter + boxH * S / 2 + 12}" text-anchor="middle" font-size="11" fill="#9a3412">${boxL} sm</text>
+<text x="${(xL1 + xW2) / 2}" y="${yCenter + boxH * S / 2 - 10}" text-anchor="middle" font-size="14" font-weight="bold" fill="#92400e">W</text>
+<text x="${(xL1 + xW2) / 2}" y="${yCenter + boxH * S / 2 + 12}" text-anchor="middle" font-size="11" fill="#92400e">${boxW} sm</text>
+<text x="${(xW2 + xL2) / 2}" y="${yCenter + boxH * S / 2 - 10}" text-anchor="middle" font-size="14" font-weight="bold" fill="#9a3412">L</text>
+<text x="${(xW2 + xL2) / 2}" y="${yCenter + boxH * S / 2 + 12}" text-anchor="middle" font-size="11" fill="#9a3412">${boxL} sm</text>
+<text x="${xGlue + 2.5 * S}" y="${yCenter + boxH * S / 2}" text-anchor="middle" font-size="10" font-weight="bold" fill="#065f46">YELIM 5</text>
+<text x="${xCut + 0.5 * S}" y="${yCenter + boxH * S / 2 + 5}" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="bold">1</text>
+<text x="${xW1 / 2}" y="${yFlapTop + flapH * S / 2 + 5}" text-anchor="middle" font-size="10" fill="#1e40af" font-weight="bold">L/2</text>
+<text x="${(xW1 + xL1) / 2}" y="${yFlapTop + flapH * S / 2 + 5}" text-anchor="middle" font-size="10" fill="#1e40af" font-weight="bold">L/2</text>
+<text x="${xW1 / 2}" y="${yFlapBot + flapH * S / 2 + 5}" text-anchor="middle" font-size="10" fill="#1e40af" font-weight="bold">L/2</text>
+<text x="${(xW1 + xL1) / 2}" y="${yFlapBot + flapH * S / 2 + 5}" text-anchor="middle" font-size="10" fill="#1e40af" font-weight="bold">L/2</text>
+<line x1="0" y1="${svgH + 10}" x2="${svgW}" y2="${svgH + 10}" stroke="#374151" stroke-width="1.5"/>
+<line x1="${x0}" y1="${svgH + 4}" x2="${xW1}" y2="${svgH + 4}" stroke="#d97706" stroke-width="1"/>
+<text x="${xW1 / 2}" y="${svgH + 24}" text-anchor="middle" font-size="11" fill="#d97706" font-weight="bold">${boxW}</text>
+<line x1="${xW1}" y1="${svgH + 4}" x2="${xL1}" y2="${svgH + 4}" stroke="#ea580c" stroke-width="1"/>
+<text x="${(xW1 + xL1) / 2}" y="${svgH + 24}" text-anchor="middle" font-size="11" fill="#ea580c" font-weight="bold">${boxL}</text>
+<line x1="${xL1}" y1="${svgH + 4}" x2="${xW2}" y2="${svgH + 4}" stroke="#d97706" stroke-width="1"/>
+<text x="${(xL1 + xW2) / 2}" y="${svgH + 24}" text-anchor="middle" font-size="11" fill="#d97706" font-weight="bold">${boxW}</text>
+<line x1="${xW2}" y1="${svgH + 4}" x2="${xL2}" y2="${svgH + 4}" stroke="#ea580c" stroke-width="1"/>
+<text x="${(xW2 + xL2) / 2}" y="${svgH + 24}" text-anchor="middle" font-size="11" fill="#ea580c" font-weight="bold">${boxL}</text>
+<line x1="${xGlue}" y1="${svgH + 4}" x2="${xCut}" y2="${svgH + 4}" stroke="#10b981" stroke-width="1"/>
+<text x="${xGlue + 2.5 * S}" y="${svgH + 24}" text-anchor="middle" font-size="10" fill="#10b981" font-weight="bold">5</text>
+<line x1="${xCut}" y1="${svgH + 4}" x2="${xEnd}" y2="${svgH + 4}" stroke="#ef4444" stroke-width="1"/>
+<text x="${xCut + 0.5 * S}" y="${svgH + 24}" text-anchor="middle" font-size="10" fill="#ef4444" font-weight="bold">1</text>
+<text x="${svgW / 2}" y="${svgH + 42}" text-anchor="middle" font-size="12" font-weight="bold" fill="#374151">Kesma: ${blankLen.toFixed(1)} sm × ${blankW.toFixed(1)} sm</text>
+<line x1="-12" y1="${yCutTop}" x2="-12" y2="${yFlapTop}" stroke="#ef4444" stroke-width="1"/>
+<text x="-18" y="${(yCutTop + yFlapTop) / 2 + 5}" text-anchor="end" font-size="10" fill="#ef4444" font-weight="bold">1</text>
+<line x1="-12" y1="${yFlapTop}" x2="-12" y2="${yCenter}" stroke="#3b82f6" stroke-width="1"/>
+<text x="-18" y="${(yFlapTop + yCenter) / 2 + 5}" text-anchor="end" font-size="10" fill="#3b82f6" font-weight="bold">${(boxL / 2).toFixed(1)}</text>
+<line x1="-12" y1="${yCenter}" x2="-12" y2="${yFlapBot}" stroke="#d97706" stroke-width="1.5"/>
+<text x="-18" y="${(yCenter + yFlapBot) / 2 + 5}" text-anchor="end" font-size="11" fill="#d97706" font-weight="bold">${boxH}</text>
+<line x1="-12" y1="${yFlapBot}" x2="-12" y2="${yCutBot}" stroke="#3b82f6" stroke-width="1"/>
+<text x="-18" y="${(yFlapBot + yCutBot) / 2 + 5}" text-anchor="end" font-size="10" fill="#3b82f6" font-weight="bold">${(boxL / 2).toFixed(1)}</text>
+<line x1="-12" y1="${yCutBot}" x2="-12" y2="${yEnd}" stroke="#ef4444" stroke-width="1"/>
+<text x="-18" y="${(yCutBot + yEnd) / 2 + 5}" text-anchor="end" font-size="10" fill="#ef4444" font-weight="bold">1</text>
+</svg>
+
+<svg viewBox="0 0 ${box3dW + 40} ${box3dH + 40}" width="${box3dW + 40}" height="${box3dH + 40}">
+<rect x="0" y="0" width="${box3dW + 40}" height="${box3dH + 40}" fill="white"/>
+<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+<polygon points="${bx + bw},${by} ${bx + bw + d},${by - d * 0.6} ${bx + bw + d},${by + bh - d * 0.6} ${bx + bw},${by + bh}" fill="#fed7aa" stroke="#ea580c" stroke-width="2"/>
+<line x1="${bx + bw}" y1="${by}" x2="${bx + bw + d}" y2="${by - d * 0.6}" stroke="#ea580c" stroke-width="1" stroke-dasharray="4 2"/>
+<polygon points="${bx},${by} ${bx + d},${by - d * 0.6} ${bx + bw + d},${by - d * 0.6} ${bx + bw},${by}" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+<line x1="${bx + bw * 0.6}" y1="${by}" x2="${bx + bw * 0.6 + d}" y2="${by - d * 0.6}" stroke="black" stroke-width="1.5" stroke-dasharray="3 2"/>
+<line x1="${bx}" y1="${by + bh + 18}" x2="${bx + bw}" y2="${by + bh + 18}" stroke="#d97706" stroke-width="1.5"/>
+<text x="${bx + bw / 2}" y="${by + bh + 35}" text-anchor="middle" font-size="14" fill="#d97706" font-weight="bold">W = ${boxW}</text>
+<line x1="${bx - 18}" y1="${by}" x2="${bx - 18}" y2="${by + bh}" stroke="#d97706" stroke-width="1.5"/>
+<text x="${bx - 26}" y="${by + bh / 2 + 5}" text-anchor="end" font-size="14" fill="#d97706" font-weight="bold">H = ${boxH}</text>
+<text x="${bx + bw / 2}" y="${by + bh / 2 - 12}" text-anchor="middle" font-size="16" fill="#374151" font-weight="bold">${boxW} × ${boxH} × ${boxL}</text>
+<text x="${bx + bw / 2}" y="${by + bh / 2 + 5}" text-anchor="middle" font-size="11" fill="#6b7280">W × H × L</text>
+</svg>
+</body></html>`;
+
+  return (
+    <RNWebView
+      source={{ html }}
+      style={{ width: width - 32, height: 400, borderRadius: 8 }}
+      originWhitelist={["*"]}
+      scrollEnabled={false}
+      javaScriptEnabled={false}
+    />
+  );
+}
+
 export default function ProductionCalcScreen() {
+  const [resetKey, setResetKey] = useState(0);
+
+  useFocusEffect(useCallback(() => {
+    setResetKey(k => k + 1);
+  }, []));
+
+  return <ProductionCalcInner key={resetKey} />;
+}
+
+function ProductionCalcInner() {
   const [boxL, setBoxL] = useState("");
   const [boxW, setBoxW] = useState("");
   const [boxH, setBoxH] = useState("");
@@ -30,7 +160,7 @@ export default function ProductionCalcScreen() {
     const L = n(boxL), W = n(boxW), H = n(boxH);
     const pwKg = n(paperWeightKg);
     const p1 = n(priceLayer1), p2 = n(priceLayer2), p3 = n(priceLayer3);
-    const w = n(wastePercent), q = n(quantity);
+    const q = n(quantity);
     const k = n(coefficient);
 
     if (L <= 0 || W <= 0 || H <= 0 || pwKg <= 0 || q <= 0) return null;
@@ -84,12 +214,6 @@ export default function ProductionCalcScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* HEADER */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>🧮 Kalkulyatsiya</Text>
-          <Text style={styles.headerSub}>Quti ishlab chiqarish xarajatlarini hisoblang</Text>
-        </View>
-
         {/* KORXONA + QUTI NOMI */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>📝 Korxona & quti nomi</Text>
@@ -106,6 +230,16 @@ export default function ProductionCalcScreen() {
             <InputField label="Balandligi (H)" value={boxH} setValue={setBoxH} placeholder="15" unit="sm" />
           </View>
         </View>
+
+        {/* ESKIZ + 3D */}
+        {hasBox && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>📐 Eskiz — {boxName}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <BoxWebView boxW={n(boxW)} boxH={n(boxH)} boxL={n(boxL)} />
+            </ScrollView>
+          </View>
+        )}
 
         {/* QOG'OG'IZ OG'IRLIGI */}
         <View style={styles.card}>
@@ -153,7 +287,7 @@ export default function ProductionCalcScreen() {
         </View>
 
         {/* NATIJALAR */}
-        {hasBox && calc ? (
+        {hasBox && calc && (
           <>
             {/* KESMA O'LCHAMLARI */}
             <View style={styles.card}>
@@ -177,7 +311,6 @@ export default function ProductionCalcScreen() {
             {/* 3 QATLAMLI JADVAL */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>📄 3 qatlamli qog'oz (1 dona uchun)</Text>
-              {/* Header */}
               <View style={[styles.tableRow, styles.tableHeader]}>
                 <Text style={[styles.tableCell, styles.tableHeaderText]}>Qatlam</Text>
                 <Text style={[styles.tableCell, styles.tableHeaderText]}>Turi</Text>
@@ -185,7 +318,6 @@ export default function ProductionCalcScreen() {
                 <Text style={[styles.tableCell, styles.tableHeaderText, { textAlign: "right" }]}>Narx</Text>
                 <Text style={[styles.tableCell, styles.tableHeaderText, { textAlign: "right" }]}>Summa</Text>
               </View>
-              {/* Layer 1 */}
               <View style={styles.tableRow}>
                 <Text style={[styles.tableCell, { fontWeight: "800", color: "#2563eb" }]}>1</Text>
                 <Text style={[styles.tableCell, { color: colors.textSecondary }]}>Tashqi</Text>
@@ -193,7 +325,6 @@ export default function ProductionCalcScreen() {
                 <Text style={[styles.tableCell, { textAlign: "right", color: colors.textSecondary }]}>{fmt(calc.l1.price)}</Text>
                 <Text style={[styles.tableCell, { textAlign: "right", fontWeight: "700" }]}>{fmt(calc.l1.cost)}</Text>
               </View>
-              {/* Layer 2 */}
               <View style={[styles.tableRow, { backgroundColor: "#fffbeb" }]}>
                 <Text style={[styles.tableCell, { fontWeight: "800", color: "#d97706" }]}>2</Text>
                 <Text style={[styles.tableCell, { color: colors.textSecondary }]}>Gofra ÷0.7</Text>
@@ -201,7 +332,6 @@ export default function ProductionCalcScreen() {
                 <Text style={[styles.tableCell, { textAlign: "right", color: "#d97706" }]}>{fmt(calc.l2.price)}</Text>
                 <Text style={[styles.tableCell, { textAlign: "right", fontWeight: "700" }]}>{fmt(calc.l2.cost)}</Text>
               </View>
-              {/* Layer 3 */}
               <View style={styles.tableRow}>
                 <Text style={[styles.tableCell, { fontWeight: "800", color: "#22c55e" }]}>3</Text>
                 <Text style={[styles.tableCell, { color: colors.textSecondary }]}>Ichki</Text>
@@ -209,7 +339,6 @@ export default function ProductionCalcScreen() {
                 <Text style={[styles.tableCell, { textAlign: "right", color: colors.textSecondary }]}>{fmt(calc.l3.price)}</Text>
                 <Text style={[styles.tableCell, { textAlign: "right", fontWeight: "700" }]}>{fmt(calc.l3.cost)}</Text>
               </View>
-              {/* JAMI */}
               <View style={[styles.tableRow, styles.tableFooter]}>
                 <Text style={[styles.tableCell, { fontWeight: "800", fontSize: 14 }]}>JAMI</Text>
                 <Text style={[styles.tableCell]}></Text>
@@ -236,7 +365,7 @@ export default function ProductionCalcScreen() {
               </View>
             </View>
 
-            {/* MIQDOR BO'LIMI — DAROMAD + SOF FOYDA */}
+            {/* MIQDOR BO'LIMI */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>📊 {fmt(calc.total.quantity)} dona uchun</Text>
               <View style={styles.resultSummaryRow}>
@@ -253,7 +382,9 @@ export default function ProductionCalcScreen() {
               </View>
             </View>
           </>
-        ) : (
+        )}
+
+        {!hasBox && (
           <View style={styles.emptyState}>
             <Text style={{ fontSize: 48, marginBottom: 12 }}>📦</Text>
             <Text style={styles.emptyText}>Quti o'lchamlarini kiriting (sm)</Text>
@@ -268,13 +399,6 @@ export default function ProductionCalcScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { paddingBottom: 40 },
-  header: {
-    backgroundColor: colors.primary, paddingTop: 12, paddingBottom: 20,
-    paddingHorizontal: spacing.xl, borderBottomLeftRadius: 24, borderBottomRightRadius: 24,
-    marginBottom: spacing.lg,
-  },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: "#fff" },
-  headerSub: { fontSize: 12, color: "rgba(255,255,255,0.8)", marginTop: 4 },
   card: {
     backgroundColor: colors.surface, borderRadius: radius.xl,
     padding: spacing.lg, marginHorizontal: spacing.lg,
@@ -298,8 +422,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: colors.border,
   },
   resultSummaryRow: {
-    flexDirection: "row", justifyContent: "space-between",
-    paddingVertical: 4,
+    flexDirection: "row", justifyContent: "space-between", paddingVertical: 4,
   },
   resultSummaryLabel: { fontSize: 13, color: colors.textSecondary, fontWeight: "500" },
   resultSummaryValue: { fontSize: 13, fontWeight: "700", color: colors.text },
@@ -320,10 +443,7 @@ const styles = StyleSheet.create({
   },
   tableHeaderText: { fontWeight: "700", color: colors.textSecondary, fontSize: 11 },
   tableCell: { flex: 1, fontSize: 12, color: colors.text, paddingHorizontal: 4 },
-  tableFooter: {
-    backgroundColor: "#f0fdf4", borderBottomWidth: 0,
-    paddingTop: 10,
-  },
+  tableFooter: { backgroundColor: "#f0fdf4", borderBottomWidth: 0, paddingTop: 10 },
   priceCardsRow: { flexDirection: "row", gap: 10, marginHorizontal: spacing.lg, marginBottom: spacing.md },
   priceCard: {
     flex: 1, borderRadius: radius.xl, padding: 16, alignItems: "center",
