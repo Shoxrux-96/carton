@@ -102,9 +102,9 @@ export function Sidebar() {
       key: "manufacturing",
       icon: Box,
       children: [
-        { href: "/dashboard/products", label: t("products"), icon: Package },
-        { href: "/dashboard/production", label: t("production"), icon: Wrench },
         { href: "/dashboard/production/calc", label: "Kalkulyatsiya", icon: Calculator },
+        { href: "/dashboard/production", label: t("production"), icon: Wrench },
+        { href: "/dashboard/products", label: t("products"), icon: Package },
         { href: "/dashboard/warehouse", label: t("warehouse"), icon: Warehouse },
       ],
     },
