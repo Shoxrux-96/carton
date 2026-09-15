@@ -39,10 +39,11 @@ router.post("/", authMiddleware, async (req, res) => {
   if (!warehouseId) {
     const [defaultWh] = await db.select().from(warehousesTable).limit(1);
     if (!defaultWh) {
-      res.status(400).json({ error: "Oldin ombor yarating" });
-      return;
+      const [newWh] = await db.insert(warehousesTable).values({ name: "Asosiy ombor" }).returning();
+      warehouseId = newWh.id;
+    } else {
+      warehouseId = defaultWh.id;
     }
-    warehouseId = defaultWh.id;
   }
 
   const product = await db.select().from(productsTable).where(eq(productsTable.id, productId)).limit(1);

@@ -4,6 +4,7 @@
  */
 import { db, employeesTable, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { hashPassword } from "./lib/password.js";
 
 const ADMIN = {
   phone: "998995054004",
@@ -69,12 +70,13 @@ const EMPLOYEES = [
 ];
 
 async function upsertUser(phone: string, password: string, role: string) {
+  const hashedPassword = hashPassword(password);
   const existing = await db.select().from(usersTable).where(eq(usersTable.phone, phone)).limit(1);
   if (existing.length > 0) {
-    await db.update(usersTable).set({ password, role }).where(eq(usersTable.phone, phone));
+    await db.update(usersTable).set({ password: hashedPassword, role }).where(eq(usersTable.phone, phone));
     return existing[0].id;
   }
-  const [user] = await db.insert(usersTable).values({ phone, password, role }).returning();
+  const [user] = await db.insert(usersTable).values({ phone, password: hashedPassword, role }).returning();
   return user.id;
 }
 
