@@ -177,11 +177,12 @@ function ProductionCalcInner() {
   const [boxL, setBoxL] = useState("");
   const [boxW, setBoxW] = useState("");
   const [boxH, setBoxH] = useState("");
-  const [paperWeightKg, setPaperWeightKg] = useState("0.125");
+  const [layer1Weight, setLayer1Weight] = useState("0.12");
+  const [layer2Weight, setLayer2Weight] = useState("0.12");
+  const [layer3Weight, setLayer3Weight] = useState("0.12");
   const [priceLayer1, setPriceLayer1] = useState("");
   const [priceLayer2, setPriceLayer2] = useState("");
   const [priceLayer3, setPriceLayer3] = useState("");
-  const [wastePercent, setWastePercent] = useState("10");
   const [quantity, setQuantity] = useState("1000");
   const [coefficient, setCoefficient] = useState("1.5");
   const [companyName, setCompanyName] = useState("Shovot Carton");
@@ -192,23 +193,23 @@ function ProductionCalcInner() {
 
   const calc = useMemo(() => {
     const L = n(boxL), W = n(boxW), H = n(boxH);
-    const pwKg = n(paperWeightKg);
+    const w1 = n(layer1Weight), w2 = n(layer2Weight), w3 = n(layer3Weight);
     const p1 = n(priceLayer1), p2 = n(priceLayer2), p3 = n(priceLayer3);
     const q = n(quantity);
     const k = n(coefficient);
 
-    if (L <= 0 || W <= 0 || H <= 0 || pwKg <= 0 || q <= 0) return null;
+    if (L <= 0 || W <= 0 || H <= 0 || q <= 0) return null;
 
     const blankLen = 2 * (W + L) + 6;
     const flapH = L / 2;
     const blankW = 1 + flapH + H + flapH + 1;
     const netAreaM2 = (blankLen * blankW) / 10000;
 
-    const l1Weight = netAreaM2 * pwKg;
+    const l1Weight = netAreaM2 * w1;
     const l1Cost = l1Weight * p1;
-    const l2Weight = netAreaM2 * pwKg / 0.7;
+    const l2Weight = netAreaM2 * w2 / 0.7;
     const l2Cost = l2Weight * p2;
-    const l3Weight = netAreaM2 * pwKg;
+    const l3Weight = netAreaM2 * w3;
     const l3Cost = l3Weight * p3;
 
     const totalWeight = l1Weight + l2Weight + l3Weight;
@@ -230,7 +231,7 @@ function ProductionCalcInner() {
       profit: Math.round((sellingPrice - totalPaperCost) * q),
       coefficient: k,
     };
-  }, [boxL, boxW, boxH, paperWeightKg, priceLayer1, priceLayer2, priceLayer3, wastePercent, quantity, coefficient]);
+  }, [boxL, boxW, boxH, layer1Weight, layer2Weight, layer3Weight, priceLayer1, priceLayer2, priceLayer3, quantity, coefficient]);
 
   const InputField = useCallback(({ label, value, setValue, placeholder, unit }: {
     label: string; value: string; setValue: (v: string) => void; placeholder: string; unit?: string;
@@ -276,27 +277,21 @@ function ProductionCalcInner() {
           </View>
         )}
 
-        {/* QOG'OG'IZ OG'IRLIGI */}
+        {/* QATLAM: OG'IRLIK + NARX */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>📄 Qog'oz og'irligi</Text>
-          <InputField label="Og'irlik" value={paperWeightKg} setValue={setPaperWeightKg} placeholder="0.125" unit="kg/m²" />
-        </View>
-
-        {/* QATLAM NARXLARI */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>💰 Har bir qatlam narxi (so'm/kg)</Text>
-          <InputField label="1-qatlam (tashqi)" value={priceLayer1} setValue={setPriceLayer1} placeholder="8000" unit="so'm/kg" />
-          <InputField label="2-qatlam (gofra)" value={priceLayer2} setValue={setPriceLayer2} placeholder="6000" unit="so'm/kg" />
-          <InputField label="3-qatlam (ichki)" value={priceLayer3} setValue={setPriceLayer3} placeholder="7000" unit="so'm/kg" />
+          <Text style={styles.cardTitle}>💰 Har bir qatlam (og'irlik + narx)</Text>
+          <InputField label="1-qatlam og." value={layer1Weight} setValue={setLayer1Weight} placeholder="0.12" unit="kg/m²" />
+          <InputField label="1-qatlam narx" value={priceLayer1} setValue={setPriceLayer1} placeholder="8000" unit="so'm/kg" />
+          <InputField label="2-qatlam og." value={layer2Weight} setValue={setLayer2Weight} placeholder="0.12" unit="kg/m²" />
+          <InputField label="2-qatlam narx" value={priceLayer2} setValue={setPriceLayer2} placeholder="6000" unit="so'm/kg" />
+          <InputField label="3-qatlam og." value={layer3Weight} setValue={setLayer3Weight} placeholder="0.12" unit="kg/m²" />
+          <InputField label="3-qatlam narx" value={priceLayer3} setValue={setPriceLayer3} placeholder="7000" unit="so'm/kg" />
         </View>
 
         {/* MIQDOR */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>📊 Miqdor</Text>
-          <View style={styles.row}>
-            <InputField label="Chiqindi" value={wastePercent} setValue={setWastePercent} placeholder="10" unit="%" />
-            <InputField label="Miqdor" value={quantity} setValue={setQuantity} placeholder="1000" unit="dona" />
-          </View>
+          <InputField label="Miqdor" value={quantity} setValue={setQuantity} placeholder="1000" unit="dona" />
           {calc && (
             <View style={styles.resultSummary}>
               <View style={styles.resultSummaryRow}>

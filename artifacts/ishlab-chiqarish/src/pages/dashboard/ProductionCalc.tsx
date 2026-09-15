@@ -12,11 +12,12 @@ export default function ProductionCalc() {
   const [boxL, setBoxL] = useState("");
   const [boxW, setBoxW] = useState("");
   const [boxH, setBoxH] = useState("");
-  const [paperWeightKg, setPaperWeightKg] = useState("0.125");
+  const [layer1Weight, setLayer1Weight] = useState("0.12");
+  const [layer2Weight, setLayer2Weight] = useState("0.12");
+  const [layer3Weight, setLayer3Weight] = useState("0.12");
   const [priceLayer1, setPriceLayer1] = useState("");
   const [priceLayer2, setPriceLayer2] = useState("");
   const [priceLayer3, setPriceLayer3] = useState("");
-  const [wastePercent, setWastePercent] = useState("10");
   const [quantity, setQuantity] = useState("1000");
   const [coefficient, setCoefficient] = useState("1.5");
   const [companyName, setCompanyName] = useState("Shovot Carton");
@@ -27,33 +28,27 @@ export default function ProductionCalc() {
 
   const calc = useMemo(() => {
     const L = n(boxL), W = n(boxW), H = n(boxH);
-    const pwKg = n(paperWeightKg);
+    const w1 = n(layer1Weight), w2 = n(layer2Weight), w3 = n(layer3Weight);
     const p1 = n(priceLayer1), p2 = n(priceLayer2), p3 = n(priceLayer3);
-    const w = n(wastePercent), q = n(quantity);
+    const q = n(quantity);
     const k = n(coefficient);
 
-    if (L <= 0 || W <= 0 || H <= 0 || pwKg <= 0 || q <= 0) return null;
+    if (L <= 0 || W <= 0 || H <= 0 || q <= 0) return null;
 
-    // Kesma o'lchamlari (sm)
     const blankLen = 2 * (W + L) + 6;
     const flapH = L / 2;
     const blankW = 1 + flapH + H + flapH + 1;
-
-    // Maydon (m²)
     const netAreaM2 = (blankLen * blankW) / 10000;
 
-    // 3 qatlam
-    const l1Weight = netAreaM2 * pwKg;
+    const l1Weight = netAreaM2 * w1;
     const l1Cost = l1Weight * p1;
-    const l2Weight = netAreaM2 * pwKg / 0.7;
+    const l2Weight = netAreaM2 * w2 / 0.7;
     const l2Cost = l2Weight * p2;
-    const l3Weight = netAreaM2 * pwKg;
+    const l3Weight = netAreaM2 * w3;
     const l3Cost = l3Weight * p3;
 
     const totalWeight = l1Weight + l2Weight + l3Weight;
     const totalPaperCost = l1Cost + l2Cost + l3Cost;
-
-    // Sotish narxi = ishlab chiqarish narxi × koeffitsient
     const sellingPrice = Math.round(totalPaperCost * k);
 
     return {
@@ -71,7 +66,7 @@ export default function ProductionCalc() {
       profit: Math.round((sellingPrice - totalPaperCost) * q),
       coefficient: k,
     };
-  }, [boxL, boxW, boxH, paperWeightKg, priceLayer1, priceLayer2, priceLayer3, wastePercent, quantity, coefficient]);
+  }, [boxL, boxW, boxH, layer1Weight, layer2Weight, layer3Weight, priceLayer1, priceLayer2, priceLayer3, quantity, coefficient]);
 
   const hasBox = n(boxL) > 0 && n(boxW) > 0 && n(boxH) > 0;
 
@@ -139,25 +134,20 @@ export default function ProductionCalc() {
           </div>
 
           <div className="bg-muted/30 rounded-lg p-2">
-            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">📄 Qog'oz og'irligi</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">💰 Har bir qatlam uchun (og'irlik + narx)</p>
             <div className="space-y-1">
-              {sm("Og'irlik", paperWeightKg, setPaperWeightKg, "0.125", "kg/m²")}
-            </div>
-          </div>
-
-          <div className="bg-muted/30 rounded-lg p-2">
-            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">💰 Har bir qatlam narxi (so'm/kg)</p>
-            <div className="space-y-1">
-              {sm("1-qatlam", priceLayer1, setPriceLayer1, "", "so'm/kg")}
-              {sm("2-qatlam", priceLayer2, setPriceLayer2, "", "so'm/kg")}
-              {sm("3-qatlam", priceLayer3, setPriceLayer3, "", "so'm/kg")}
+              {sm("1-qatlam og.", layer1Weight, setLayer1Weight, "0.12", "kg/m²")}
+              {sm("1-qatlam narx", priceLayer1, setPriceLayer1, "", "so'm/kg")}
+              {sm("2-qatlam og.", layer2Weight, setLayer2Weight, "0.12", "kg/m²")}
+              {sm("2-qatlam narx", priceLayer2, setPriceLayer2, "", "so'm/kg")}
+              {sm("3-qatlam og.", layer3Weight, setLayer3Weight, "0.12", "kg/m²")}
+              {sm("3-qatlam narx", priceLayer3, setPriceLayer3, "", "so'm/kg")}
             </div>
           </div>
 
           <div className="bg-muted/30 rounded-lg p-2">
             <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">📊 Miqdor</p>
             <div className="space-y-1">
-              {sm("Chiqindi", wastePercent, setWastePercent, "10", "%")}
               {sm("Miqdor", quantity, setQuantity, "1000", "dona")}
             </div>
             {calc && (
