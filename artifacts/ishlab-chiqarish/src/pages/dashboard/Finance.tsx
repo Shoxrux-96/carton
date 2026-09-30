@@ -93,6 +93,7 @@ export default function Finance() {
   const { data: waybills, refetch: refetchWaybills } = useQuery({
     queryKey: ["/api/waybills"],
     queryFn: () => customFetch("/api/waybills", { headers: authOpts.headers }).then(r => r.json()),
+    refetchInterval: 10000, // yangi yuk xatlari (kirim/chiqim) shu sahifada tez ko'rinsin
   });
 
   const waybillMap = useMemo(() => {
@@ -109,6 +110,7 @@ export default function Finance() {
   const { data: apiTransactions } = useQuery({
     queryKey: ["/api/finance"],
     queryFn: () => customFetch("/api/finance", { headers: authOpts.headers }).then(r => r.json()),
+    refetchInterval: 10000,
   });
 
   const { data: apiSummary } = useQuery({

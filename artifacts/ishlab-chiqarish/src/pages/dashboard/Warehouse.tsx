@@ -73,6 +73,7 @@ export default function WarehousePage() {
 
   const totalQuantity = filtered.reduce((sum, i) => sum + i.quantity, 0);
   const totalSum = filtered.reduce((sum, i) => sum + i.quantity * i.price, 0);
+  const lowStockCount = filtered.filter(i => i.quantity < 10).length;
 
   return (
     <DashboardLayout>
@@ -94,7 +95,7 @@ export default function WarehousePage() {
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-card border border-border/60 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -125,6 +126,17 @@ export default function WarehousePage() {
             <div>
               <p className="text-sm text-muted-foreground font-medium">{t('total_amount')}</p>
               <p className="text-3xl font-bold">{formatCurrency(totalSum)}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-card border border-border/60 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center">
+              <Package className="w-6 h-6 text-destructive" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground font-medium">{t('low_stock')}</p>
+              <p className="text-3xl font-bold">{lowStockCount}</p>
             </div>
           </div>
         </div>

@@ -45,6 +45,18 @@ router.get("/", authMiddleware, async (_req, res) => {
     .from(transactionsTable)
     .where(sql`to_char(${transactionsTable.date}, 'YYYY-MM') = to_char(now(), 'YYYY-MM')`);
 
+  // Oylik daromad = moliyaviy kirimlar (yuk xati sotuvi, qo'lda kirim) + shu oygi sotuvlar.
+  // Sotuvlar alohida jadvalda saqlanadi, ular ham daromad hisoblanadi.
+  const [salesMonth] = await db
+    .select({
+      total: sql<number>`coalesce(sum(abs(${salesTable.quantity}) * ${productsTable.price}), 0)`,
+    })
+    .from(salesTable)
+    .leftJoin(productsTable, eq(salesTable.productId, productsTable.id))
+    .where(sql`to_char(${salesTable.soldAt}, 'YYYY-MM') = to_char(now(), 'YYYY-MM')`);
+
+  const monthIncome = Number(financeMonth.income) + Number(salesMonth.total);
+
   const [employeesCount] = await db.select({ count: count() }).from(employeesTable).where(eq(employeesTable.status, "active"));
 
   res.json({
@@ -56,9 +68,9 @@ router.get("/", authMiddleware, async (_req, res) => {
     lowStockItems: lowStock[0].count,
     totalCustomers: customersCount.count,
     totalEmployees: employeesCount.count,
-    monthlyIncome: Number(financeMonth.income),
+    monthlyIncome: monthIncome,
     monthlyExpense: Number(financeMonth.expense),
-    monthlyProfit: Number(financeMonth.income) - Number(financeMonth.expense),
+    monthlyProfit: monthIncome - Number(financeMonth.expense),
   });
 });
 

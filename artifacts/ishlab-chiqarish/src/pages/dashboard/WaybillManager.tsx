@@ -61,6 +61,7 @@ export default function WaybillManager() {
   const { data: waybills, refetch } = useQuery({
     queryKey: ["/api/waybills"],
     queryFn: () => customFetch("/api/waybills", { headers: authOpts.headers }).then(r => r.json()),
+    refetchInterval: 5000, // mobil ilovadan saqlangan yuk xatlari tezda ko'rinsin
   });
 
   const { data: companyData } = useQuery({

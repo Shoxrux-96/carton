@@ -7,6 +7,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as Print from "expo-print";
 import { apiFetch } from "../api";
 import { colors, radius, shadows, spacing } from "../theme";
+import CompanyAutocomplete from "../components/CompanyAutocomplete";
 
 const { width } = Dimensions.get("window");
 const months = ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"];
@@ -82,15 +83,18 @@ export default function WaybillsScreen({ route, navigation }: any) {
   const [printing, setPrinting] = useState(false);
   const [companies, setCompanies] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
 
   const loadCompanies = async () => {
     try {
-      const [companyData, productData] = await Promise.all([
+      const [companyData, productData, clientData] = await Promise.all([
         apiFetch("/company").catch(() => null),
         apiFetch("/products").catch(() => null),
+        apiFetch("/clients").catch(() => null),
       ]);
       setCompanies(Array.isArray(companyData?.companies) ? companyData.companies : []);
       setProducts(Array.isArray(productData) ? productData : []);
+      setClients(Array.isArray(clientData) ? clientData : []);
     } catch {}
   };
 
@@ -106,7 +110,12 @@ export default function WaybillsScreen({ route, navigation }: any) {
     } catch {}
   };
 
-  useFocusEffect(useCallback(() => { load(); loadCompanies(); }, []));
+  useFocusEffect(useCallback(() => {
+    load(); loadCompanies();
+    // Webdan saqlangan yangi yuk xatlari bir ozdan keyin shu ro'yxatda ko'rinsin
+    const timer = setInterval(() => { load(); }, 15000);
+    return () => clearInterval(timer);
+  }, []));
   const onRefresh = async () => { setRefreshing(true); await load(); await loadCompanies(); setRefreshing(false); };
 
   useEffect(() => {
@@ -421,12 +430,26 @@ export default function WaybillsScreen({ route, navigation }: any) {
                   <TextInput style={s.input} value={form.date} onChangeText={v => setField("date", v)} placeholder="2026-09-20" placeholderTextColor={colors.textMuted} />
                   <Text style={s.sectionTitle}>📤 Yuboruvchi</Text>
                   <Text style={s.fieldLabel}>Kompaniya</Text>
-                  <TextInput style={s.input} value={form.senderCompany} onChangeText={v => setField("senderCompany", v)} placeholder="Kompaniya nomi" placeholderTextColor={colors.textMuted} />
+                  <CompanyAutocomplete
+                    value={form.senderCompany}
+                    phone={form.senderPhone}
+                    clients={clients}
+                    onChange={(name, phone) => { setField("senderCompany", name); setField("senderPhone", phone); }}
+                    placeholder="Kompaniya nomi"
+                    inputStyle={s.input}
+                  />
                   <Text style={s.fieldLabel}>Telefon</Text>
                   <TextInput style={s.input} value={form.senderPhone} onChangeText={v => setField("senderPhone", v)} placeholder="+998 XX XXX XX XX" placeholderTextColor={colors.textMuted} />
                   <Text style={s.sectionTitle}>📥 Qabul qiluvchi</Text>
                   <Text style={s.fieldLabel}>Kompaniya</Text>
-                  <TextInput style={s.input} value={form.receiverCompany} onChangeText={v => setField("receiverCompany", v)} placeholder="Kompaniya nomi" placeholderTextColor={colors.textMuted} />
+                  <CompanyAutocomplete
+                    value={form.receiverCompany}
+                    phone={form.receiverPhone}
+                    clients={clients}
+                    onChange={(name, phone) => { setField("receiverCompany", name); setField("receiverPhone", phone); }}
+                    placeholder="Qabul qiluvchi nomi"
+                    inputStyle={s.input}
+                  />
                   <Text style={s.fieldLabel}>Telefon</Text>
                   <TextInput style={s.input} value={form.receiverPhone} onChangeText={v => setField("receiverPhone", v)} placeholder="+998 XX XXX XX XX" placeholderTextColor={colors.textMuted} />
                   <Text style={s.fieldLabel}>Kategoriya (avtomatik)</Text>

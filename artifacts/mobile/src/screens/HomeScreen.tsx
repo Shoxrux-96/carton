@@ -26,10 +26,13 @@ const roleLabels: Record<string, { label: string; color: string; bg: string; emo
   employee: { label: "Xodim", color: "#fff", bg: colors.success, emoji: "👷" },
 };
 
+// Webdagi fmtSoam bilan bir xil format: "11 mln so'm" / "500 ming so'm"
 const fmt = (n: number) => {
-  if (n >= 1000000) return (n / 1000000).toFixed(1) + " mln";
-  if (n >= 1000) return (n / 1000).toFixed(0) + " ming";
-  return n.toLocaleString("uz-UZ");
+  const a = Math.abs(n);
+  const sign = n < 0 ? "-" : "";
+  if (a >= 1000000) return sign + Math.round(a / 1000000) + " mln so'm";
+  if (a >= 1000) return sign + Math.round(a / 1000) + " ming so'm";
+  return sign + Math.round(a) + " so'm";
 };
 
 function DualLineChart({ labels, data1, data2, color1, color2, label1, label2 }: {
@@ -84,10 +87,12 @@ function DualLineChart({ labels, data1, data2, color1, color2, label1, label2 }:
           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color1 }} />
           <Text style={{ fontSize: 9, color: colors.textMuted }}>{label1}</Text>
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color2 }} />
-          <Text style={{ fontSize: 9, color: colors.textMuted }}>{label2}</Text>
-        </View>
+        {!!label2 && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color2 }} />
+            <Text style={{ fontSize: 9, color: colors.textMuted }}>{label2}</Text>
+          </View>
+        )}
       </View>
       <View style={{ height: chartH, position: "relative" }}>
         {[0, 0.5, 1].map((pct) => (
@@ -119,12 +124,12 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
   const [faceImg, setFaceImg] = React.useState<string | null>(null);
 
   const [salesChart, setSalesChart] = React.useState<{ labels: string[]; data: number[] } | null>(null);
-  const [prodChart, setProdChart] = React.useState<{ labels: string[]; data: number[] } | null>(null);
   const [financeChart, setFinanceChart] = React.useState<{ labels: string[]; income: number[]; expense: number[] } | null>(null);
 
   const [lowStockItems, setLowStockItems] = React.useState<any[]>([]);
   const [totalSales, setTotalSales] = React.useState(0);
-  const [totalProd, setTotalProd] = React.useState(0);
+  const [todaySalesMoney, setTodaySalesMoney] = React.useState(0);
+  const [totalStock, setTotalStock] = React.useState(0);
 
   const monthNames = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"];
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -148,22 +153,21 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
         setFaceImg(admin ? null : (profile.faceImage ?? null));
       }
 
-      const [salesData, prodData, financeData, inventoryData] = await Promise.all([
+      const [salesData, financeData, inventoryData] = await Promise.all([
         apiFetch("/sales").catch(() => []),
-        apiFetch("/production/transactions").catch(() => []),
         apiFetch("/finance").catch(() => []),
         apiFetch("/inventory").catch(() => []),
       ]);
 
       const salesArr = Array.isArray(salesData) ? salesData : [];
-      const prodArr = Array.isArray(prodData) ? prodData : [];
       const finArr = Array.isArray(financeData) ? financeData : [];
       const invArr = Array.isArray(inventoryData) ? inventoryData : [];
+      // Yuk xati orqali sotuv — "Sotuv" kategoriyali kirimlar
+      const waybillSales = finArr.filter((t: any) => t.type === "income" && t.category === "Sotuv");
 
       const now = new Date();
       const labels: string[] = [];
       const sv: number[] = [];
-      const pv: number[] = [];
       const fi: number[] = [];
       const fe: number[] = [];
       for (let i = 5; i >= 0; i--) {
@@ -171,21 +175,32 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
         const ym = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
         labels.push(monthNames[d.getMonth()]);
         sv.push(salesArr.filter((t: any) => String(t.date || t.createdAt || "").startsWith(ym))
-          .reduce((s: number, t: any) => s + (t.totalSum || t.totalAmount || t.amount || 0), 0));
-        pv.push(prodArr.filter((t: any) => String(t.date || t.createdAt || "").startsWith(ym))
-          .reduce((s: number, t: any) => s + (t.totalSum || t.totalAmount || t.amount || 0), 0));
+          .reduce((s: number, t: any) => s + (t.totalSum || t.totalAmount || t.amount || 0), 0) +
+          waybillSales.filter((t: any) => String(t.date || "").startsWith(ym))
+            .reduce((s: number, t: any) => s + (t.amount || 0), 0));
         fi.push(finArr.filter((t: any) => t.type === "income" && String(t.date || "").startsWith(ym))
-          .reduce((s: number, t: any) => s + (t.amount || 0), 0));
+          .reduce((s: number, t: any) => s + (t.amount || 0), 0) +
+          salesArr.filter((t: any) => String(t.date || t.createdAt || "").startsWith(ym))
+            .reduce((s: number, t: any) => s + (t.totalSum || t.totalAmount || t.amount || 0), 0));
         fe.push(finArr.filter((t: any) => t.type === "expense" && String(t.date || "").startsWith(ym))
           .reduce((s: number, t: any) => s + (t.amount || 0), 0));
       }
+      const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      const salesTotal = salesArr.reduce((s: number, t: any) => s + (t.totalSum || t.totalAmount || t.amount || 0), 0);
+      const waybillTotal = waybillSales.reduce((s: number, t: any) => s + (t.amount || 0), 0);
       setSalesChart({ labels, data: sv });
-      setProdChart({ labels, data: pv });
       setFinanceChart({ labels, income: fi, expense: fe });
-      setTotalSales(salesArr.reduce((s: number, t: any) => s + (t.totalSum || t.totalAmount || t.amount || 0), 0));
-      setTotalProd(prodArr.reduce((s: number, t: any) => s + (t.totalSum || t.totalAmount || t.amount || 0), 0));
+      setTotalSales(salesTotal + waybillTotal);
+      setTodaySalesMoney(
+        salesArr.filter((t: any) => String(t.date || t.createdAt || "").startsWith(todayStr))
+          .reduce((s: number, t: any) => s + (t.totalSum || t.totalAmount || t.amount || 0), 0) +
+        waybillSales.filter((t: any) => String(t.date || "") === todayStr)
+          .reduce((s: number, t: any) => s + (t.amount || 0), 0)
+      );
 
-      setLowStockItems(invArr.filter((i: any) => i.quantity <= 10).sort((a: any, b: any) => a.quantity - b.quantity).slice(0, 5));
+      setLowStockItems(invArr.filter((i: any) => i.quantity < 10).sort((a: any, b: any) => a.quantity - b.quantity).slice(0, 5));
+      // Webdagi "Jami Mahsulotlar" bilan bir xil manba — ombordagi jami dona
+      setTotalStock(invArr.reduce((s: number, i: any) => s + (Number(i.quantity) || 0), 0));
     } catch {}
   };
 
@@ -212,14 +227,13 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
   const openScreen = (name: string) => { if (canOpen(name)) navigation.navigate(name); };
 
   const statCards = stats ? [
-    { icon: "📦", label: "Mahsulotlar", value: stats.totalProducts ?? 0, color: "#7c3aed", bg: "#f5f3ff" },
-    { icon: "📋", label: "Inventar turlari", value: stats.totalInventoryItems ?? 0, color: "#0891b2", bg: "#ecfeff" },
-    { icon: "🏭", label: "Bugungi ishlab chiq.", value: stats.totalProductionToday ?? 0, color: "#ea580c", bg: "#fff7ed" },
-    { icon: "📊", label: "Bugungi sotuv", value: stats.totalSalesToday ?? 0, color: "#22c55e", bg: "#f0fdf4" },
+    { icon: "📦", label: "Jami Mahsulotlar", value: totalStock.toLocaleString(), color: "#7c3aed", bg: "#f5f3ff" },
+    { icon: "📋", label: "Zaxiradagi Turlar", value: stats.totalInventoryItems ?? 0, color: "#0891b2", bg: "#ecfeff" },
+    { icon: "📊", label: "Bugungi Sotuv", value: todaySalesMoney, color: "#22c55e", bg: "#f0fdf4", money: true },
     { icon: "🏢", label: "Mijozlar", value: stats.totalCustomers ?? 0, color: "#2563eb", bg: "#dbeafe" },
-    { icon: "💰", label: "Oylik kirim", value: stats.monthlyIncome ?? 0, color: "#16a34a", bg: "#f0fdf4", money: true },
-    { icon: "📉", label: "Oylik chiqim", value: stats.monthlyExpense ?? 0, color: "#dc2626", bg: "#fef2f2", money: true },
-    { icon: "🏦", label: "Oylik foyda", value: stats.monthlyProfit ?? 0, color: "#2563eb", bg: "#dbeafe", money: true },
+    { icon: "💰", label: "Oy Kirimi", value: stats.monthlyIncome ?? 0, color: "#16a34a", bg: "#f0fdf4", money: true },
+    { icon: "📉", label: "Oy Chiqimi", value: stats.monthlyExpense ?? 0, color: "#dc2626", bg: "#fef2f2", money: true },
+    { icon: "🏦", label: "Oy Foydasi", value: stats.monthlyProfit ?? 0, color: "#2563eb", bg: "#dbeafe", money: true },
   ] : [];
 
   return (
@@ -307,11 +321,11 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
       {!isDriver && (
       <View style={styles.chartSection}>
         <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>📈 Sotuv vs Ishlab chiqarish</Text>
+          <Text style={styles.chartTitle}>📈 Sotuv trendi</Text>
           <Text style={styles.chartSub}>Oxirgi 6 oy (so'm)</Text>
           {salesChart && salesChart.data.some(v => v > 0) ? (
-            <DualLineChart labels={salesChart.labels} data1={salesChart.data} data2={prodChart?.data || []}
-              color1="#10b981" color2="#6366f1" label1="Sotuv" label2="Ishlab chiqarish" />
+            <DualLineChart labels={salesChart.labels} data1={salesChart.data} data2={[]}
+              color1="#10b981" color2="#6366f1" label1="Sotuv" label2="" />
           ) : (
             <View style={{ height: 80, justifyContent: "center", alignItems: "center" }}>
               <Text style={{ color: colors.textMuted, fontSize: 12 }}>Ma'lumotlar yo'q</Text>
@@ -340,14 +354,10 @@ export default function HomeScreen({ navigation, onLogout }: Props) {
       <View style={styles.widgetSection}>
         {/* General summary */}
         <View style={styles.widgetCard}>
-          <Text style={styles.widgetTitle}>📊 Umumiy ma'lumotlar</Text>
+          <Text style={styles.widgetTitle}>📊 Umumiy ko'rsatkichlar</Text>
           <View style={styles.widgetRow}>
             <Text style={styles.widgetLabel}>Jami sotuv</Text>
             <Text style={[styles.widgetValue, { color: "#16a34a" }]}>{fmt(totalSales)}</Text>
-          </View>
-          <View style={styles.widgetRow}>
-            <Text style={styles.widgetLabel}>Jami ishlab chiqarish</Text>
-            <Text style={[styles.widgetValue, { color: "#6366f1" }]}>{fmt(totalProd)}</Text>
           </View>
           {isAdmin && (
             <View style={styles.widgetRow}>

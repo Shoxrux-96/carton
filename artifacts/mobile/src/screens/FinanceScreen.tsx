@@ -5,8 +5,10 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Print from "expo-print";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiFetch } from "../api";
 import { colors, radius, shadows, spacing } from "../theme";
+import CompanyAutocomplete from "../components/CompanyAutocomplete";
 
 const { width } = Dimensions.get("window");
 
@@ -40,6 +42,9 @@ const compareTx = (a: any, b: any): number => {
 const EXPENSE_CATEGORIES = ["Machalka", "Qo'lqop", "Transport", "Ijara", "Maosh", "Elektr", "Gaz", "Oziq-ovqat", "Suv", "Boshqa"];
 const months = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"];
 const monthsRU = ["Января","Февраля","Марта","Апреля","Мая","Июня","Июля","Августа","Сентября","Октября","Ноября","Декабря"];
+
+// Web bilan bir xil: o'chirilgan avtomatik (sotuv) yozuvlar qaytadan paydo bo'lmasligi uchun
+const DELETED_SOURCES_KEY = "carton_deleted_finance_sources";
 
 interface WaybillRow {
   id: number;
@@ -144,6 +149,9 @@ function generateWaybillHTML(doc: any, rows: WaybillRow[], total: number) {
 
 export default function FinanceScreen({ navigation }: any) {
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [salesRecords, setSalesRecords] = useState<any[]>([]);
+  const [deletedSources, setDeletedSources] = useState<string[]>([]);
+  const [txType, setTxType] = useState<"all" | "income" | "expense">("all");
   const [refreshing, setRefreshing] = useState(false);
   const [periodFilter, setPeriodFilter] = useState<"all" | "month" | "year">("all");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -169,18 +177,49 @@ export default function FinanceScreen({ navigation }: any) {
     { id: 1, name: "", format: "", unit: "Kg", quantity: "", price: "" },
   ]);
   const [wbPrinting, setWbPrinting] = useState(false);
+  const [wbSaving, setWbSaving] = useState(false);
+  const [wbClients, setWbClients] = useState<any[]>([]);
+
+  // Yuk xati oynasi ochilganda mijozlar ro'yxatini olish (korxona nomlari avtomatik chiqishi uchun)
+  useEffect(() => {
+    if (!showWaybill) return;
+    apiFetch("/clients")
+      .then((d: any) => setWbClients(Array.isArray(d) ? d : []))
+      .catch(() => {});
+  }, [showWaybill]);
 
   const load = async () => {
     try {
-      const tx = await apiFetch("/finance");
+      const [tx, sales] = await Promise.all([
+        apiFetch("/finance"),
+        apiFetch("/sales").catch(() => []),
+      ]);
       setTransactions(Array.isArray(tx) ? tx : []);
+      setSalesRecords(Array.isArray(sales) ? sales : []);
     } catch {}
   };
 
-  useFocusEffect(useCallback(() => { load(); }, []));
+  // Web bilan sinxron: o'chirilgan sotuv yozuvlarini lokal saqlash
+  useEffect(() => {
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(DELETED_SOURCES_KEY);
+        setDeletedSources(raw ? JSON.parse(raw) : []);
+      } catch {}
+    })();
+  }, []);
+
+  useFocusEffect(useCallback(() => {
+    load();
+    // Webdan saqlangan yangi yozuvlar (yuk xati kirimlari) shu ro'yxatda ko'rinsin
+    const timer = setInterval(() => { load(); }, 15000);
+    return () => clearInterval(timer);
+  }, []));
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
+  // Oyna ochilgunda har doim keyingi bo'sh hujjat raqamini hisoblash
   useEffect(() => {
+    if (!showWaybill) return;
     (async () => {
       try {
         const waybills = await apiFetch("/waybills");
@@ -189,30 +228,55 @@ export default function FinanceScreen({ navigation }: any) {
         setWbDocNumber(maxDoc + 1);
       } catch { setWbDocNumber(1); }
     })();
-  }, []);
+  }, [showWaybill]);
 
-  const filtered = useMemo(() => {
-    let result = transactions;
+  // Sotuvlar → avtomatik "Sotuv" kategoriyali kirim yozuvlari (web bilan bir xil)
+  const autoRecords = useMemo(() => {
+    const skip = new Set(deletedSources);
+    let idCounter = -1;
+    return salesRecords.map((sale: any) => ({
+      id: idCounter--,
+      type: "income",
+      category: "Sotuv",
+      amount: sale.totalSum || 0,
+      description: `${sale.productName || "Mahsulot"} sotildi (${sale.quantity || 0} ta)`,
+      date: sale.soldAt ? String(sale.soldAt).split("T")[0] : new Date().toISOString().split("T")[0],
+      createdAt: sale.soldAt || new Date().toISOString(),
+      source: `sale_${sale.id}`,
+      _skip: skip.has(`sale_${sale.id}`),
+    })).filter((r: any) => !r._skip);
+  }, [salesRecords, deletedSources]);
+
+  // API + avtomatik sotuv yozuvlari (web allRecords bilan bir xil qoida)
+  const allRecords = useMemo(() => {
+    const api = transactions;
+    const apiIds = new Set(api.map((r: any) => r.id));
+    const merged = [...api, ...autoRecords.filter((r: any) => !apiIds.has(r.id))];
+    merged.sort(compareTx);
+    let result: any[] = merged;
+    if (txType === "income") result = result.filter((r: any) => r.type === "income");
+    if (txType === "expense") result = result.filter((r: any) => r.type === "expense");
     if (periodFilter !== "all") {
       const monthStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
       const yearStr = String(selectedYear);
-      result = result.filter((t: any) => {
-        if (!t.date) return false;
-        if (periodFilter === "month") return t.date.startsWith(monthStr);
-        if (periodFilter === "year") return t.date.startsWith(yearStr);
+      result = result.filter((r: any) => {
+        if (!r.date) return false;
+        if (periodFilter === "month") return r.date.startsWith(monthStr);
+        if (periodFilter === "year") return r.date.startsWith(yearStr);
         return true;
       });
     }
-    // Tartib: yangi yozuv yuqorida, bir kunda soat bo'yicha (aralashmaydi)
-    return [...result].sort(compareTx);
-  }, [transactions, periodFilter, selectedMonth, selectedYear]);
+    return result;
+  }, [transactions, autoRecords, txType, periodFilter, selectedMonth, selectedYear]);
+
+  const filtered = allRecords;
 
   const computedSummary = useMemo(() => {
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     const currentYear = String(now.getFullYear());
     let monthIncome = 0, monthExpense = 0, yearIncome = 0, yearExpense = 0;
-    for (const r of transactions) {
+    for (const r of allRecords) {
       if (r.date?.startsWith(currentYear)) {
         if (r.type === "income") yearIncome += r.amount;
         else yearExpense += r.amount;
@@ -226,7 +290,7 @@ export default function FinanceScreen({ navigation }: any) {
       monthly: { income: monthIncome, expense: monthExpense, profit: monthIncome - monthExpense },
       yearly: { income: yearIncome, expense: yearExpense, profit: yearIncome - yearExpense },
     };
-  }, [transactions]);
+  }, [allRecords]);
 
   const resetForm = () => { setCategory(""); setAmount(""); setQuantity(""); setDescription(""); };
 
@@ -251,6 +315,14 @@ export default function FinanceScreen({ navigation }: any) {
 
   const handleDelete = (id: number) => {
     const doDelete = async () => {
+      // Avtomatik sotuv yozuvi — lokal "o'chirilganlar" ro'yxatiga qo'shiladi (web bilan bir xil)
+      const auto = allRecords.find((r: any) => r.id === id && r.source);
+      if (auto?.source) {
+        const next = [...deletedSources, auto.source];
+        setDeletedSources(next);
+        try { await AsyncStorage.setItem(DELETED_SOURCES_KEY, JSON.stringify(next)); } catch {}
+        return;
+      }
       try { await apiFetch(`/finance/${id}`, { method: "DELETE" }); await load(); } catch {}
     };
     // react-native-web'da Alert no-op — web uchun window.confirm
@@ -289,7 +361,22 @@ export default function FinanceScreen({ navigation }: any) {
         wbRows, wbTotal
       );
       await Print.printAsync({ html });
-      // Save to API
+    } catch (e: any) {
+      if (e?.message !== "User did not cancel") {
+        Alert.alert("Xatolik", e.message || "Chop etishda xatolik");
+      }
+    } finally { setWbPrinting(false); }
+  };
+
+  // Saqlash — serverga yozadi (POST /waybills), shu zahoti web va mobil
+  // ilovalarda yuk xatlar ro'yxatida hamda moliyada ko'rinadi.
+  const handleWbSave = async () => {
+    if (!wbSenderCompany && !wbReceiverCompany) {
+      Alert.alert("Xatolik", "Yuboruvchi yoki qabul qiluvchini kiriting");
+      return;
+    }
+    setWbSaving(true);
+    try {
       await apiFetch("/waybills", {
         method: "POST",
         body: JSON.stringify({
@@ -308,13 +395,13 @@ export default function FinanceScreen({ navigation }: any) {
           })),
         }),
       });
-      // Increment doc number
-      setWbDocNumber(prev => prev + 1);
+      await load();
+      setShowWaybill(false);
+      resetWbForm();
+      Alert.alert("✅ Saqlandi", `Yuk xati №${wbDocNumber} saqlandi — web va mobil ilovada ko'rinadi`);
     } catch (e: any) {
-      if (e?.message !== "User did not cancel") {
-        Alert.alert("Xatolik", e.message || "Chop etishda xatolik");
-      }
-    } finally { setWbPrinting(false); }
+      Alert.alert("Xatolik", e.message || "Saqlashda xatolik");
+    } finally { setWbSaving(false); }
   };
 
   const resetWbForm = () => {
@@ -379,6 +466,17 @@ export default function FinanceScreen({ navigation }: any) {
           </View>
         </View>
 
+        {/* Tur filter — webdagi Hammasi/Kirim/Chiqim tugmalari bilan bir xil */}
+        <View style={styles.periodRow}>
+          {([["all", "Hammasi"], ["income", "Kirim"], ["expense", "Chiqim"]] as const).map(([k, l]) => (
+            <TouchableOpacity key={k} style={[styles.periodBtn, txType === k && styles.periodActive]} onPress={() => setTxType(k)}>
+              <Text style={[styles.periodText, txType === k && { color: colors.primary }]}>{l}</Text>
+            </TouchableOpacity>
+          ))}
+          <View style={{ flex: 1 }} />
+          <Text style={styles.countInfo}>{allRecords.length} ta yozuv</Text>
+        </View>
+
         {/* Period filter */}
         <View style={styles.periodRow}>
           {([["all", "Jami"], ["month", "Oy"], ["year", "Yil"]] as const).map(([k, l]) => (
@@ -397,7 +495,6 @@ export default function FinanceScreen({ navigation }: any) {
             </TouchableOpacity>
           )}
           <View style={{ flex: 1 }} />
-          <Text style={styles.countInfo}>{filtered.length} ta yozuv</Text>
         </View>
 
         {/* Transactions table */}
@@ -536,14 +633,28 @@ export default function FinanceScreen({ navigation }: any) {
               {/* Sender */}
               <Text style={styles.wbSectionTitle}>📤 Jo'natuvchi</Text>
               <Text style={styles.fieldLabel}>Kompaniya</Text>
-              <TextInput style={styles.wbInput} value={wbSenderCompany} onChangeText={setWbSenderCompany} placeholder="Kompaniya nomi" placeholderTextColor={colors.textMuted} />
+              <CompanyAutocomplete
+                value={wbSenderCompany}
+                phone={wbSenderPhone}
+                clients={wbClients}
+                onChange={(name, phone) => { setWbSenderCompany(name); setWbSenderPhone(phone); }}
+                placeholder="Kompaniya nomi"
+                inputStyle={styles.wbInput}
+              />
               <Text style={styles.fieldLabel}>Telefon</Text>
               <TextInput style={styles.wbInput} value={wbSenderPhone} onChangeText={setWbSenderPhone} placeholder="+998 XX XXX XX XX" placeholderTextColor={colors.textMuted} />
 
               {/* Receiver */}
               <Text style={styles.wbSectionTitle}>📥 Qabul qiluvchi</Text>
               <Text style={styles.fieldLabel}>Kompaniya</Text>
-              <TextInput style={styles.wbInput} value={wbReceiverCompany} onChangeText={setWbReceiverCompany} placeholder="Kompaniya nomi" placeholderTextColor={colors.textMuted} />
+              <CompanyAutocomplete
+                value={wbReceiverCompany}
+                phone={wbReceiverPhone}
+                clients={wbClients}
+                onChange={(name, phone) => { setWbReceiverCompany(name); setWbReceiverPhone(phone); }}
+                placeholder="Qabul qiluvchi nomi"
+                inputStyle={styles.wbInput}
+              />
               <Text style={styles.fieldLabel}>Telefon</Text>
               <TextInput style={styles.wbInput} value={wbReceiverPhone} onChangeText={setWbReceiverPhone} placeholder="+998 XX XXX XX XX" placeholderTextColor={colors.textMuted} />
 
@@ -603,7 +714,10 @@ export default function FinanceScreen({ navigation }: any) {
               </View>
             </ScrollView>
 
-            {/* Print button */}
+            {/* Save + Print */}
+            <TouchableOpacity style={[styles.saveBtn, { marginTop: 16, flex: 0, height: 52 }, wbSaving && { opacity: 0.6 }]} onPress={handleWbSave} disabled={wbSaving}>
+              <Text style={styles.saveText}>{wbSaving ? "Saqlanmoqda..." : "💾 Saqlash"}</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={[styles.wbPrintBtn, wbPrinting && { opacity: 0.6 }]} onPress={handleWbPrint} disabled={wbPrinting}>
               <Text style={styles.wbPrintBtnText}>{wbPrinting ? "Chop etilmoqda..." : "🖨️ Chop etish (A4)"}</Text>
             </TouchableOpacity>
