@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
 import {
   FileText, Plus, Printer, Filter, Download, Edit3, Eye,
-  ArrowUpDown, Trash2,
+  ArrowUpDown, Trash2, Wallet,
 } from "lucide-react";
 import WaybillModal from "@/components/WaybillModal";
 import { exportToExcel, type ExcelColumn } from "@/lib/export-to-excel";
@@ -52,7 +52,8 @@ export default function WaybillManager() {
   const [viewingWaybillId, setViewingWaybillId] = useState<number | null>(null);
   const [printWaybillId, setPrintWaybillId] = useState<number | null>(null);
   const [editingWaybillId, setEditingWaybillId] = useState<number | null>(null);
-  const [filterMonth, setFilterMonth] = useState(new Date().getMonth());
+  // null = barcha oylar (Moliya sahifasidagi kabi — default barcha yozuvlar ko'rinadi)
+  const [filterMonth, setFilterMonth] = useState<number | null>(null);
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
   const [filterText, setFilterText] = useState("");
   const [filterCategory, setFilterCategory] = useState<"all" | "Sotuv" | "Xarid">("all");
@@ -77,6 +78,13 @@ export default function WaybillManager() {
   const productNames: string[] = Array.isArray(productData)
     ? productData.map((p: any) => p?.name).filter(Boolean)
     : [];
+
+  // Moliyadagi yozuvlar (yuk xati bilan sinxron) — sahifada "Sotuv"lari ko'rsatiladi
+  const { data: financeRows } = useQuery({
+    queryKey: ["/api/finance"],
+    queryFn: () => customFetch("/api/finance", { headers: authOpts.headers }).then(r => r.json()),
+    refetchInterval: 5000,
+  });
 
   // Serverdan kelgan category ustuvor, aks holda lokal hisob (API bilan bir xil qoida)
   const catOf = (w: any): string =>
@@ -114,6 +122,38 @@ export default function WaybillManager() {
   const totalSum = useMemo(() => {
     return waybillList.reduce((s: number, w: any) => s + (parseFloat(w.totalSum) || 0), 0);
   }, [waybillList]);
+
+  // Moliyadagi "Sotuv" (kirim) yozuvlari — oy/izoh filtrlari bilan (Moliya sahifasidagi kabi)
+  const sotuvRows = useMemo(() => {
+    const ft = filterText.toLowerCase();
+    let list: any[] = Array.isArray(financeRows)
+      ? financeRows.filter((t: any) => t.type === "income" && t.category === "Sotuv")
+      : [];
+    if (filterMonth !== null) {
+      const monthStr = `${filterYear}-${String(filterMonth + 1).padStart(2, "0")}`;
+      list = list.filter((t: any) => String(t.date || "").startsWith(monthStr));
+    }
+    if (ft) {
+      list = list.filter((t: any) => String(t.description || "").toLowerCase().includes(ft));
+    }
+    return list.sort((a: any, b: any) => {
+      const da = String(a?.date || "").slice(0, 10);
+      const db = String(b?.date || "").slice(0, 10);
+      if (da !== db) return db.localeCompare(da);
+      return (b?.id || 0) - (a?.id || 0);
+    });
+  }, [financeRows, filterMonth, filterYear, filterText]);
+
+  const sotuvTotal = useMemo(
+    () => sotuvRows.reduce((s: number, t: any) => s + (Number(t.amount) || 0), 0),
+    [sotuvRows],
+  );
+
+  const fmtTxDate = (d?: string) => {
+    const day = String(d || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return day || "—";
+    return format(new Date(day + "T00:00:00"), "dd.MM.yyyy");
+  };
 
   const handleView = (id: number) => {
     setViewingWaybillId(id);
@@ -200,10 +240,11 @@ export default function WaybillManager() {
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">{t('waybill_month')}</span>
                 <select
-                  value={filterMonth}
-                  onChange={e => setFilterMonth(Number(e.target.value))}
+                  value={filterMonth ?? ""}
+                  onChange={e => setFilterMonth(e.target.value === "" ? null : Number(e.target.value))}
                   className="px-3 py-2 rounded-xl border-2 border-border text-sm bg-background"
                 >
+                  <option value="">{t('waybill_all_months')}</option>
                   {months.map((m, i) => (
                     <option key={i} value={i}>{m}</option>
                   ))}
@@ -242,7 +283,7 @@ export default function WaybillManager() {
               {(filterMonth !== null || filterText || filterCategory !== "all") && (
                 <Button
                   variant="ghost"
-                  onClick={() => { setFilterMonth(new Date().getMonth()); setFilterText(""); setFilterCategory("all"); }}
+                  onClick={() => { setFilterMonth(null); setFilterText(""); setFilterCategory("all"); }}
                   className="h-10 px-3 text-sm"
                 >
                   {t('waybill_clear')}
@@ -374,6 +415,58 @@ export default function WaybillManager() {
           </table>
         </div>
       </Card>
+
+      {/* Moliyadagi "Sotuv" yozuvlari */}
+      {filterCategory !== "Xarid" && (
+        <Card className="overflow-hidden border-0 shadow-lg mt-6">
+          <div className="flex items-center justify-between px-4 py-3 bg-emerald-50 border-b border-emerald-100">
+            <div className="flex items-center gap-2 text-emerald-700 font-semibold">
+              <Wallet className="h-4 w-4" />
+              {t('waybill_finance_title')}
+            </div>
+            <div className="text-sm text-emerald-700">
+              {sotuvRows.length} {t('waybill_piece')} ·{" "}
+              <span className="font-bold">{sotuvTotal.toLocaleString("uz-UZ")} so'm</span>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">{t('waybill_date')}</th>
+                  <th className="px-4 py-3 font-semibold">{t('description_label')}</th>
+                  <th className="px-4 py-3 font-semibold text-center">{t('waybill_category')}</th>
+                  <th className="px-4 py-3 font-semibold text-right">{t('waybill_total')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sotuvRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center py-8 text-muted-foreground">
+                      {t('waybill_finance_empty')}
+                    </td>
+                  </tr>
+                ) : (
+                  sotuvRows.map((tx: any) => (
+                    <tr key={tx.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">{fmtTxDate(tx.date)}</td>
+                      <td className="px-4 py-3">{tx.description || "—"}</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-block px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                          {tx.category}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono font-semibold text-emerald-600">
+                        {(Number(tx.amount) || 0).toLocaleString("uz-UZ")}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       <WaybillModal
         open={isWaybillOpen}

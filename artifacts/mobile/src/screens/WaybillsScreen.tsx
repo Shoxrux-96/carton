@@ -68,8 +68,10 @@ const defaultForm = () => ({
 
 export default function WaybillsScreen({ route, navigation }: any) {
   const [waybills, setWaybills] = useState<WaybillData[]>([]);
+  const [finance, setFinance] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [filterMonth, setFilterMonth] = useState(new Date().getMonth());
+  // null = barcha oylar (Moliya sahifasidagi kabi — default barcha yozuvlar ko'rinadi)
+  const [filterMonth, setFilterMonth] = useState<number | null>(null);
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
   const [filterText, setFilterText] = useState("");
   const [filterCategory, setFilterCategory] = useState<"all" | "Sotuv" | "Xarid">("all");
@@ -108,6 +110,11 @@ export default function WaybillsScreen({ route, navigation }: any) {
       const data = await apiFetch("/waybills");
       setWaybills(Array.isArray(data) ? data : []);
     } catch {}
+    try {
+      // Moliyadagi yozuvlar — sahifada "Sotuv"lari ko'rsatiladi (web bilan bir xil)
+      const txs = await apiFetch("/finance");
+      setFinance(Array.isArray(txs) ? txs : []);
+    } catch {}
   };
 
   useFocusEffect(useCallback(() => {
@@ -137,14 +144,35 @@ export default function WaybillsScreen({ route, navigation }: any) {
       list = list.filter((w: any) => String(w.docNumber).includes(ft) || (w.senderCompany || "").toLowerCase().includes(ft) || (w.receiverCompany || "").toLowerCase().includes(ft));
     }
     if (filterCategory !== "all") list = list.filter((w: any) => catOf(w) === filterCategory);
-    const monthStr = `${filterYear}-${String(filterMonth + 1).padStart(2, "0")}`;
-    list = list.filter((w: any) => w.date && w.date.startsWith(monthStr));
+    if (filterMonth !== null) {
+      const monthStr = `${filterYear}-${String(filterMonth + 1).padStart(2, "0")}`;
+      list = list.filter((w: any) => w.date && w.date.startsWith(monthStr));
+    }
     return list;
   }, [waybills, filterMonth, filterYear, filterText, filterCategory, companies]);
 
   const totalSum = useMemo(() => filtered.reduce((s: number, w: any) => s + (parseFloat(w.totalSum) || 0), 0), [filtered]);
   const sotuvCount = filtered.filter((w: any) => catOf(w) === "Sotuv").length;
   const xaridCount = filtered.filter((w: any) => catOf(w) === "Xarid").length;
+
+  // Moliyadagi "Sotuv" (kirim) yozuvlari — oy/izoh filtrlari bilan (web bilan bir xil)
+  const sotuvRows = useMemo(() => {
+    const ft = filterText.toLowerCase();
+    let list = finance.filter((t: any) => t.type === "income" && t.category === "Sotuv");
+    if (filterMonth !== null) {
+      const monthStr = `${filterYear}-${String(filterMonth + 1).padStart(2, "0")}`;
+      list = list.filter((t: any) => String(t.date || "").startsWith(monthStr));
+    }
+    return list
+      .filter((t: any) => !ft || String(t.description || "").toLowerCase().includes(ft))
+      .sort((a: any, b: any) => {
+        const da = String(a?.date || "").slice(0, 10);
+        const db = String(b?.date || "").slice(0, 10);
+        if (da !== db) return db.localeCompare(da);
+        return (b?.id || 0) - (a?.id || 0);
+      });
+  }, [finance, filterMonth, filterYear, filterText]);
+  const sotuvTotal = useMemo(() => sotuvRows.reduce((s: number, t: any) => s + (Number(t.amount) || 0), 0), [sotuvRows]);
 
   const openNew = () => { setEditingId(null); setForm(defaultForm()); setShowModal(true); };
   const openEdit = (w: WaybillData) => {
@@ -317,6 +345,9 @@ export default function WaybillsScreen({ route, navigation }: any) {
                 ))}
               </ScrollView>
               <View style={s.monthRow}>
+                <TouchableOpacity style={[s.monthBtn, filterMonth === null && s.monthBtnActive]} onPress={() => setFilterMonth(null)}>
+                  <Text style={[s.monthBtnText, filterMonth === null && { color: "#fff" }]}>Barcha</Text>
+                </TouchableOpacity>
                 {months.map((m, i) => (
                   <TouchableOpacity key={i} style={[s.monthBtn, filterMonth===i && s.monthBtnActive]} onPress={() => setFilterMonth(i)}>
                     <Text style={[s.monthBtnText, filterMonth===i && { color: "#fff" }]}>{m.slice(0,3)}</Text>
@@ -330,7 +361,7 @@ export default function WaybillsScreen({ route, navigation }: any) {
               </View>
               <TextInput style={s.searchInput} value={filterText} onChangeText={setFilterText} placeholder="🔍 Qidirish..." placeholderTextColor={colors.textMuted} />
               {(filterMonth !== null || filterText || filterCategory !== "all") && (
-                <TouchableOpacity style={s.clearBtn} onPress={() => { setFilterMonth(new Date().getMonth()); setFilterText(""); setFilterCategory("all"); }}>
+                <TouchableOpacity style={s.clearBtn} onPress={() => { setFilterMonth(null); setFilterText(""); setFilterCategory("all"); }}>
                   <Text style={s.clearBtnText}>Tozalash</Text>
                 </TouchableOpacity>
               )}
@@ -379,6 +410,29 @@ export default function WaybillsScreen({ route, navigation }: any) {
             );
           })}
         </View>
+
+        {/* Moliyadagi "Sotuv" yozuvlari (web bilan bir xil) */}
+        {filterCategory !== "Xarid" && (
+          <View style={s.finCard}>
+            <View style={s.finHeader}>
+              <Text style={s.finTitle}>💰 Moliyadagi 'Sotuv' yozuvlari</Text>
+              <Text style={s.finSummary}>{sotuvRows.length} ta · {sotuvTotal.toLocaleString("uz-UZ")} so'm</Text>
+            </View>
+            {sotuvRows.length === 0 ? (
+              <View style={s.finEmpty}>
+                <Text style={s.emptyText}>Sotuv yozuvlari topilmadi</Text>
+              </View>
+            ) : sotuvRows.map((tx: any) => (
+              <View key={tx.id} style={s.finRow}>
+                <View style={{ flex: 1, paddingRight: 8 }}>
+                  <Text style={s.finDesc} numberOfLines={2}>{tx.description || "—"}</Text>
+                  <Text style={s.finDate}>{String(tx.date || "").slice(0, 10) || "—"}</Text>
+                </View>
+                <Text style={s.finAmount}>{(Number(tx.amount) || 0).toLocaleString("uz-UZ")}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         <Text style={s.hint}>* Kartochkani bosib tahrirlang, uzoq bosib o'chiring</Text>
        </ScrollView>
@@ -553,6 +607,16 @@ const s = StyleSheet.create({
   emptyText: { fontSize: 16, color: colors.textMuted, fontWeight: "600", marginTop: 8 },
   emptyHint: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
   hint: { fontSize: 10, color: colors.textMuted, textAlign: "center", marginTop: spacing.md },
+
+  finCard: { backgroundColor: colors.surface, borderRadius: radius.xl, overflow: "hidden", ...shadows.sm, marginBottom: spacing.md },
+  finHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: "#ecfdf5", paddingVertical: 10, paddingHorizontal: spacing.md, borderBottomWidth: 1, borderBottomColor: "#d1fae5" },
+  finTitle: { fontSize: 13, fontWeight: "800", color: "#047857" },
+  finSummary: { fontSize: 11, fontWeight: "700", color: "#047857" },
+  finRow: { flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  finDesc: { fontSize: 13, fontWeight: "600", color: colors.text },
+  finDate: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
+  finAmount: { fontSize: 14, fontWeight: "800", color: "#16a34a" },
+  finEmpty: { paddingVertical: 28, alignItems: "center" },
 
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
   sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing.xxl, paddingBottom: 40, maxHeight: "95%" },
