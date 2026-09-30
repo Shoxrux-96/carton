@@ -55,3 +55,7 @@ Thumbs.db
 # Expo CNG
 /android/
 /ios/
+
+# runtime data (server ishga tushganda yaratadi)
+artifacts/api-server/company.json
+artifacts/api-server/off-days.json

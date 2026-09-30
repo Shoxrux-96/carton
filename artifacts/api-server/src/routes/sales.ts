@@ -25,7 +25,7 @@ router.get("/", authMiddleware, async (_req, res) => {
   res.json(records.map(r => ({
     ...r,
     price: r.price ? parseFloat(String(r.price)) : 0,
-    totalAmount: r.price ? parseFloat(String(r.price)) * r.quantity : 0,
+    totalSum: r.price ? parseFloat(String(r.price)) * Math.abs(r.quantity) : 0,
     date: r.soldAt,
   })));
 });

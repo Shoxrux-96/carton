@@ -140,11 +140,18 @@ export default function CalculationsScreen() {
   };
 
   const handleDelete = (id: number) => {
+    const doDelete = async () => {
+      try { await apiFetch(`/calculations/${id}`, { method: "DELETE" }); await load(); } catch {}
+    };
+    // react-native-web'da Alert no-op — web uchun window.confirm
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined" && !window.confirm("Hisoblash o'chirilsinmi?")) return;
+      doDelete();
+      return;
+    }
     Alert.alert("O'chirish", "Hisoblash o'chirilsinmi?", [
       { text: "Yo'q" },
-      { text: "Ha", style: "destructive", onPress: async () => {
-        try { await apiFetch(`/calculations/${id}`, { method: "DELETE" }); await load(); } catch {}
-      }},
+      { text: "Ha", style: "destructive", onPress: doDelete },
     ]);
   };
 
@@ -387,7 +394,7 @@ export default function CalculationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: {flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: 100 },
   emptyState: { padding: 60, alignItems: "center" },
   emptyText: { fontSize: 14, color: colors.textMuted, fontWeight: "600" },

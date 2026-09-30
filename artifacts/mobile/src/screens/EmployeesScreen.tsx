@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import {
   View, Text, ScrollView, StyleSheet, RefreshControl,
-  TouchableOpacity, TextInput, Modal, Alert, Image, Linking,
+  TouchableOpacity, TextInput, Modal, Alert, Image, Linking, Platform,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { apiFetch } from "../api";
@@ -54,19 +54,15 @@ export default function EmployeesScreen({ navigation }: any) {
     if (!phone.trim()) { Alert.alert("Xatolik", "Telefon raqamni kiriting (login uchun kerak)"); return; }
     setSaving(true);
     try {
+      const cleanPhone = phone.replace(/[\s\+\-\(\)]/g, "");
+      const role = position === "Boshqaruvchi" ? "manager" : position === "Haydovchi" ? "driver" : "employee";
       const body = { name: name.trim(), phone, position, salary: Number(salary) || 0, hireDate, notes };
       if (editing) {
         await apiFetch(`/employees/${editing.id}`, { method: "PUT", body: JSON.stringify(body) });
         Alert.alert("Muvaffaqiyat", "Hodim yangilandi");
       } else {
-        // 1. Hodimni yaratish
-        await apiFetch("/employees", { method: "POST", body: JSON.stringify(body) });
-        // 2. Avtomatik login yaratish
-        const cleanPhone = phone.replace(/[\s\+\-\(\)]/g, "");
-        const role = position === "Boshqaruvchi" ? "manager" : position === "Haydovchi" ? "driver" : "employee";
-        try {
-          await apiFetch("/auth/register", { method: "POST", body: JSON.stringify({ phone: cleanPhone, password: loginPassword, role }) });
-        } catch {}
+        // Hodim + login (parol/rol bilan) bitta so'rovda — API user hisobini yaratadi
+        await apiFetch("/employees", { method: "POST", body: JSON.stringify({ ...body, loginPhone: cleanPhone, loginPassword, role }) });
         Alert.alert("Muvaffaqiyat", `Hodim qo'shildi\n\nLogin: ${cleanPhone}\nParol: ${loginPassword}\nRol: ${role}`);
       }
       setShowModal(false); resetForm(); await load();
@@ -84,11 +80,18 @@ export default function EmployeesScreen({ navigation }: any) {
 
   const deleteEmployee = (emp: any) => {
     if (emp.position === "Owner") { Alert.alert("", "Owner o'chirib bo'lmaydi"); return; }
+    const doDelete = async () => {
+      try { await apiFetch(`/employees/${emp.id}`, { method: "DELETE" }); await load(); } catch (e: any) { Alert.alert("Xatolik", e.message); }
+    };
+    // react-native-web'da Alert no-op — web uchun window.confirm
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined" && !window.confirm(`${emp.name} ni o'chirmoqchimisiz?`)) return;
+      doDelete();
+      return;
+    }
     Alert.alert("O'chirish", `${emp.name} ni o'chirmoqchimisiz?`, [
       { text: "Yo'q" },
-      { text: "Ha", style: "destructive", onPress: async () => {
-        try { await apiFetch(`/employees/${emp.id}`, { method: "DELETE" }); await load(); } catch (e: any) { Alert.alert("Xatolik", e.message); }
-      }},
+      { text: "Ha", style: "destructive", onPress: doDelete },
     ]);
   };
 
@@ -128,26 +131,6 @@ export default function EmployeesScreen({ navigation }: any) {
             <Text style={[styles.statValue, { fontSize: 14 }]}>{formatSum(totalSalary)}</Text>
             <Text style={styles.statLabel}>Jami maosh</Text>
           </View>
-        </View>
-
-        {/* Quick actions */}
-        <View style={styles.quickRow}>
-          <TouchableOpacity style={styles.quickBtn} onPress={() => navigation.navigate("Attendance")}>
-            <Text style={styles.quickEmoji}>✅</Text>
-            <Text style={styles.quickText}>Davomat</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickBtn} onPress={() => navigation.navigate("AttendanceReport")}>
-            <Text style={styles.quickEmoji}>📊</Text>
-            <Text style={styles.quickText}>Hisobot</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickBtn} onPress={() => navigation.navigate("FaceAttendance")}>
-            <Text style={styles.quickEmoji}>🤳</Text>
-            <Text style={styles.quickText}>Face ID</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickBtn} onPress={() => navigation.navigate("FaceRegister")}>
-            <Text style={styles.quickEmoji}>📸</Text>
-            <Text style={styles.quickText}>Yuz ro'yxati</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Employees list */}
@@ -274,17 +257,13 @@ export default function EmployeesScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: {flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: 100 },
   statsRow: { flexDirection: "row", gap: 10, marginBottom: spacing.lg },
   statCard: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, borderLeftWidth: 3, ...shadows.sm },
   statValue: { fontSize: 20, fontWeight: "800", color: colors.text },
   statLabel: { fontSize: 10, color: colors.textSecondary },
-  quickRow: { flexDirection: "row", gap: 8, marginBottom: spacing.xl },
-  quickBtn: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.lg, paddingVertical: 14, alignItems: "center", ...shadows.sm },
-  quickEmoji: { fontSize: 22, marginBottom: 4 },
-  quickText: { fontSize: 10, fontWeight: "600", color: colors.textSecondary },
   sectionTitle: { fontSize: 16, fontWeight: "700", color: colors.text, marginBottom: spacing.md },
   empCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.sm, ...shadows.sm },
   empRow: { flexDirection: "row", alignItems: "center", gap: 12 },

@@ -170,7 +170,7 @@ export default function FaceRegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: {flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: 40 },
   permContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 40 },
   permIcon: { fontSize: 48, marginBottom: 12 },

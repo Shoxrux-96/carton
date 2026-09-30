@@ -69,9 +69,61 @@ router.put("/:id", authMiddleware, async (req, res) => {
   res.json(record);
 });
 
-router.get("/report", authMiddleware, async (req, res) => {
+// Oylik xom yozuvlar (web report/salary uchun — lokal kesh bilan sinxron)
+router.get("/monthly", authMiddleware, async (req, res) => {
   const year = parseInt(req.query.year as string) || new Date().getFullYear();
   const month = parseInt(req.query.month as string) || (new Date().getMonth() + 1);
+  const monthStr = `${year}-${String(month).padStart(2, "0")}`;
+
+  const records = await db
+    .select({
+      employeeId: attendanceTable.employeeId,
+      employeeName: employeesTable.name,
+      employeePosition: employeesTable.position,
+      date: sql<string>`to_char(${attendanceTable.date}, 'YYYY-MM-DD')`,
+      status: attendanceTable.status,
+      createdAt: attendanceTable.createdAt,
+    })
+    .from(attendanceTable)
+    .leftJoin(employeesTable, eq(attendanceTable.employeeId, employeesTable.id))
+    .where(sql`to_char(${attendanceTable.date}, 'YYYY-MM') = ${monthStr}`)
+    .orderBy(attendanceTable.date);
+
+  res.json(records);
+});
+
+router.get("/report", authMiddleware, async (req, res) => {
+  const year = parseInt(req.query.year as string) || new Date().getFullYear();
+  const monthRaw = parseInt(req.query.month as string, 10);
+  const month = Number.isNaN(monthRaw) ? new Date().getMonth() + 1 : monthRaw;
+
+  // month=0 → yillik hisobot, oylik guruhlash bilan (har oy alohida qator)
+  if (!month) {
+    const records = await db
+      .select({
+        employeeId: attendanceTable.employeeId,
+        employeeName: employeesTable.name,
+        employeePosition: employeesTable.position,
+        month: sql<string>`to_char(${attendanceTable.date}, 'MM')`,
+        totalDays: sql<number>`count(*)`,
+        presentDays: sql<number>`sum(case when ${attendanceTable.status} = 'present' then 1 else 0 end)`,
+        absentDays: sql<number>`sum(case when ${attendanceTable.status} = 'absent' then 1 else 0 end)`,
+        lateDays: sql<number>`sum(case when ${attendanceTable.status} = 'late' then 1 else 0 end)`,
+      })
+      .from(attendanceTable)
+      .leftJoin(employeesTable, eq(attendanceTable.employeeId, employeesTable.id))
+      .where(sql`to_char(${attendanceTable.date}, 'YYYY') = ${String(year)}`)
+      .groupBy(attendanceTable.employeeId, employeesTable.name, employeesTable.position, sql`to_char(${attendanceTable.date}, 'MM')`);
+
+    return res.json(records.map(r => ({
+      ...r,
+      totalDays: Number(r.totalDays),
+      presentDays: Number(r.presentDays),
+      absentDays: Number(r.absentDays),
+      lateDays: Number(r.lateDays),
+    })));
+  }
+
   const monthStr = `${year}-${String(month).padStart(2, "0")}`;
 
   const records = await db
@@ -89,7 +141,7 @@ router.get("/report", authMiddleware, async (req, res) => {
     .where(sql`to_char(${attendanceTable.date}, 'YYYY-MM') = ${monthStr}`)
     .groupBy(attendanceTable.employeeId, employeesTable.name, employeesTable.position);
 
-  res.json(records.map(r => ({
+  return res.json(records.map(r => ({
     ...r,
     totalDays: Number(r.totalDays),
     presentDays: Number(r.presentDays),

@@ -1,20 +1,26 @@
 import { Router } from "express";
 import { db, ordersTable, productsTable, clientsTable, salesTable, inventoryTable, transactionsTable } from "@workspace/db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
 import { paramInt } from "../lib/params.js";
 
 const router = Router();
 
-const mapOrder = (o: any) => ({
+const mapOrder = (o: any, product?: any) => ({
   ...o,
   totalSum: parseFloat(o.totalSum),
   items: o.items ? JSON.parse(o.items) : [],
+  productName: o.productName || product?.name || null,
 });
 
 router.get("/", authMiddleware, async (_req, res) => {
   const orders = await db.select().from(ordersTable).orderBy(desc(ordersTable.createdAt));
-  res.json(orders.map(mapOrder));
+  const productIds = [...new Set(orders.map(o => o.productId).filter(Boolean))].filter((id): id is number => typeof id === "number");
+  const products = productIds.length > 0
+    ? await db.select().from(productsTable).where(inArray(productsTable.id, productIds))
+    : [];
+  const productMap = new Map(products.map((p: any) => [p.id, p]));
+  res.json(orders.map(o => mapOrder(o, productMap.get(o.productId))));
 });
 
 router.get("/:id", authMiddleware, async (req, res) => {
@@ -24,7 +30,12 @@ router.get("/:id", authMiddleware, async (req, res) => {
     res.status(404).json({ error: "Topilmadi" });
     return;
   }
-  res.json(mapOrder(order));
+  let product = null;
+  if (order.productId) {
+    const [p] = await db.select().from(productsTable).where(eq(productsTable.id, order.productId));
+    product = p || null;
+  }
+  res.json(mapOrder(order, product));
 });
 
 router.post("/", authMiddleware, async (req, res) => {

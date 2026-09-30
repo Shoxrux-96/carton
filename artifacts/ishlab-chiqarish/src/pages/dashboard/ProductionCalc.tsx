@@ -2,13 +2,18 @@ import { useState, useMemo, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calculator, Printer, Layers, TrendingUp, Building2, Package } from "lucide-react";
+import { Calculator, Printer, Layers, TrendingUp, Building2, Package, Save } from "lucide-react";
+import { useAuthHeaders } from "@/hooks/use-auth";
+import customFetch from "@/lib/custom-fetch";
+import { toast } from "sonner";
 import BoxTemplate from "@/components/BoxTemplate";
+import { useLang } from "@/lib/i18n";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 const fmtD = (n: number, d = 2) => n.toFixed(d);
 
 export default function ProductionCalc() {
+  const { t } = useLang();
   const [boxL, setBoxL] = useState("");
   const [boxW, setBoxW] = useState("");
   const [boxH, setBoxH] = useState("");
@@ -24,7 +29,9 @@ export default function ProductionCalc() {
   const [boxName, setBoxName] = useState("RSC quti");
 
   const printRef = useRef<HTMLDivElement>(null);
+  const authOpts = useAuthHeaders();
   const n = (s: string) => parseFloat(s) || 0;
+  const [saving, setSaving] = useState(false);
 
   const calc = useMemo(() => {
     const L = n(boxL), W = n(boxW), H = n(boxH);
@@ -78,6 +85,50 @@ export default function ProductionCalc() {
     setTimeout(() => { document.title = "Shovot Carton ERP"; }, 1000);
   };
 
+  const handleSaveAsProduct = async () => {
+    if (!calc) return;
+    setSaving(true);
+    try {
+      const calcData = {
+        companyName, boxName,
+        boxL: n(boxL), boxW: n(boxW), boxH: n(boxH),
+        layer1Weight: n(layer1Weight), layer2Weight: n(layer2Weight), layer3Weight: n(layer3Weight),
+        priceLayer1: n(priceLayer1), priceLayer2: n(priceLayer2), priceLayer3: n(priceLayer3),
+        quantity: n(quantity), coefficient: n(coefficient),
+        blankLen: calc.blankLen, blankW: calc.blankW, netAreaM2: calc.netAreaM2,
+        l1: calc.l1, l2: calc.l2, l3: calc.l3,
+        totalPaperCost: calc.totalPaperCost, sellingPrice: calc.sellingPrice,
+      };
+      const body = {
+        name: boxName || "Nomsiz quti",
+        description: `${companyName} — ${boxName} (${n(boxW)}×${n(boxH)}×${n(boxL)} sm)`,
+        price: calc.sellingPrice,
+        length: n(boxL),
+        width: n(boxW),
+        height: n(boxH),
+        material: JSON.stringify(calcData),
+        materials: [
+          layer1Weight && `1-qatlam: ${layer1Weight}kg/m² × ${fmt(n(priceLayer1))}`,
+          layer2Weight && `2-qatlam: ${layer2Weight}kg/m² × ${fmt(n(priceLayer2))}`,
+          layer3Weight && `3-qatlam: ${layer3Weight}kg/m² × ${fmt(n(priceLayer3))}`,
+        ].filter(Boolean),
+        category: "Quti",
+        isPublished: false,
+      };
+      const res = await customFetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authOpts.headers },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(t('calc_save_error'));
+      toast.success(t('calc_saved') + " → " + t('calc_publish_hint'));
+    } catch (e: any) {
+      toast.error(e.message || t('calc_save_error'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const sm = (label: string, val: string, set: (v: string) => void, ph: string, unit: string) => (
     <div className="flex items-center gap-1.5">
       <span className="text-[10px] text-muted-foreground w-16 shrink-0 text-right">{label}</span>
@@ -94,12 +145,17 @@ export default function ProductionCalc() {
       <div className="p-3 border-b border-border/50 bg-primary/5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Calculator className="w-4 h-4 text-primary" />
-          <h3 className="text-sm font-bold">🧮 Kalkulyatsiya</h3>
+          <h3 className="text-sm font-bold">{t('calc_header')}</h3>
         </div>
         {hasBox && (
-          <Button size="sm" variant="outline" onClick={handlePrint} className="h-7 text-xs gap-1">
-            <Printer className="w-3 h-3" /> Chop etish
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Button size="sm" variant="default" onClick={handleSaveAsProduct} disabled={saving || !calc} className="h-7 text-xs gap-1">
+              <Save className="w-3 h-3" /> {saving ? t('calc_save_saving') : t('calc_save_as_product')}
+            </Button>
+            <Button size="sm" variant="outline" onClick={handlePrint} className="h-7 text-xs gap-1">
+              <Printer className="w-3 h-3" /> {t('calc_print')}
+            </Button>
+          </div>
         )}
       </div>
 
@@ -108,16 +164,16 @@ export default function ProductionCalc() {
         <div className="lg:w-80 p-3 space-y-2 border-r border-border/50">
           <div className="bg-muted/30 rounded-lg p-2">
             <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5 flex items-center gap-1">
-              <Building2 className="w-3 h-3" /> Korxona & quti nomi
+              <Building2 className="w-3 h-3" /> {t('calc_company_box_name')}
             </p>
             <div className="space-y-1">
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-muted-foreground w-16 shrink-0 text-right">Korxona</span>
+                <span className="text-[10px] text-muted-foreground w-16 shrink-0 text-right">{t('calc_company')}</span>
                 <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Shovot Carton"
                   className="h-8 text-xs px-2 bg-background/50 border-border/50" />
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-muted-foreground w-16 shrink-0 text-right">Quti nomi</span>
+                <span className="text-[10px] text-muted-foreground w-16 shrink-0 text-right">{t('calc_box_name')}</span>
                 <Input value={boxName} onChange={e => setBoxName(e.target.value)} placeholder="RSC quti"
                   className="h-8 text-xs px-2 bg-background/50 border-border/50" />
               </div>
@@ -125,43 +181,43 @@ export default function ProductionCalc() {
           </div>
 
           <div className="bg-muted/30 rounded-lg p-2">
-            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">📦 Quti (sm)</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">{t('calc_box_sm')}</p>
             <div className="space-y-1">
-              {sm("Bo'yi", boxL, setBoxL, "30", "sm")}
-              {sm("Eni", boxW, setBoxW, "20", "sm")}
-              {sm("Balandligi", boxH, setBoxH, "15", "sm")}
+              {sm(t('calc_length'), boxL, setBoxL, "30", "sm")}
+              {sm(t('calc_width'), boxW, setBoxW, "20", "sm")}
+              {sm(t('calc_height'), boxH, setBoxH, "15", "sm")}
             </div>
           </div>
 
           <div className="bg-muted/30 rounded-lg p-2">
-            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">💰 Har bir qatlam uchun (og'irlik + narx)</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">{t('calc_layers_weight_price')}</p>
             <div className="space-y-1">
-              {sm("1-qatlam og.", layer1Weight, setLayer1Weight, "0.12", "kg/m²")}
-              {sm("1-qatlam narx", priceLayer1, setPriceLayer1, "", "so'm/kg")}
-              {sm("2-qatlam og.", layer2Weight, setLayer2Weight, "0.12", "kg/m²")}
-              {sm("2-qatlam narx", priceLayer2, setPriceLayer2, "", "so'm/kg")}
-              {sm("3-qatlam og.", layer3Weight, setLayer3Weight, "0.12", "kg/m²")}
-              {sm("3-qatlam narx", priceLayer3, setPriceLayer3, "", "so'm/kg")}
+              {sm(t('calc_layer1_weight'), layer1Weight, setLayer1Weight, "0.12", "kg/m²")}
+              {sm(t('calc_layer1_price'), priceLayer1, setPriceLayer1, "", "so'm/kg")}
+              {sm(t('calc_layer2_weight'), layer2Weight, setLayer2Weight, "0.12", "kg/m²")}
+              {sm(t('calc_layer2_price'), priceLayer2, setPriceLayer2, "", "so'm/kg")}
+              {sm(t('calc_layer3_weight'), layer3Weight, setLayer3Weight, "0.12", "kg/m²")}
+              {sm(t('calc_layer3_price'), priceLayer3, setPriceLayer3, "", "so'm/kg")}
             </div>
           </div>
 
           <div className="bg-muted/30 rounded-lg p-2">
-            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">📊 Miqdor</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1.5">{t('calc_quantity')}</p>
             <div className="space-y-1">
-              {sm("Miqdor", quantity, setQuantity, "1000", "dona")}
+              {sm(t('calc_amount'), quantity, setQuantity, "1000", "dona")}
             </div>
             {calc && (
               <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
                 <div className="flex justify-between text-[11px]">
-                  <span className="text-muted-foreground">Ishlab chiqarish:</span>
+                  <span className="text-muted-foreground">{t('calc_production_cost')}</span>
                   <span className="font-bold">{fmt(calc.total.paper)} so'm</span>
                 </div>
                 <div className="flex justify-between text-[11px]">
-                  <span className="text-muted-foreground">Daromad:</span>
+                  <span className="text-muted-foreground">{t('calc_revenue')}</span>
                   <span className="font-bold text-indigo-600">{fmt(calc.revenue)} so'm</span>
                 </div>
                 <div className="flex justify-between text-[11px]">
-                  <span className="text-muted-foreground">Sof foyda:</span>
+                  <span className="text-muted-foreground">{t('calc_net_profit')}</span>
                   <span className="font-bold text-rose-600">{fmt(calc.profit)} so'm</span>
                 </div>
               </div>
@@ -169,9 +225,9 @@ export default function ProductionCalc() {
           </div>
 
           <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-2 border border-amber-200 dark:border-amber-800">
-            <p className="text-[9px] font-bold text-amber-700 dark:text-amber-400 uppercase mb-1.5">📈 Sotish narxi</p>
+            <p className="text-[9px] font-bold text-amber-700 dark:text-amber-400 uppercase mb-1.5">{t('calc_selling_price')}</p>
             <div className="space-y-1">
-              {sm("Koeffitsient", coefficient, setCoefficient, "1.5", "×")}
+              {sm(t('calc_coefficient'), coefficient, setCoefficient, "1.5", "×")}
             </div>
           </div>
         </div>
@@ -188,17 +244,17 @@ export default function ProductionCalc() {
                 <>
                   {/* Kesma o'lchamlari */}
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="text-center p-2 bg-violet-50 dark:bg-violet-950/30 rounded-lg">
-                      <div className="text-base font-bold text-violet-600">{calc.blankLen} sm</div>
-                      <div className="text-[9px] text-muted-foreground">Kesma uzunligi</div>
-                    </div>
-                    <div className="text-center p-2 bg-violet-50 dark:bg-violet-950/30 rounded-lg">
-                      <div className="text-base font-bold text-violet-600">{calc.blankW} sm</div>
-                      <div className="text-[9px] text-muted-foreground">Kesma eni</div>
-                    </div>
-                    <div className="text-center p-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
-                      <div className="text-base font-bold text-amber-500">{calc.netAreaM2} m²</div>
-                      <div className="text-[9px] text-muted-foreground">Sof maydon</div>
+                      <div className="text-center p-2 bg-violet-50 dark:bg-violet-950/30 rounded-lg">
+                       <div className="text-base font-bold text-violet-600">{calc.blankLen} sm</div>
+                       <div className="text-[9px] text-muted-foreground">{t('calc_cut_length')}</div>
+                     </div>
+                     <div className="text-center p-2 bg-violet-50 dark:bg-violet-950/30 rounded-lg">
+                       <div className="text-base font-bold text-violet-600">{calc.blankW} sm</div>
+                       <div className="text-[9px] text-muted-foreground">{t('calc_cut_width')}</div>
+                     </div>
+                     <div className="text-center p-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
+                       <div className="text-base font-bold text-amber-500">{calc.netAreaM2} m²</div>
+                       <div className="text-[9px] text-muted-foreground">{t('calc_net_area')}</div>
                     </div>
                   </div>
 
@@ -209,37 +265,37 @@ export default function ProductionCalc() {
                       <div className="bg-card rounded-lg border border-border/50 overflow-hidden">
                         <div className="p-2.5 border-b border-border/50 bg-muted/30 flex items-center gap-2">
                           <Layers className="w-4 h-4 text-primary" />
-                          <span className="text-sm font-bold">3 qatlamli qog'oz (1 dona uchun)</span>
+                          <span className="text-sm font-bold">{t('calc_3layer_paper')}</span>
                         </div>
                         <div className="p-3">
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="text-muted-foreground border-b border-border/50">
-                                <th className="text-left py-2 font-semibold">Qatlam</th>
-                                <th className="text-left py-2 font-semibold">Turi</th>
-                                <th className="text-right py-2 font-semibold">Og'irlik</th>
-                                <th className="text-right py-2 font-semibold">Narx</th>
-                                <th className="text-right py-2 font-semibold">Summa</th>
+                                 <th className="text-left py-2 font-semibold">{t('calc_layer')}</th>
+                                 <th className="text-left py-2 font-semibold">{t('calc_type')}</th>
+                                 <th className="text-right py-2 font-semibold">{t('calc_weight')}</th>
+                                 <th className="text-right py-2 font-semibold">{t('calc_price')}</th>
+                                 <th className="text-right py-2 font-semibold">{t('calc_sum')}</th>
                               </tr>
                             </thead>
                             <tbody>
                               <tr className="border-b border-border/30">
                                 <td className="py-2 font-bold text-blue-600 text-base">1</td>
-                                <td className="py-2 text-muted-foreground">Tashqi</td>
+                                <td className="py-2 text-muted-foreground">{t('calc_outer')}</td>
                                 <td className="py-2 text-right font-mono font-bold">{calc.l1.weight} kg</td>
                                 <td className="py-2 text-right font-mono text-muted-foreground">{fmt(calc.l1.price)}</td>
                                 <td className="py-2 text-right font-mono font-bold text-base">{fmt(calc.l1.cost)}</td>
                               </tr>
                               <tr className="border-b border-border/30 bg-amber-50/50 dark:bg-amber-950/20">
                                 <td className="py-2 font-bold text-amber-600 text-base">2</td>
-                                <td className="py-2 text-muted-foreground">Gofra ÷0.7</td>
+                                <td className="py-2 text-muted-foreground">{t('calc_gofra')}</td>
                                 <td className="py-2 text-right font-mono font-bold">{calc.l2.weight} kg</td>
                                 <td className="py-2 text-right font-mono text-amber-600">{fmt(calc.l2.price)}</td>
                                 <td className="py-2 text-right font-mono font-bold text-base">{fmt(calc.l2.cost)}</td>
                               </tr>
                               <tr className="border-b border-border/50">
                                 <td className="py-2 font-bold text-green-600 text-base">3</td>
-                                <td className="py-2 text-muted-foreground">Ichki</td>
+                                <td className="py-2 text-muted-foreground">{t('calc_inner')}</td>
                                 <td className="py-2 text-right font-mono font-bold">{calc.l3.weight} kg</td>
                                 <td className="py-2 text-right font-mono text-muted-foreground">{fmt(calc.l3.price)}</td>
                                 <td className="py-2 text-right font-mono font-bold text-base">{fmt(calc.l3.cost)}</td>
@@ -247,7 +303,7 @@ export default function ProductionCalc() {
                             </tbody>
                             <tfoot>
                               <tr className="bg-primary/5 font-bold">
-                                <td className="py-2 text-base" colSpan={2}>JAMI</td>
+                                <td className="py-2 text-base" colSpan={2}>{t('calc_total')}</td>
                                 <td className="py-2 text-right font-mono text-base">{calc.totalWeight} kg</td>
                                 <td></td>
                                 <td className="py-2 text-right font-mono text-primary text-lg">{fmt(calc.totalPaperCost)} so'm</td>
@@ -262,16 +318,16 @@ export default function ProductionCalc() {
                     <div className="lg:w-44 flex flex-row lg:flex-col gap-2">
                       {/* Ishlab chiqarish narxi */}
                       <div className="flex-1 lg:flex-none bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800 flex flex-col items-center justify-center">
-                        <p className="text-[10px] font-bold text-blue-700 uppercase mb-1">Ishlab chiqarish</p>
+                        <p className="text-[10px] font-bold text-blue-700 uppercase mb-1">{t('calc_production_cost')}</p>
                         <div className="text-2xl font-extrabold text-blue-600 leading-none">{fmt(calc.perBox.total)}</div>
-                        <div className="text-[11px] text-blue-500 mt-1">so'm / dona</div>
+                        <div className="text-[11px] text-blue-500 mt-1">{t('calc_per_unit')}</div>
                       </div>
 
                       {/* Sotish narxi */}
                       <div className="flex-1 lg:flex-none bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 border-2 border-emerald-400 dark:border-emerald-600 flex flex-col items-center justify-center">
-                        <p className="text-[10px] font-bold text-emerald-700 uppercase mb-1">Sotish narxi</p>
+                        <p className="text-[10px] font-bold text-emerald-700 uppercase mb-1">{t('calc_selling_price')}</p>
                         <div className="text-2xl font-extrabold text-emerald-600 leading-none">{fmt(calc.sellingPrice)}</div>
-                        <div className="text-[11px] text-emerald-500 mt-1">so'm / dona</div>
+                        <div className="text-[11px] text-emerald-500 mt-1">{t('calc_per_unit')}</div>
                         <div className="text-[10px] text-emerald-700 mt-1 bg-emerald-200 dark:bg-emerald-800 px-2 py-0.5 rounded-full font-bold">
                           × {calc.coefficient}
                         </div>
@@ -284,8 +340,8 @@ export default function ProductionCalc() {
            ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Calculator className="w-12 h-12 mb-3 opacity-20" />
-              <p className="text-sm font-medium">Quti o'lchamlarini kiriting (sm)</p>
-              <p className="text-xs mt-1">Eskiz avtomatik chiziladi</p>
+              <p className="text-sm font-medium">{t('calc_empty_hint')}</p>
+              <p className="text-xs mt-1">{t('calc_empty_sub')}</p>
             </div>
           )}
         </div>

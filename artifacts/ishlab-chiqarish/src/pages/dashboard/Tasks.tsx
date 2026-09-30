@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2, ClipboardCheck, Pencil, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { Plus, Trash2, ClipboardCheck, Pencil, Calendar } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format, subDays, startOfWeek, startOfMonth, isAfter } from "date-fns";
+import { format, startOfWeek, startOfMonth, startOfYear, isAfter } from "date-fns";
 import { useLang } from "@/lib/i18n";
-import { PRODUCTS_MATERIALS } from "./Products";
+
 
 const schema = z.object({
   title: z.string().min(1, "Sarlavha talab qilinadi"),
@@ -25,19 +25,14 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: "Kutilmoqda", color: "bg-amber-100 text-amber-700", icon: Clock },
-  in_progress: { label: "Jarayonda", color: "bg-blue-100 text-blue-700", icon: AlertCircle },
-  completed: { label: "Bajarildi", color: "bg-green-100 text-green-700", icon: CheckCircle2 },
-};
-
-type TimePeriod = "all" | "daily" | "weekly" | "monthly";
+type TimePeriod = "all" | "daily" | "weekly" | "monthly" | "yearly";
 
 const TIME_LABELS: Record<TimePeriod, string> = {
   all: "Barchasi",
   daily: "Bugun",
   weekly: "Bu hafta",
   monthly: "Bu oy",
+  yearly: "Bu yil",
 };
 
 export default function Tasks() {
@@ -47,10 +42,9 @@ export default function Tasks() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [isLoadingSubmit, setIsLoadingSubmit] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "in_progress" | "completed">("all");
   const [timeFilter, setTimeFilter] = useState<TimePeriod>("all");
-  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
-  const [customMaterial, setCustomMaterial] = useState("");
+  const [filterDate, setFilterDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const { data: tasks, isLoading } = useQuery({
     queryKey: ["/api/tasks"],
@@ -67,32 +61,19 @@ export default function Tasks() {
     queryFn: () => customFetch("/api/products").then(r => r.json()),
   });
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { title: "", description: "", assigneeId: undefined, productId: undefined, materialName: "" },
   });
 
   const openAdd = () => {
     setEditing(null);
-    setSelectedMaterials([]);
-    setCustomMaterial("");
     reset({ title: "", description: "", assigneeId: undefined, productId: undefined, materialName: "" });
     setIsAddOpen(true);
   };
 
   const openEdit = (task: any) => {
     setEditing(task);
-    const matStr = task.materialName || "";
-    if (matStr) {
-      const mats = matStr.split(",").map((s: string) => s.trim()).filter(Boolean);
-      const known = mats.filter((m: string) => PRODUCTS_MATERIALS.includes(m));
-      const unknown = mats.filter((m: string) => !PRODUCTS_MATERIALS.includes(m));
-      setSelectedMaterials(known);
-      setCustomMaterial(unknown.join(", "));
-    } else {
-      setSelectedMaterials([]);
-      setCustomMaterial("");
-    }
     reset({
       title: task.title,
       description: task.description || "",
@@ -103,24 +84,12 @@ export default function Tasks() {
     setIsAddOpen(true);
   };
 
-  const toggleMaterial = (mat: string) => {
-    setSelectedMaterials(prev =>
-      prev.includes(mat) ? prev.filter(m => m !== mat) : [...prev, mat]
-    );
-  };
-
   const onSubmit = async (data: FormValues) => {
     setIsLoadingSubmit(true);
     try {
-      const allMats = [...selectedMaterials];
-      if (customMaterial.trim()) {
-        customMaterial.split(",").map(s => s.trim()).filter(Boolean).forEach(m => allMats.push(m));
-      }
-      const materialName = allMats.length > 0 ? allMats.join(", ") : null;
-
       const payload = {
         ...data,
-        materialName,
+        materialName: null,
         productId: data.productId || null,
         assigneeId: data.assigneeId || null,
       };
@@ -140,8 +109,6 @@ export default function Tasks() {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       setIsAddOpen(false);
       reset();
-      setSelectedMaterials([]);
-      setCustomMaterial("");
     } finally {
       setIsLoadingSubmit(false);
     }
@@ -156,31 +123,30 @@ export default function Tasks() {
     queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
   };
 
-  const updateStatus = async (id: number, status: string) => {
-    try {
-      await customFetch(`/api/tasks/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", ...authOpts.headers },
-        body: JSON.stringify({ status }),
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-    } catch {}
-  };
-
   const filteredTasks = useMemo(() => {
     if (!Array.isArray(tasks)) return [];
-    let result = statusFilter === "all" ? tasks : tasks.filter((t: any) => t.status === statusFilter);
+    let result = [...tasks];
 
-    if (timeFilter !== "all") {
-      const now = new Date();
-      let cutoff: Date;
-      if (timeFilter === "daily") {
-        cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      } else if (timeFilter === "weekly") {
-        cutoff = startOfWeek(now, { weekStartsOn: 1 });
-      } else {
-        cutoff = startOfMonth(now);
-      }
+    if (timeFilter === "daily") {
+      const cutoff = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+      result = result.filter((t: any) => {
+        if (!t.date) return false;
+        return isAfter(new Date(t.date), cutoff) || new Date(t.date).getTime() === cutoff.getTime();
+      });
+    } else if (timeFilter === "weekly") {
+      const cutoff = startOfWeek(new Date(), { weekStartsOn: 1 });
+      result = result.filter((t: any) => {
+        if (!t.date) return false;
+        return isAfter(new Date(t.date), cutoff) || new Date(t.date).getTime() === cutoff.getTime();
+      });
+    } else if (timeFilter === "monthly") {
+      const cutoff = startOfMonth(new Date());
+      result = result.filter((t: any) => {
+        if (!t.date) return false;
+        return isAfter(new Date(t.date), cutoff) || new Date(t.date).getTime() === cutoff.getTime();
+      });
+    } else if (timeFilter === "yearly") {
+      const cutoff = startOfYear(new Date());
       result = result.filter((t: any) => {
         if (!t.date) return false;
         return isAfter(new Date(t.date), cutoff) || new Date(t.date).getTime() === cutoff.getTime();
@@ -188,14 +154,38 @@ export default function Tasks() {
     }
 
     return result;
-  }, [tasks, statusFilter, timeFilter]);
+  }, [tasks, timeFilter]);
 
-  const stats = Array.isArray(tasks) ? {
-    total: tasks.length,
-    pending: tasks.filter((t: any) => t.status === "pending").length,
-    inProgress: tasks.filter((t: any) => t.status === "in_progress").length,
-    completed: tasks.filter((t: any) => t.status === "completed").length,
-  } : { total: 0, pending: 0, inProgress: 0, completed: 0 };
+  const countByPeriod = (period: TimePeriod) => {
+    if (!Array.isArray(tasks)) return 0;
+    const now = new Date();
+    if (period === "all") return tasks.length;
+    if (period === "daily") {
+      const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return tasks.filter((t: any) => t.date && (isAfter(new Date(t.date), cutoff) || new Date(t.date).getTime() === cutoff.getTime())).length;
+    }
+    if (period === "weekly") {
+      const cutoff = startOfWeek(now, { weekStartsOn: 1 });
+      return tasks.filter((t: any) => t.date && (isAfter(new Date(t.date), cutoff) || new Date(t.date).getTime() === cutoff.getTime())).length;
+    }
+    if (period === "monthly") {
+      const cutoff = startOfMonth(now);
+      return tasks.filter((t: any) => t.date && (isAfter(new Date(t.date), cutoff) || new Date(t.date).getTime() === cutoff.getTime())).length;
+    }
+    if (period === "yearly") {
+      const cutoff = startOfYear(now);
+      return tasks.filter((t: any) => t.date && (isAfter(new Date(t.date), cutoff) || new Date(t.date).getTime() === cutoff.getTime())).length;
+    }
+    return 0;
+  };
+
+  const stats = {
+    total: Array.isArray(tasks) ? tasks.length : 0,
+    daily: countByPeriod("daily"),
+    weekly: countByPeriod("weekly"),
+    monthly: countByPeriod("monthly"),
+    yearly: countByPeriod("yearly"),
+  };
 
   const activeEmployees = Array.isArray(employees) ? employees.filter((e: any) => e.status === "active") : [];
 
@@ -203,7 +193,7 @@ export default function Tasks() {
     <DashboardLayout>
       <PageHeader
         title="Topshiriqlar"
-        description={`${stats.total} ta topshiriq — ${stats.completed} bajarildi, ${stats.pending} kutilmoqda`}
+        description={`${stats.total} ta topshiriq`}
         action={
           <Button onClick={openAdd} className="rounded-xl px-6 h-12 shadow-lg shadow-primary/20 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white border-0">
             <Plus className="mr-2 h-5 w-5" /> Yangi topshiriq
@@ -213,46 +203,29 @@ export default function Tasks() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card className="p-4 border-0 shadow-md bg-gradient-to-br from-gray-50 to-gray-100">
-          <div className="text-2xl font-bold text-gray-800">{stats.total}</div>
-          <div className="text-xs text-gray-600">Jami</div>
-        </Card>
-        <Card className="p-4 border-0 shadow-md bg-gradient-to-br from-amber-50 to-amber-100">
-          <div className="text-2xl font-bold text-amber-700">{stats.pending}</div>
-          <div className="text-xs text-amber-600">Kutilmoqda</div>
+        <Card className="p-4 border-0 shadow-md bg-gradient-to-br from-indigo-50 to-indigo-100">
+          <div className="text-2xl font-bold text-indigo-700">{stats.total}</div>
+          <div className="text-xs text-indigo-600">Jami</div>
         </Card>
         <Card className="p-4 border-0 shadow-md bg-gradient-to-br from-blue-50 to-blue-100">
-          <div className="text-2xl font-bold text-blue-700">{stats.inProgress}</div>
-          <div className="text-xs text-blue-600">Jarayonda</div>
+          <div className="text-2xl font-bold text-blue-700">{stats.daily}</div>
+          <div className="text-xs text-blue-600">Bugun</div>
+        </Card>
+        <Card className="p-4 border-0 shadow-md bg-gradient-to-br from-amber-50 to-amber-100">
+          <div className="text-2xl font-bold text-amber-700">{stats.monthly}</div>
+          <div className="text-xs text-amber-600">Bu oy</div>
         </Card>
         <Card className="p-4 border-0 shadow-md bg-gradient-to-br from-green-50 to-green-100">
-          <div className="text-2xl font-bold text-green-700">{stats.completed}</div>
-          <div className="text-xs text-green-600">Bajarildi</div>
+          <div className="text-2xl font-bold text-green-700">{stats.yearly}</div>
+          <div className="text-xs text-green-600">Bu yil</div>
         </Card>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        {/* Status filter */}
-        <div className="flex gap-2">
-          {(["all", "pending", "in_progress", "completed"] as const).map(s => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                statusFilter === s
-                  ? "bg-primary text-white shadow-md"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              {s === "all" ? "Barchasi" : STATUS_CONFIG[s]?.label}
-            </button>
-          ))}
-        </div>
-
+      <div className="flex flex-wrap items-center gap-3 mb-6">
         {/* Time period filter */}
-        <div className="flex gap-2 ml-auto">
-          {(["all", "daily", "weekly", "monthly"] as const).map(p => (
+        <div className="flex gap-2">
+          {(["all", "daily", "monthly", "yearly"] as const).map(p => (
             <button
               key={p}
               onClick={() => setTimeFilter(p)}
@@ -265,6 +238,27 @@ export default function Tasks() {
               {TIME_LABELS[p]}
             </button>
           ))}
+        </div>
+
+        {/* Calendar filter */}
+        <div className="relative">
+          <button
+            onClick={() => setShowDatePicker(!showDatePicker)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 border border-primary/30 text-sm font-semibold text-primary hover:bg-primary/20 transition-colors"
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Kalendar</span>
+          </button>
+          {showDatePicker && (
+            <div className="absolute top-full left-0 mt-2 bg-card border-2 border-border rounded-2xl shadow-xl z-50 p-4">
+              <input
+                type="date"
+                value={filterDate}
+                onChange={e => { setFilterDate(e.target.value); setShowDatePicker(false); }}
+                className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -282,8 +276,8 @@ export default function Tasks() {
           </div>
         ) : (
           filteredTasks.map((task: any) => {
-            const StatusIcon = STATUS_CONFIG[task.status]?.icon || Clock;
-            const isCompleted = task.status === "completed";
+            const isCompleted = task.status === "finished" || task.status === "completed";
+            const isFinished = task.status === "finished" || task.status === "completed";
             return (
               <Card key={task.id} className={`p-5 border-0 shadow-sm hover:shadow-md transition-all ${isCompleted ? "opacity-70" : ""}`}>
                 <div className="flex items-start justify-between gap-4">
@@ -292,8 +286,8 @@ export default function Tasks() {
                       <h3 className={`font-bold text-lg ${isCompleted ? "line-through text-muted-foreground" : "text-foreground"}`}>
                         {task.title}
                       </h3>
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_CONFIG[task.status]?.color || "bg-gray-100"}`}>
-                        {STATUS_CONFIG[task.status]?.label}
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold shrink-0 ${isFinished ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>
+                        {isFinished ? "✅ Yakunlandi" : "🔄 Boshlandi"}
                       </span>
                     </div>
 
@@ -312,11 +306,6 @@ export default function Tasks() {
                           {task.productName}
                         </span>
                       )}
-                      {task.materialName && (
-                        <span className="px-2 py-1 rounded-lg bg-purple-50 text-purple-700 font-medium">
-                          {task.materialName}
-                        </span>
-                      )}
                       <span className="px-2 py-1 rounded-lg bg-muted font-medium">
                         {task.date ? format(new Date(task.date), "dd.MM.yyyy") : "-"}
                       </span>
@@ -324,17 +313,6 @@ export default function Tasks() {
                   </div>
 
                   <div className="flex items-center gap-1 shrink-0">
-                    {task.status !== "completed" && (
-                      <select
-                        value={task.status}
-                        onChange={e => updateStatus(task.id, e.target.value)}
-                        className="px-2 py-1 rounded-lg text-xs font-medium border border-border bg-background cursor-pointer"
-                      >
-                        {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                          <option key={k} value={k}>{v.label}</option>
-                        ))}
-                      </select>
-                    )}
                     <button onClick={() => openEdit(task)} className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors">
                       <Pencil className="w-4 h-4" />
                     </button>
@@ -357,6 +335,28 @@ export default function Tasks() {
             <Input {...register("title")} error={errors.title?.message} placeholder="Topshiriq nomi" className="h-12" />
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-semibold block mb-1.5">Mas'ul (hodim)</label>
+              <select {...register("assigneeId")} className="flex h-12 w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm">
+                <option value="">Tanlang...</option>
+                {activeEmployees.map((emp: any) => (
+                  <option key={emp.id} value={emp.id}>{emp.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold block mb-1.5">Mahsulot (ixtiyoriy)</label>
+              <select {...register("productId")} className="flex h-12 w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm">
+                <option value="">Tanlang...</option>
+                {Array.isArray(products) && products.map((p: any) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div>
             <label className="text-sm font-semibold block mb-1.5">Izoh</label>
             <textarea
@@ -367,62 +367,6 @@ export default function Tasks() {
             />
           </div>
 
-          <div>
-            <label className="text-sm font-semibold block mb-1.5">Mas'ul (hodim)</label>
-            <select {...register("assigneeId")} className="flex h-12 w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm">
-              <option value="">Tanlang...</option>
-              {activeEmployees.map((emp: any) => (
-                <option key={emp.id} value={emp.id}>{emp.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-sm font-semibold block mb-1.5">Mahsulot (ixtiyoriy)</label>
-            <select {...register("productId")} className="flex h-12 w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm">
-              <option value="">Tanlang...</option>
-              {Array.isArray(products) && products.map((p: any) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-sm font-semibold block mb-1.5">Materiallar (bir nechta tanlash mumkin)</label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {PRODUCTS_MATERIALS.map(mat => {
-                const isSelected = selectedMaterials.includes(mat);
-                return (
-                  <button
-                    key={mat}
-                    type="button"
-                    onClick={() => toggleMaterial(mat)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${
-                      isSelected
-                        ? "bg-primary text-white border-primary"
-                        : "bg-muted text-muted-foreground border-border hover:border-primary/50"
-                    }`}
-                  >
-                    {mat}
-                  </button>
-                );
-              })}
-            </div>
-            {selectedMaterials.length > 0 && (
-              <p className="text-xs text-primary font-medium mb-2">{selectedMaterials.length} ta material tanlangan</p>
-            )}
-          </div>
-
-          <div>
-            <label className="text-sm font-semibold block mb-1.5">Boshqa materiallar (vergul bilan ajrating)</label>
-            <input
-              type="text"
-              value={customMaterial}
-              onChange={e => setCustomMaterial(e.target.value)}
-              placeholder="Masalan: Zanglamas po'lat, Alyuminiy"
-              className="flex h-12 w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm"
-            />
-          </div>
 
           <div className="text-xs text-muted-foreground">
             Sana: <span className="font-semibold">{format(new Date(), "dd.MM.yyyy")}</span> (avtomatik)

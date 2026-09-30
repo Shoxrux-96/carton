@@ -191,10 +191,10 @@ export default function TasksScreen() {
               {task.description ? <Text style={styles.taskDesc} numberOfLines={3}>{task.description}</Text> : null}
 
               <View style={styles.taskMeta}>
-                {task.assigneeName && <View style={styles.metaPill}><Text style={styles.metaText}>👤 {task.assigneeName}</Text></View>}
-                {task.productName && <View style={styles.metaPill}><Text style={styles.metaText}>📦 {task.productName}</Text></View>}
-                {task.materialName && <View style={styles.metaPill}><Text style={styles.metaText}>🧱 {task.materialName}</Text></View>}
-                {task.date && <View style={styles.metaPill}><Text style={styles.metaText}>📅 {new Date(task.date).toLocaleDateString("uz")}</Text></View>}
+                {task.assigneeName ? <View style={styles.metaPill}><Text style={styles.metaText}>👤 {task.assigneeName}</Text></View> : null}
+                {task.productName ? <View style={styles.metaPill}><Text style={styles.metaText}>📦 {task.productName}</Text></View> : null}
+                {task.materialName ? <View style={styles.metaPill}><Text style={styles.metaText}>🧱 {task.materialName}</Text></View> : null}
+                {task.date ? <View style={styles.metaPill}><Text style={styles.metaText}>📅 {new Date(task.date).toLocaleDateString("uz")}</Text></View> : null}
               </View>
 
               <View style={styles.taskActions}>
@@ -313,7 +313,7 @@ export default function TasksScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: {flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: 100 },
   statsRow: { flexDirection: "row", gap: 8, marginBottom: spacing.lg },

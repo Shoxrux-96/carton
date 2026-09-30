@@ -25,14 +25,6 @@ const STYLE_LABEL: Record<BoxStyle, string> = {
 // Three.js BoxGeometry material order: [+x, -x, +y, -y, +z, -z]
 const BOX_ORDER: FaceKey[] = ["right", "left", "top", "bottom", "front", "back"];
 
-const DEFAULT_IMAGES = [
-  `${import.meta.env.BASE_URL}images/carton-gofra.png`,
-  `${import.meta.env.BASE_URL}images/box-60x40.webp`,
-  `${import.meta.env.BASE_URL}images/quti.png`,
-  `${import.meta.env.BASE_URL}images/qutilar.png`,
-  `${import.meta.env.BASE_URL}images/sovg.png`,
-];
-
 const FACE_LABEL: Record<FaceKey, string> = {
   front: "catalog_3d_face_front",
   back: "catalog_3d_face_back",
@@ -87,11 +79,6 @@ export default function CatalogView3D() {
     queryKey: ["/api/products", id],
     queryFn: () => customFetch(`/api/products/${id}`).then(r => r.json()),
     enabled: !!id,
-  });
-
-  const { data: products } = useQuery({
-    queryKey: ["/api/public/products"],
-    queryFn: () => customFetch("/api/public/products").then(r => r.json()),
   });
 
   const [face, setFace] = useState<FaceKey>("front");
@@ -192,8 +179,6 @@ export default function CatalogView3D() {
       </div>
     );
   }
-
-  const otherProducts = (Array.isArray(products) ? products : []).filter((p: any) => String(p.id) !== String(id)).slice(0, 4);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-stone-100 flex flex-col">
@@ -337,17 +322,12 @@ export default function CatalogView3D() {
           </div>
 
           {/* Info */}
-          {(x || y || z || product.material) && (
+          {(x || y || z) && (
             <div className="pt-4 border-t border-border/60">
               <div className="flex flex-wrap gap-2">
                 <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-xs font-medium text-amber-700 border border-amber-100">
                   {t("catalog_3d_dimensions")}: {x}×{y}×{z} sm
                 </span>
-                {product.material && (
-                  <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-xs font-medium text-amber-700 border border-amber-100">
-                    {t("catalog_3d_material")}: {product.material}
-                  </span>
-                )}
                 {isAdmin && product.price != null && (
                   <span className="px-2.5 py-1 rounded-lg bg-amber-600 text-xs font-medium text-white border border-amber-600">
                     {Number(product.price).toLocaleString(lang === "ru" ? "ru-RU" : "uz-UZ")} {t("landing_currency")}
@@ -360,39 +340,6 @@ export default function CatalogView3D() {
         </aside>
       </main>
 
-      {/* Other products strip */}
-      <div className="max-w-[1400px] w-full mx-auto px-4 sm:px-6 pb-8">
-        <div className="bg-white/70 backdrop-blur rounded-2xl border border-border/50 shadow-sm p-4">
-          <p className="text-sm font-bold text-foreground mb-3">{t("catalog_3d_other_products")}</p>
-          {otherProducts.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {otherProducts.map((p: any, i: number) => {
-                const imgSrc = p.image || DEFAULT_IMAGES[i % DEFAULT_IMAGES.length];
-                return (
-                  <Link
-                    key={p.id}
-                    href={`/catalog/${p.id}`}
-                    className={`flex items-center gap-3 p-2.5 rounded-xl border transition-all ${
-                      String(p.id) === String(id)
-                        ? "border-amber-400 bg-amber-50"
-                        : "border-border/60 hover:border-amber-300 hover:bg-amber-50/60"
-                    }`}
-                  >
-                    <img
-                      src={imgSrc}
-                      alt={p.name}
-                      className="w-14 h-14 rounded-lg object-cover shrink-0 bg-gradient-to-br from-amber-50 to-orange-50"
-                    />
-                    <span className="text-sm font-semibold text-foreground leading-tight line-clamp-2">{p.name}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t("landing_no_products")}</p>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

@@ -16,9 +16,9 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import {
-  Package, TrendingUp, Wrench, AlertTriangle, Users, Building2,
-  ShoppingCart, TrendingDown, Landmark, Layers, ArrowUpRight, ArrowDownRight,
-  Clock, ArrowRight, DollarSign
+  Package, TrendingUp, Wrench, Building2,
+  TrendingDown, Landmark, Layers, ArrowUpRight, ArrowDownRight,
+  DollarSign
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Line, LineChart } from "recharts";
@@ -55,46 +55,16 @@ export default function Overview() {
     enabled: !isLoading,
   });
 
-  const { data: ordersData } = useQuery({
-    queryKey: ["/api/orders"],
-    queryFn: () => customFetch("/api/orders", { headers: authOpts.headers }).then(r => r.json()),
-    enabled: !isLoading,
-  });
-
-  const { data: inventoryData } = useQuery({
-    queryKey: ["/api/inventory"],
-    queryFn: () => customFetch("/api/inventory", { headers: authOpts.headers }).then(r => r.json()),
-    enabled: !isLoading,
-  });
-
   const statCards = [
     { title: t('total_products'), value: stats?.totalProducts, icon: Package, color: "text-blue-500", bg: "bg-blue-500/10", gradient: "from-blue-500/20 to-blue-500/5" },
     { title: t('inventory_types'), value: stats?.totalInventoryItems, icon: Layers, color: "text-indigo-500", bg: "bg-indigo-500/10", gradient: "from-indigo-500/20 to-indigo-500/5" },
     { title: t('today_production'), value: stats?.totalProductionToday, icon: Wrench, color: "text-teal-500", bg: "bg-teal-500/10", gradient: "from-teal-500/20 to-teal-500/5" },
     { title: t('today_sales'), value: stats?.totalSalesToday, icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10", gradient: "from-emerald-500/20 to-emerald-500/5" },
-    { title: t('low_stock'), value: stats?.lowStockItems, icon: AlertTriangle, color: "text-amber-500", bg: "bg-amber-500/10", gradient: "from-amber-500/20 to-amber-500/5" },
-    { title: t('leads'), value: stats?.totalLeads, icon: Users, color: "text-rose-500", bg: "bg-rose-500/10", gradient: "from-rose-500/20 to-rose-500/5" },
     { title: t('clients'), value: stats?.totalCustomers, icon: Building2, color: "text-cyan-500", bg: "bg-cyan-500/10", gradient: "from-cyan-500/20 to-cyan-500/5" },
-    { title: t('active_orders_stat'), value: stats?.activeOrders, icon: ShoppingCart, color: "text-orange-500", bg: "bg-orange-500/10", gradient: "from-orange-500/20 to-orange-500/5" },
-    { title: t('month_income'), icon: DollarSign, value: stats?.monthlyIncome ? (stats.monthlyIncome / 1000000).toFixed(1) + " mln" : "0", color: "text-green-500", bg: "bg-green-500/10", gradient: "from-green-500/20 to-green-500/5" },
-    { title: t('month_expense'), icon: TrendingDown, value: stats?.monthlyExpense ? (stats.monthlyExpense / 1000000).toFixed(1) + " mln" : "0", color: "text-red-500", bg: "bg-red-500/10", gradient: "from-red-500/20 to-red-500/5" },
-    { title: t('month_profit'), icon: Landmark, value: stats?.monthlyProfit ? (stats.monthlyProfit / 1000000).toFixed(1) + " mln" : "0", color: "text-blue-500", bg: "bg-blue-500/10", gradient: "from-blue-500/20 to-blue-500/5" },
+    { title: t('month_income'), icon: DollarSign, value: stats?.monthlyIncome ? Math.round(stats.monthlyIncome / 1000000) + " mln so'm" : "0", color: "text-green-500", bg: "bg-green-500/10", gradient: "from-green-500/20 to-green-500/5" },
+    { title: t('month_expense'), icon: TrendingDown, value: stats?.monthlyExpense ? Math.round(stats.monthlyExpense / 1000000) + " mln so'm" : "0", color: "text-red-500", bg: "bg-red-500/10", gradient: "from-red-500/20 to-red-500/5" },
+    { title: t('month_profit'), icon: Landmark, value: stats?.monthlyProfit ? Math.round(stats.monthlyProfit / 1000000) + " mln so'm" : "0", color: "text-blue-500", bg: "bg-blue-500/10", gradient: "from-blue-500/20 to-blue-500/5" },
   ];
-
-  const lowStockItems = useMemo(() => {
-    if (!Array.isArray(inventoryData)) return [];
-    return inventoryData
-      .filter((i: any) => i.quantity <= 5)
-      .slice(0, 5)
-      .sort((a: any, b: any) => a.quantity - b.quantity);
-  }, [inventoryData]);
-
-  const recentOrders = useMemo(() => {
-    if (!Array.isArray(ordersData)) return [];
-    return [...ordersData]
-      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 5);
-  }, [ordersData]);
 
   const lastSixMonths = useMemo(() => {
     const now = new Date();
@@ -133,15 +103,16 @@ export default function Overview() {
 
   const financeChartData = useMemo(() => {
     const tx = Array.isArray(financeData) ? financeData : [];
-    const sumIncome = (rows: any[]) => rows.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + (t.amount || 0), 0);
-    const sumExpense = (rows: any[]) => rows.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + (t.amount || 0), 0);
+    const sumIncome = (rows: any[]) => rows.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + (Number(t.amount) || 0), 0);
+    const sumExpense = (rows: any[]) => rows.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + (Number(t.amount) || 0), 0);
+    const toMln = (v: number) => Math.round(v / 1000000);
 
     if (finPeriod === "daily") {
       const days = eachDayOfInterval({ start: subDays(new Date(), 29), end: new Date() });
       return days.map((day) => {
         const ds = format(day, "yyyy-MM-dd");
         const dayTx = tx.filter((t: any) => t.date?.startsWith(ds));
-        return { name: format(day, "dd.MM"), kirim: sumIncome(dayTx), chiqim: sumExpense(dayTx) };
+        return { name: format(day, "dd.MM"), kirim: toMln(sumIncome(dayTx)), chiqim: toMln(sumExpense(dayTx)) };
       });
     }
 
@@ -150,7 +121,7 @@ export default function Overview() {
       const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i).reverse();
       return years.map((y) => {
         const yTx = tx.filter((t: any) => new Date(t.date).getFullYear() === y);
-        return { name: String(y), kirim: sumIncome(yTx), chiqim: sumExpense(yTx) };
+        return { name: String(y), kirim: toMln(sumIncome(yTx)), chiqim: toMln(sumExpense(yTx)) };
       });
     }
 
@@ -161,8 +132,8 @@ export default function Overview() {
       });
       return {
         name: `${MONTHS_UZ[m]} ${y}`,
-        kirim: sumIncome(monthTx),
-        chiqim: sumExpense(monthTx),
+        kirim: toMln(sumIncome(monthTx)),
+        chiqim: toMln(sumExpense(monthTx)),
       };
     });
   }, [financeData, lastSixMonths, finPeriod]);
@@ -313,11 +284,11 @@ export default function Overview() {
                 </div>
               </div>
               <ChartContainer config={chartConfig2} className="aspect-[2/1] w-full">
-                <LineChart data={financeChartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                <LineChart data={financeChartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" interval={Math.ceil(financeChartData.length / 6) - 1} />
-                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `${v}`} />
+                  <ChartTooltip content={<ChartTooltipContent formatter={(v: any) => `${v} mln so'm`} />} />
                   <Line type="monotone" dataKey="kirim" stroke="#22c55e" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="chiqim" stroke="#ef4444" strokeWidth={2} dot={false} />
                 </LineChart>
@@ -333,16 +304,16 @@ export default function Overview() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between py-2 border-b border-border/50">
                   <span className="text-sm text-muted-foreground">{t('total_sales_label')}</span>
-                  <span className="text-sm font-bold">{(totalSales / 1000000).toFixed(1)} mln so'm</span>
+                  <span className="text-sm font-bold">{Math.round(totalSales / 1000000)} mln so'm</span>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-border/50">
                   <span className="text-sm text-muted-foreground">{t('total_production_label')}</span>
-                  <span className="text-sm font-bold">{(totalProd / 1000000).toFixed(1)} mln so'm</span>
+                  <span className="text-sm font-bold">{Math.round(totalProd / 1000000)} mln so'm</span>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-border/50">
                   <span className="text-sm text-muted-foreground">{t('month_profit_label')}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold">{(profit / 1000000).toFixed(1)} mln so'm</span>
+                    <span className="text-sm font-bold">{Math.round(profit / 1000000)} mln so'm</span>
                     <span className={`text-xs font-medium flex items-center gap-0.5 ${
                       profitPercent >= 0 ? "text-emerald-600" : "text-red-600"
                     }`}>
@@ -351,87 +322,7 @@ export default function Overview() {
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm text-muted-foreground">{t('active_orders_stat')}</span>
-                  <Badge variant="secondary" className="text-xs">
-                    {stats?.activeOrders || 0} ta
-                  </Badge>
-                </div>
               </div>
-            </Card>
-
-            {/* Low stock alerts */}
-            <Card className="p-6 border-0 shadow-lg">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold">{t('low_stock_products')}</h3>
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
-              </div>
-              {lowStockItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                  <Package className="w-8 h-8 mb-2 opacity-30" />
-                  <p className="text-sm">{t('all_products_sufficient')}</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {lowStockItems.map((item: any, index: number) => (
-                    <div
-                      key={item.productId ?? item.id ?? `${item.productName ?? "low-stock"}-${index}`}
-                      className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{item.productName}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{item.quantity} {t('items_left')}</p>
-                      </div>
-                      <div className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                        item.quantity === 0
-                          ? "bg-red-100 text-red-700"
-                          : "bg-amber-100 text-amber-700"
-                      }`}>
-                        {item.quantity === 0 ? t('out_of_stock') : `${item.quantity} ta`}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-
-            {/* Recent orders */}
-            <Card className="p-6 border-0 shadow-lg">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold">{t('recent_orders')}</h3>
-                <ShoppingCart className="w-4 h-4 text-muted-foreground" />
-              </div>
-              {recentOrders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                  <ShoppingCart className="w-8 h-8 mb-2 opacity-30" />
-                  <p className="text-sm">{t('no_orders_text')}</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {recentOrders.map((order: any) => (
-                    <div
-                      key={order.id}
-                      className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">#{order.orderCode || order.id}</span>
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                            {order.orderType === "purchase" ? t('purchase_type') : t('delivery_type')}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <Clock className="w-3 h-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">
-                            {order.createdAt ? format(new Date(order.createdAt), "dd.MM HH:mm") : "—"}
-                          </span>
-                        </div>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-muted-foreground/50" />
-                    </div>
-                  ))}
-                </div>
-              )}
             </Card>
           </div>
         </div>

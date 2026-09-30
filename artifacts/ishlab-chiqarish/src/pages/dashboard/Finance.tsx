@@ -7,16 +7,39 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
-import { Plus, TrendingUp, TrendingDown, Wallet, Trash2, RefreshCw, FileDown } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Wallet, Trash2, RefreshCw, FileDown, FileText, Printer } from "lucide-react";
+import WaybillModal from "@/components/WaybillModal";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { exportToExcel, type ExcelColumn } from "@/lib/export-to-excel";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
+import { format } from "date-fns";
 import { useLang } from "@/lib/i18n";
-import { MATERIALS } from "./Products";
+const EXPENSE_CATEGORIES = ["Machalka", "Qo'lqop", "Transport", "Ijara", "Maosh", "Elektr", "Gaz", "Oziq-ovqat", "Suv", "Boshqa"];
 
 const formatSum = (n: number) => n.toLocaleString("uz-UZ") + " so'm";
+
+// Sana + soat: sana (yyyy-MM-dd) + yozuv qo'shilgan vaqt (createdAt, UTC → lokal HH:mm)
+const formatTxDateTime = (tx: any): string => {
+  const day = String(tx?.date || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return tx?.date ? String(tx.date) : "—";
+  let out = format(new Date(day + "T00:00:00"), "dd.MM.yyyy");
+  const t = tx?.createdAt ? new Date(tx.createdAt) : null;
+  if (t && !isNaN(t.getTime())) out += " " + format(t, "HH:mm");
+  return out;
+};
+
+// Tartiblash: avval sana kamayish (yangisi yuqorida), bir kunda — createdAt kamayish, so'ng id
+const compareTx = (a: any, b: any): number => {
+  const da = String(a?.date || "").slice(0, 10);
+  const db = String(b?.date || "").slice(0, 10);
+  if (da !== db) return db.localeCompare(da);
+  const ta = a?.createdAt ? Date.parse(a.createdAt) : NaN;
+  const tb = b?.createdAt ? Date.parse(b.createdAt) : NaN;
+  if (!isNaN(ta) && !isNaN(tb) && ta !== tb) return tb - ta;
+  if (!isNaN(ta) !== !isNaN(tb)) return isNaN(tb) ? -1 : 1;
+  return (b?.id || 0) - (a?.id || 0);
+};
 
 const schema = z.object({
   type: z.enum(["income", "expense"]),
@@ -43,10 +66,11 @@ interface FinanceRecord {
   amount: number;
   description: string;
   date: string;
+  createdAt?: string;
   source?: string;
+  waybillData?: any;
 }
 
-const AUTO_SOURCES = ["carton_auto_finance"];
 const DELETED_SOURCES_KEY = "carton_deleted_finance_sources";
 
 export default function Finance() {
@@ -59,7 +83,27 @@ export default function Finance() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isWaybillOpen, setIsWaybillOpen] = useState(false);
+  const [viewingWaybillId, setViewingWaybillId] = useState<number | null>(null);
+  const [editingWaybillId, setEditingWaybillId] = useState<number | null>(null);
+  const [printWaybillId, setPrintWaybillId] = useState<number | null>(null);
   const { t } = useLang();
+
+  // Waybills data
+  const { data: waybills, refetch: refetchWaybills } = useQuery({
+    queryKey: ["/api/waybills"],
+    queryFn: () => customFetch("/api/waybills", { headers: authOpts.headers }).then(r => r.json()),
+  });
+
+  const waybillMap = useMemo(() => {
+    const map: Record<number, any> = {};
+    if (Array.isArray(waybills)) {
+      for (const w of waybills) {
+        map[w.id] = w;
+      }
+    }
+    return map;
+  }, [waybills]);
 
   // API data
   const { data: apiTransactions } = useQuery({
@@ -78,18 +122,6 @@ export default function Finance() {
     queryFn: () => customFetch("/api/sales", { headers: authOpts.headers }).then(r => r.json()),
   });
 
-  // Production transactions
-  const { data: prodTransactions } = useQuery({
-    queryKey: ["/api/production/transactions"],
-    queryFn: () => customFetch("/api/production/transactions", { headers: authOpts.headers }).then(r => r.json()),
-  });
-
-  // Orders (for purchase → expense)
-  const { data: orders } = useQuery({
-    queryKey: ["/api/orders"],
-    queryFn: () => customFetch("/api/orders", { headers: authOpts.headers }).then(r => r.json()),
-  });
-
   // Local manually-added finance records
   const [manualRecords, setManualRecords] = useState<FinanceRecord[]>(() => getLocal("carton_finance", []));
   // Track deleted auto-generated sources so they don't reappear
@@ -105,13 +137,13 @@ export default function Finance() {
     setLocal(DELETED_SOURCES_KEY, sources);
   };
 
-  // Auto-generated records (computed every render, no effect needed)
+  // Auto-generated records (only sales)
   const autoRecords = useMemo(() => {
     const result: FinanceRecord[] = [];
     const skip = new Set(deletedSources);
     let idCounter = -1;
 
-    // 1. From sales (API + localStorage)
+    // From sales (API + localStorage)
     const allSales = Array.isArray(sales) ? [...sales] : [];
     const localSales: any[] = getLocal("carton_sales", []);
     for (const ls of localSales) {
@@ -127,106 +159,13 @@ export default function Finance() {
         amount: sale.totalSum || 0,
         description: `${sale.productName || "Mahsulot"} sotildi (${sale.quantity || 0} ta)`,
         date: sale.soldAt ? sale.soldAt.split("T")[0] : format(new Date(), "yyyy-MM-dd"),
-        source: src,
-      });
-    }
-
-    // 2. From production material expenses (API + localStorage)
-    const allProdTx = Array.isArray(prodTransactions) ? [...prodTransactions] : [];
-    for (const tx of allProdTx) {
-      const src = `prod_${tx.id}`;
-      if (skip.has(src)) continue;
-      if (tx.type === "chiqim" && tx.totalSum > 0) {
-        result.push({
-          id: idCounter--,
-          type: "expense",
-          category: "Material",
-          amount: tx.totalSum,
-          description: `${tx.productName || "Material"} ishlatildi (${tx.quantity || 0} ta)`,
-          date: tx.date ? tx.date.split("T")[0] : format(new Date(), "yyyy-MM-dd"),
-          source: src,
-        });
-      }
-    }
-
-    // 3. Salary expenses (last 3 months)
-    const employees = getLocal("carton_employees", []);
-    const attendance = getLocal("carton_attendance", {});
-    const offDays = getLocal("carton_off_days", []);
-    const isDayOff = (date: string) => offDays.some((d: any) => d.date === date);
-
-    for (let monthOffset = 0; monthOffset < 3; monthOffset++) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - monthOffset);
-      const ym = format(d, "yyyy-MM");
-      const lastDay = format(endOfMonth(d), "yyyy-MM-dd");
-      const src = `salary_${ym}`;
-      if (skip.has(src)) continue;
-
-      const monthStart = startOfMonth(d);
-      const monthEnd = endOfMonth(d);
-      const allDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
-      const workingDays = allDays.filter(dd => !isDayOff(format(dd, "yyyy-MM-dd")));
-      const totalWorkingDays = workingDays.length;
-
-      let totalSalary = 0;
-      for (const emp of employees) {
-        if (emp.status !== "active") continue;
-        const monthlySalary = emp.salary || 0;
-        if (monthlySalary === 0) continue;
-        let attended = 0;
-        for (const [dateStr, entries] of Object.entries(attendance)) {
-          if (!String(dateStr).startsWith(ym)) continue;
-          const record = (entries as any[]).find((e: any) => e.employeeId === emp.id);
-          if (record && (record.status === "present" || record.status === "late")) attended++;
-        }
-        const dailyRate = totalWorkingDays > 0 ? monthlySalary / totalWorkingDays : 0;
-        totalSalary += Math.round(dailyRate * attended);
-      }
-
-      if (totalSalary > 0) {
-        result.push({
-          id: idCounter--,
-          type: "expense",
-          category: "Maosh",
-          amount: totalSalary,
-          description: `${ym} oyi uchun ish haqi (${employees.filter((e: any) => e.status === "active").length} hodim)`,
-          date: lastDay,
-          source: src,
-        });
-      }
-    }
-
-    // 4. Purchase orders as expense
-    const allOrders = Array.isArray(orders) ? [...orders] : [];
-    // Also include locally-saved purchase orders
-    const localOrders: any[] = getLocal("carton_orders", []);
-    for (const lo of localOrders) {
-      if (!allOrders.some((o: any) => o.id === lo.id)) allOrders.push(lo);
-    }
-    for (const order of allOrders) {
-      if (order.orderType !== "purchase") continue;
-      const src = `purchase_${order.id}`;
-      if (skip.has(src)) continue;
-      const totalSum = order.totalSum || 0;
-      if (totalSum <= 0) continue;
-      const items = Array.isArray(order.items) ? order.items : [];
-      const desc = items.length > 0
-        ? items.map((i: any) => `${i.name} x${i.quantity}`).join(", ")
-        : order.materialName || "Xarid";
-      result.push({
-        id: idCounter--,
-        type: "expense",
-        category: "Xarid",
-        amount: totalSum,
-        description: `${desc} (yetkazib beruvchi: ${order.supplier || "Noma'lum"})`,
-        date: order.createdAt ? order.createdAt.split("T")[0] : format(new Date(), "yyyy-MM-dd"),
+        createdAt: sale.soldAt || new Date().toISOString(),
         source: src,
       });
     }
 
     return result;
-  }, [sales, prodTransactions, orders, deletedSources]);
+  }, [sales, deletedSources]);
 
   // Merge API + manual + auto records
   const allRecords = useMemo(() => {
@@ -238,7 +177,7 @@ export default function Finance() {
       ...manualRecords,
       ...autoRecords.filter(r => !apiIds.has(r.id) && !manualIds.has(r.id)),
     ];
-    merged.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    merged.sort(compareTx);
     let result = merged;
     if (txType === "income") result = result.filter((r: any) => r.type === "income");
     if (txType === "expense") result = result.filter((r: any) => r.type === "expense");
@@ -284,7 +223,7 @@ export default function Finance() {
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { type: "income", category: "", quantity: 0, amount: 0, description: "", date: format(new Date(), "yyyy-MM-dd") },
+    defaultValues: { type: "expense", category: "", quantity: 0, amount: 0, description: "", date: format(new Date(), "yyyy-MM-dd") },
   });
 
   const onSubmit = async (data: FormValues) => {
@@ -308,6 +247,7 @@ export default function Finance() {
           id: Date.now(),
           ...data,
           date: payload.date,
+          createdAt: new Date().toISOString(),
           category: data.category || (data.type === "income" ? "Kirim" : "Chiqim"),
           description: data.description || "",
         };
@@ -338,56 +278,6 @@ export default function Finance() {
     queryClient.invalidateQueries({ queryKey: ["/api/finance"] });
   };
 
-  // Generate salary for current month manually
-  const generateMonthlyExpenses = () => {
-    const employees = getLocal("carton_employees", []);
-    const attendance = getLocal("carton_attendance", {});
-    const offDays = getLocal("carton_off_days", []);
-    const isDayOff = (date: string) => offDays.some((d: any) => d.date === date);
-    const now = new Date();
-    const ym = format(now, "yyyy-MM");
-
-    // If already auto-generated, skip
-    if (autoRecords.some(r => r.source === `salary_${ym}`)) {
-      alert(t('salary_already_calculated'));
-      return;
-    }
-
-    const monthStart = startOfMonth(now);
-    const monthEnd = endOfMonth(now);
-    const allDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
-    const workingDays = allDays.filter(d => !isDayOff(format(d, "yyyy-MM-dd")));
-    const totalWorkingDays = workingDays.length;
-
-    let totalSalary = 0;
-    for (const emp of employees) {
-      if (emp.status !== "active") continue;
-      const monthlySalary = emp.salary || 0;
-      if (monthlySalary === 0) continue;
-      let attended = 0;
-      for (const [dateStr, entries] of Object.entries(attendance)) {
-        if (!String(dateStr).startsWith(ym)) continue;
-        const record = (entries as any[]).find((e: any) => e.employeeId === emp.id);
-        if (record && (record.status === "present" || record.status === "late")) attended++;
-      }
-      const dailyRate = totalWorkingDays > 0 ? monthlySalary / totalWorkingDays : 0;
-      totalSalary += Math.round(dailyRate * attended);
-    }
-
-    if (totalSalary > 0) {
-      // Add as manual record (not auto, so it won't be regenerated)
-      persistManual([...manualRecords, {
-        id: Date.now(),
-        type: "expense",
-        category: "Maosh",
-        amount: totalSalary,
-        description: `${ym} oyi uchun ish haqi`,
-        date: format(endOfMonth(now), "yyyy-MM-dd"),
-        source: `salary_${ym}`,
-      }]);
-    }
-  };
-
   return (
     <DashboardLayout>
       <PageHeader
@@ -397,7 +287,7 @@ export default function Finance() {
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => {
               const cols: ExcelColumn[] = [
-                { header: "Sana", key: "date", accessor: (r: any) => format(new Date(r.date), "dd.MM.yyyy") },
+                { header: "Sana", key: "date", accessor: (r: any) => formatTxDateTime(r) },
                 { header: "Tur", key: "type", accessor: (r: any) => r.type === "income" ? "Kirim" : "Chiqim" },
                 { header: "Kategoriya", key: "category", accessor: (r: any) => r.category || "" },
                 { header: "Izoh", key: "description", accessor: (r: any) => r.description || "" },
@@ -408,11 +298,11 @@ export default function Finance() {
             }} className="rounded-xl px-4 h-12">
               <FileDown className="mr-2 h-5 w-5" /> Excel
             </Button>
-            <Button variant="outline" onClick={generateMonthlyExpenses} className="rounded-xl px-4 h-12">
-              <RefreshCw className="mr-2 h-5 w-5" /> {t('monthly_expense_btn')}
+            <Button variant="outline" onClick={() => setIsWaybillOpen(true)} className="rounded-xl px-4 h-12">
+              <FileText className="mr-2 h-5 w-5" /> Yuk xati
             </Button>
             <Button onClick={() => setIsAddOpen(true)} className="rounded-xl px-6 h-12 shadow-lg shadow-primary/20">
-              <Plus className="mr-2 h-5 w-5" /> {t('new_record')}
+              <Plus className="mr-2 h-5 w-5" /> Xarajatlar
             </Button>
           </div>
         }
@@ -559,7 +449,6 @@ export default function Finance() {
                 <th className="px-6 py-4 font-semibold">{t('date')}</th>
                 <th className="px-6 py-4 font-semibold">{t('category')}</th>
                 <th className="px-6 py-4 font-semibold">{t('description_label')}</th>
-                <th className="px-6 py-4 font-semibold">{t('source')}</th>
                 <th className="px-6 py-4 font-semibold text-right">{t('sum_label')}</th>
                 <th className="px-6 py-4 font-semibold text-right">{t('action')}</th>
               </tr>
@@ -567,7 +456,7 @@ export default function Finance() {
             <tbody>
               {allRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-16">
+                  <td colSpan={5} className="text-center py-16">
                     <Wallet className="w-12 h-12 mx-auto text-muted-foreground mb-3 opacity-20" />
                     <p className="text-lg font-medium">{t('no_records')}</p>
                   </td>
@@ -577,8 +466,8 @@ export default function Finance() {
                   const isAuto = !!tx.source;
                   return (
                     <tr key={tx.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                      <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">
-                        {format(new Date(tx.date), 'dd.MM.yyyy')}
+                      <td className="px-6 py-4 text-muted-foreground whitespace-nowrap font-mono">
+                        {formatTxDateTime(tx)}
                       </td>
                       <td className="px-6 py-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -587,24 +476,34 @@ export default function Finance() {
                           {tx.category || (tx.type === "income" ? "Kirim" : "Chiqim")}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-muted-foreground max-w-[300px] truncate">
-                        {tx.description || "-"}
-                        {isAuto && (
-                          <span className="ml-2 text-[10px] text-blue-500 font-medium">{t('auto_label')}</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-xs text-muted-foreground">
-                        {tx.source ? (
-                          <span className="font-mono text-[10px]">
-                            {tx.source.startsWith("sale") ? t('sale_source') :
-                             tx.source.startsWith("salary") ? t('salary_source') :
-                             tx.source.startsWith("prod") ? t('material_source') :
-                             tx.source.startsWith("purchase") ? t('purchase_source') : t('manual_label')}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-muted-foreground">{t('manual_label')}</span>
-                        )}
-                      </td>
+<td className="px-6 py-4 text-muted-foreground max-w-[350px] truncate">
+                          {tx.waybillId && waybillMap[tx.waybillId] ? (
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <button
+                                onClick={() => { setViewingWaybillId(tx.waybillId); setPrintWaybillId(null); setIsWaybillOpen(true); }}
+                                className="text-left hover:text-amber-700 hover:underline transition-colors cursor-pointer font-medium text-sm"
+                              >
+                                Yuk xati №{waybillMap[tx.waybillId].docNumber} — {waybillMap[tx.waybillId].senderCompany || "—"} → {waybillMap[tx.waybillId].receiverCompany || "—"}
+                              </button>
+                              <button
+                                onClick={() => { setViewingWaybillId(tx.waybillId); setPrintWaybillId(tx.waybillId); setIsWaybillOpen(true); }}
+                                className="text-blue-600 hover:text-blue-800 p-0.5"
+                                title="Chop etish"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : tx.waybillId ? (
+                            <button
+                              onClick={() => { setViewingWaybillId(tx.waybillId); setPrintWaybillId(null); setIsWaybillOpen(true); }}
+                              className="text-left hover:text-amber-700 hover:underline transition-colors cursor-pointer font-medium"
+                            >
+                              Yuk xati №{tx.waybillId}
+                            </button>
+                          ) : (
+                            tx.description || "-"
+                          )}
+                        </td>
                       <td className={`px-6 py-4 text-right font-mono font-semibold whitespace-nowrap ${
                         tx.type === "income" ? "text-green-600" : "text-red-600"
                       }`}>
@@ -624,27 +523,13 @@ export default function Finance() {
         </div>
       </Card>
 
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen} title={t('new_finance_record')}>
+      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen} title="Xarajatlar">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
-          <div>
-            <label className="text-sm font-semibold block mb-1.5">{t('record_type')}</label>
-            <div className="flex gap-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" value="income" {...register("type")} className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-medium text-green-700">{t('income')}</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" value="expense" {...register("type")} className="w-4 h-4 text-red-600" />
-                <span className="text-sm font-medium text-red-700">{t('expense')}</span>
-              </label>
-            </div>
-          </div>
-
           <div>
             <label className="text-sm font-semibold block mb-1.5">{t('category')}</label>
             <select {...register("category")} className="flex h-12 w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm">
               <option value="">{t('select_product')}</option>
-              {MATERIALS.map(cat => (
+              {EXPENSE_CATEGORIES.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
@@ -672,6 +557,19 @@ export default function Finance() {
           </div>
         </form>
       </Dialog>
+
+      <WaybillModal
+        open={isWaybillOpen}
+        onClose={() => { setIsWaybillOpen(false); setViewingWaybillId(null); setEditingWaybillId(null); setPrintWaybillId(null); }}
+        onView={viewingWaybillId}
+        onEdit={editingWaybillId}
+        headers={authOpts.headers}
+        printOnOpen={!!printWaybillId}
+        onSave={() => {
+          refetchWaybills();
+          queryClient.invalidateQueries({ queryKey: ["/api/finance"] });
+        }}
+      />
     </DashboardLayout>
   );
 }

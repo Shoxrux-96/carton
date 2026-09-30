@@ -41,7 +41,7 @@ router.post("/orders", async (req, res) => {
     [client] = await db.insert(clientsTable).values({
       name: customerName,
       phone: customerPhone,
-      type: "lead",
+      type: "customer",
       source: "catalog",
     }).returning();
   }
@@ -80,7 +80,7 @@ router.post("/contact", async (req, res) => {
   await db.insert(clientsTable).values({
     name,
     phone,
-    type: "lead",
+    type: "customer",
     source: "contact_form",
     notes: message,
   });
@@ -99,7 +99,7 @@ router.post("/ads-lead", async (req, res) => {
   await db.insert(clientsTable).values({
     name,
     phone,
-    type: "lead",
+    type: "customer",
     source: customSource || "Reklama",
     notes: message || "",
   });

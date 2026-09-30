@@ -48,6 +48,7 @@ export default function CreateProductionScreen() {
 
   return (
     <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
+      
       {/* Summary */}
       {summary && (
         <View style={styles.summaryGrid}>
@@ -127,7 +128,7 @@ export default function CreateProductionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, padding: spacing.lg },
+  container: {flex: 1, backgroundColor: colors.background, padding: spacing.lg },
   summaryGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: spacing.xl },
   summaryCard: { width: "48%", borderRadius: radius.lg, padding: spacing.lg, alignItems: "center" },
   summaryEmoji: { fontSize: 18, marginBottom: 4 },

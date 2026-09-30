@@ -6,11 +6,8 @@ import {
   LayoutDashboard,
   Package,
   Wrench,
-  TrendingUp,
   LogOut,
-  Users,
   Building2,
-  ShoppingCart,
   Briefcase,
   ClipboardCheck,
   Landmark,
@@ -19,6 +16,7 @@ import {
   Warehouse,
   Truck,
   Calculator,
+  FileText,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -102,22 +100,10 @@ export function Sidebar() {
       key: "manufacturing",
       icon: Box,
       children: [
-        { href: "/dashboard/production/calc", label: "Kalkulyatsiya", icon: Calculator },
-        { href: "/dashboard/production", label: t("production"), icon: Wrench },
+        { href: "/dashboard/production/calc", label: t("calc_title"), icon: Calculator },
         { href: "/dashboard/products", label: t("products"), icon: Package },
+        { href: "/dashboard/production", label: t("production"), icon: Wrench },
         { href: "/dashboard/warehouse", label: t("warehouse"), icon: Warehouse },
-      ],
-    },
-    {
-      label: t("trade"),
-      key: "trade",
-      icon: ShoppingCart,
-      children: [
-        { href: "/dashboard/orders", label: t("orders"), icon: ShoppingCart },
-        { href: "/dashboard/delivery", label: t("delivery"), icon: Truck },
-        { href: "/dashboard/sales", label: t("sales"), icon: TrendingUp },
-        { href: "/dashboard/leads", label: t("leads"), icon: Users },
-        { href: "/dashboard/clients", label: t("clients"), icon: Building2 },
       ],
     },
     {
@@ -135,6 +121,9 @@ export function Sidebar() {
   const singleItems = [
     { href: "/dashboard", label: t("home"), icon: LayoutDashboard },
     { href: "/dashboard/finance", label: t("finance"), icon: Landmark },
+    { href: "/dashboard/waybills", label: t("waybill_title"), icon: FileText },
+    { href: "/dashboard/clients", label: t("clients"), icon: Building2 },
+    { href: "/dashboard/delivery", label: t("delivery"), icon: Truck },
   ];
 
   const toggleGroup = (key: string) => {

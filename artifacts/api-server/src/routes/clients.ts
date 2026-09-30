@@ -41,7 +41,7 @@ router.get("/:id", authMiddleware, async (req, res) => {
 });
 
 router.post("/", authMiddleware, async (req, res) => {
-  const { name, phone, address, type, source, notes } = req.body;
+  const { name, phone, companyName, address, type, source, notes } = req.body;
 
   if (!name) {
     res.status(400).json({ error: "Ismi talab qilinadi" });
@@ -51,8 +51,9 @@ router.post("/", authMiddleware, async (req, res) => {
   const [client] = await db.insert(clientsTable).values({
     name,
     phone: phone || null,
+    companyName: companyName || null,
     address: address || null,
-    type: type || "lead",
+    type: type || "customer",
     source: source || null,
     notes: notes || null,
   }).returning();
@@ -62,11 +63,12 @@ router.post("/", authMiddleware, async (req, res) => {
 
 router.put("/:id", authMiddleware, async (req, res) => {
   const id = paramInt(req.params.id);
-  const { name, phone, address, type, source, notes } = req.body;
+  const { name, phone, companyName, address, type, source, notes } = req.body;
 
   const updates: Record<string, any> = {};
   if (name !== undefined) updates.name = name;
   if (phone !== undefined) updates.phone = phone;
+  if (companyName !== undefined) updates.companyName = companyName;
   if (address !== undefined) updates.address = address;
   if (type !== undefined) updates.type = type;
   if (source !== undefined) updates.source = source;

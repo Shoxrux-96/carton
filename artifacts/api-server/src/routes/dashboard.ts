@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, productsTable, warehousesTable, inventoryTable, productionTable, salesTable, clientsTable, ordersTable, transactionsTable, employeesTable } from "@workspace/db";
+import { db, productsTable, warehousesTable, inventoryTable, productionTable, salesTable, clientsTable, transactionsTable, employeesTable } from "@workspace/db";
 import { count, sql, eq } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
 
@@ -28,24 +28,11 @@ router.get("/", authMiddleware, async (_req, res) => {
     .from(inventoryTable)
     .where(sql`${inventoryTable.quantity} < 10`);
 
-  const [leadsCount] = await db
-    .select({ count: count() })
-    .from(clientsTable)
-    .where(eq(clientsTable.type, "lead"));
-
   const [customersCount] = await db
     .select({ count: count() })
     .from(clientsTable)
     .where(eq(clientsTable.type, "customer"));
 
-  const [pendingOrders] = await db
-    .select({ count: count() })
-    .from(ordersTable)
-    .where(sql`${ordersTable.deliveryStatus} != 'delivered'`);
-
-  const [totalOrders] = await db
-    .select({ count: count() })
-    .from(ordersTable);
 
   const [financeMonth] = await db
     .select({
@@ -64,10 +51,7 @@ router.get("/", authMiddleware, async (_req, res) => {
     totalProductionToday: Number(todayProduction[0].total),
     totalSalesToday: Number(todaySales[0].total),
     lowStockItems: lowStock[0].count,
-    totalLeads: leadsCount.count,
     totalCustomers: customersCount.count,
-    activeOrders: pendingOrders.count,
-    totalOrders: totalOrders.count,
     totalEmployees: employeesCount.count,
     monthlyIncome: Number(financeMonth.income),
     monthlyExpense: Number(financeMonth.expense),

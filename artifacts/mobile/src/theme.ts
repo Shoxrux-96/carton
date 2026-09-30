@@ -1,3 +1,7 @@
+import { Platform } from 'react-native';
+
+const isWeb = Platform.OS === 'web';
+
 // Web sayt bilan bir xil tema — Vivid Orange primary
 export const colors = {
   primary: '#f97316',       // Orange (web: hsl(24,95%,53%))
@@ -15,6 +19,7 @@ export const colors = {
   textSecondary: '#57534e',  // Stone-600
   textMuted: '#a8a29e',     // Stone-400
   border: '#e7e5e4',        // Stone-200
+  borderLight: '#f0efed',   // Stone-100
   shadow: '#000',
   gradientStart: '#f97316',
   gradientEnd: '#ea580c',
@@ -40,26 +45,34 @@ export const radius = {
   full: 999,
 };
 
+// RNW 0.21 web'da `shadow*` prop'larini yangilik sifatida qo'llamaydi —
+// webda CSS boxShadow, native'da eski shadow* + elevation ishlatiladi.
 export const shadows = {
-  sm: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  lg: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 8,
-  },
+  sm: isWeb
+    ? { boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }
+    : {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 2,
+      },
+  md: isWeb
+    ? { boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }
+    : {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+      },
+  lg: isWeb
+    ? { boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }
+    : {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.12,
+        shadowRadius: 24,
+        elevation: 8,
+      },
 };

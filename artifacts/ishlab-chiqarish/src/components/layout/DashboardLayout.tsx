@@ -22,9 +22,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen w-full bg-gradient-to-br from-zinc-50 to-amber-50/30 overflow-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
+      <div className="flex-1 flex flex-col h-screen overflow-x-hidden overflow-y-auto relative">
         {/* Top bar with language switcher */}
-        <div className="h-12 bg-white/80 backdrop-blur-sm border-b border-border/50 shrink-0 flex items-center justify-end px-6 gap-2">
+        <div className="sticky top-0 z-20 h-12 bg-white/80 backdrop-blur-sm border-b border-border/50 shrink-0 flex items-center justify-end px-6 gap-2">
           <div className="flex items-center gap-1.5 bg-muted/60 rounded-lg p-1">
             <Globe className="w-3.5 h-3.5 text-muted-foreground ml-1.5" />
             <button
@@ -42,7 +42,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-10 w-full max-w-[1440px] mx-auto">
+        <main className="flex-1 p-4 md:p-8 lg:p-10 w-full max-w-[1494px] mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}

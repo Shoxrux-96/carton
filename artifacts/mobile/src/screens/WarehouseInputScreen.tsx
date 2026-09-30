@@ -79,6 +79,7 @@ export default function WarehouseInputScreen() {
 
   return (
     <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
+      
       {/* Stats */}
       <View style={styles.statsRow}>
         <View style={[styles.statCard, { borderLeftColor: colors.primary }]}>
@@ -175,7 +176,7 @@ export default function WarehouseInputScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, padding: spacing.lg },
+  container: {flex: 1, backgroundColor: colors.background, padding: spacing.lg },
   statsRow: { flexDirection: "row", gap: 10, marginBottom: spacing.xl },
   statCard: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, borderLeftWidth: 3, ...shadows.sm },
   statValue: { fontSize: 22, fontWeight: "800", color: colors.text },

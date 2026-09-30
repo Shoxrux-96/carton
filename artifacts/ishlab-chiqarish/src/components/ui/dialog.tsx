@@ -37,7 +37,9 @@ export function Dialog({ open, onOpenChange, title, description, children, class
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ type: "spring", duration: 0.4, bounce: 0.3 }}
-              className={cn("w-full max-w-lg rounded-2xl bg-background p-6 shadow-2xl pointer-events-auto border border-border", className)}
+            onClick={e => e.stopPropagation()}
+            onMouseDown={e => e.stopPropagation()}
+            className={cn("w-full max-w-lg rounded-2xl bg-background p-6 shadow-2xl pointer-events-auto border border-border", className)}
             >
               <div className="flex items-center justify-between mb-5">
                 <div>

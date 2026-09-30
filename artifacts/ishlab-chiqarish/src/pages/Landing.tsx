@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import customFetch from "@/lib/custom-fetch";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Mail, MapPin, ChevronRight, Award, Truck, Package, Send, Loader2, PackageOpen, Boxes, Stamp, Palette, ArrowRightLeft, Phone, Ruler, Globe } from "lucide-react";
+import { Mail, MapPin, ChevronRight, Award, Truck, Package, Send, Loader2, PackageOpen, Boxes, Stamp, Palette, ArrowRightLeft, Phone, Ruler, Globe, Layers } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
 import SiteNavbar from "@/components/SiteNavbar";
@@ -319,33 +319,76 @@ export default function Landing() {
                       <p className="text-muted-foreground text-sm mb-4 min-h-[40px]">
                         {product.description || t("landing_product_detail")}
                       </p>
-                      {(product.length || product.width || product.height || product.material) && (
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {(product.length || product.width || product.height) && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 text-xs font-medium text-amber-700 border border-amber-100">
-                              <Ruler className="w-3 h-3" />
-                              {product.length || "—"}×{product.width || "—"}×{product.height || "—"} sm
-                            </span>
+
+                      {/* Quti o'lchamlari */}
+                      {(product.length || product.width || product.height) && (
+                        <div className="grid grid-cols-3 gap-2 mb-4">
+                          {product.length && (
+                            <div className="text-center p-2 bg-amber-50 rounded-lg border border-amber-100">
+                              <div className="text-[10px] text-amber-600 font-medium uppercase">Bo'yi</div>
+                              <div className="text-sm font-bold text-amber-800">{product.length} sm</div>
+                            </div>
                           )}
-                          {product.material && <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-xs font-medium text-amber-700 border border-amber-100">{product.material}</span>}
-                          {product.color && <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-xs font-medium text-amber-700 border border-amber-100">{product.color}</span>}
+                          {product.width && (
+                            <div className="text-center p-2 bg-amber-50 rounded-lg border border-amber-100">
+                              <div className="text-[10px] text-amber-600 font-medium uppercase">Eni</div>
+                              <div className="text-sm font-bold text-amber-800">{product.width} sm</div>
+                            </div>
+                          )}
+                          {product.height && (
+                            <div className="text-center p-2 bg-amber-50 rounded-lg border border-amber-100">
+                              <div className="text-[10px] text-amber-600 font-medium uppercase">Balandligi</div>
+                              <div className="text-sm font-bold text-amber-800">{product.height} sm</div>
+                            </div>
+                          )}
                         </div>
                       )}
+
+                      {/* Kalkulyatsiya ma'lumotlari */}
+                      {(() => {
+                        let calcData: any = null;
+                        try { calcData = product.material ? JSON.parse(product.material) : null; } catch {}
+                        if (!calcData) return null;
+                        return (
+                          <div className="mb-4 space-y-2 bg-violet-50 rounded-xl p-3 border border-violet-100">
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-violet-700 uppercase">
+                              <Layers className="w-3 h-3" /> Qog'oz tarkibi
+                            </div>
+                            {calcData.l1 && (
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500" /> 1-qatlam (Tashqi)</span>
+                                <span className="font-medium">{calcData.l1.weight} kg</span>
+                              </div>
+                            )}
+                            {calcData.l2 && (
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" /> 2-qatlam (Gofra)</span>
+                                <span className="font-medium">{calcData.l2.weight} kg</span>
+                              </div>
+                            )}
+                            {calcData.l3 && (
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500" /> 3-qatlam (Ichki)</span>
+                                <span className="font-medium">{calcData.l3.weight} kg</span>
+                              </div>
+                            )}
+                            {calcData.blankLen && (
+                              <div className="flex items-center justify-between text-xs pt-1.5 border-t border-violet-200">
+                                <span className="text-violet-600">Kesma</span>
+                                <span className="font-bold">{calcData.blankLen}×{calcData.blankW} sm</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+
                       <div className="pt-4 border-t border-border mt-auto">
-                        {isAdmin ? (
+                        {isAdmin && (
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-muted-foreground">{t("landing_price_label")}</span>
-                            <span className="text-2xl font-bold text-amber-600">
+                            <span className="text-sm font-medium text-muted-foreground">Sotish narxi</span>
+                            <span className="text-2xl font-bold text-emerald-600">
                               {Number(product.price).toLocaleString(lang === "ru" ? "ru-RU" : "uz-UZ")} {t("landing_currency")}
                             </span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center gap-2">
-                            <Phone className="w-4 h-4 text-amber-600 shrink-0" />
-                            <span className="text-sm text-muted-foreground">{t("landing_price_inquiry")}</span>
-                            <a href="tel:+998995054004" className="font-bold text-amber-700 hover:underline shrink-0">
-                              +998 99 505 40 04
-                            </a>
                           </div>
                         )}
                       </div>

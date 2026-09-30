@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, productsTable } from "@workspace/db";
-import { eq, type SQL } from "drizzle-orm";
+import { eq, and, isNull, type SQL } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
 import { paramInt } from "../lib/params.js";
 
@@ -35,7 +35,9 @@ function applyStatus(updates: Record<string, any>, body: { status?: string; isPu
 
 router.get("/", async (req, res) => {
   const published = req.query.published;
-  const where: SQL | undefined = published === "true" ? eq(productsTable.isPublished, true) : undefined;
+  const conditions: SQL[] = [isNull(productsTable.deletedAt)];
+  if (published === "true") conditions.push(eq(productsTable.isPublished, true));
+  const where = conditions.length === 1 ? conditions[0] : and(...conditions);
   const products = await db.select().from(productsTable).where(where).orderBy(productsTable.createdAt);
   res.json(products.map(mapProduct));
 });
@@ -119,7 +121,7 @@ router.put("/:id", authMiddleware, async (req, res) => {
 
 router.delete("/:id", authMiddleware, async (req, res) => {
   const id = paramInt(req.params.id);
-  await db.delete(productsTable).where(eq(productsTable.id, id));
+  await db.update(productsTable).set({ deletedAt: new Date() }).where(eq(productsTable.id, id));
   res.json({ success: true, message: "Mahsulot o'chirildi" });
 });
 

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { DashboardLayout, PageHeader } from "@/components/layout/DashboardLayout";
 import { useAuthHeaders } from "@/hooks/use-auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,6 +13,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useLang } from "@/lib/i18n";
+import { pinIcon } from "@/lib/mapPin";
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -128,7 +129,7 @@ function OfficeLocationPicker({ lat, lng, onLatChange, onLngChange }: { lat: num
                 url={satellite ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
               />
               <MapClickHandler />
-              <Marker position={[draftLat, draftLng]} />
+              <Marker position={[draftLat, draftLng]} icon={pinIcon} />
             </MapContainer>
           </div>
           <div className="p-2 flex gap-2 items-center bg-muted/50">
@@ -191,6 +192,19 @@ export default function Attendance() {
     lateMinutes: 30,
   }));
   useEffect(() => { setLocal("carton_office_settings", officeSettings); }, [officeSettings]);
+
+  // Office settings — API'dan yuklab olish (mobil o'zgartirsa webda ham ko'rinadi)
+  useEffect(() => {
+    customFetch("/api/settings", { headers: authOpts.headers })
+      .then(r => r.json())
+      .then((data: any) => {
+        if (data && typeof data === "object" && data.lat !== undefined) {
+          setOfficeSettings((prev: any) => ({ ...prev, ...data }));
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const updateOfficeSetting = (key: string, value: any) => {
     setOfficeSettings((prev: any) => {
@@ -281,18 +295,46 @@ export default function Attendance() {
 
   useEffect(() => { setLocal("carton_off_days", offDays); }, [offDays]);
 
+  // Off days — API'dan yuklab olish (mobil bilan sinxron)
+  useEffect(() => {
+    customFetch("/api/settings/off-days", { headers: authOpts.headers })
+      .then(r => r.json())
+      .then((data: any) => {
+        if (Array.isArray(data?.offDays)) setOffDays(data.offDays);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const isDayOff = (date: string) => offDays.some(d => d.date === date);
 
   const addOffDay = () => {
     if (!offDate) return;
     if (isDayOff(offDate)) return;
-    setOffDays(prev => [...prev, { date: offDate, reason: offReason || "Dam olish" }].sort((a, b) => a.date.localeCompare(b.date)));
+    const entry = { date: offDate, reason: offReason || "Dam olish" };
+    setOffDays(prev => [...prev, entry].sort((a, b) => a.date.localeCompare(b.date)));
     setOffDate("");
     setOffReason("");
+    // API'ga yozish (mobil ko'radi)
+    customFetch("/api/settings/off-days", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authOpts.headers },
+      body: JSON.stringify(entry),
+    })
+      .then(r => r.json())
+      .then((data: any) => { if (Array.isArray(data?.offDays)) setOffDays(data.offDays); })
+      .catch(() => {});
   };
 
   const removeOffDay = (date: string) => {
     setOffDays(prev => prev.filter(d => d.date !== date));
+    customFetch(`/api/settings/off-days/${date}`, {
+      method: "DELETE",
+      headers: authOpts.headers,
+    })
+      .then(r => r.json())
+      .then((data: any) => { if (Array.isArray(data?.offDays)) setOffDays(data.offDays); })
+      .catch(() => {});
   };
 
   // Attendance data (local + API)
@@ -305,6 +347,33 @@ export default function Attendance() {
   const [localAttendance, setLocalAttendance] = useState<Record<string, any[]>>(() => getLocal("carton_attendance", {}));
 
   useEffect(() => { setLocal("carton_attendance", localAttendance); }, [localAttendance]);
+
+  // API oylik yozuvlar (mobil'da belgilangan davomat ham hisobga olinadi)
+  const [apiMonthly, setApiMonthly] = useState<Record<string, { employeeId: number; date: string; status: string }[]>>({});
+  const fetchedMonthsRef = useRef<Set<string>>(new Set());
+
+  const monthsNeeded = useMemo(() => {
+    const arr: string[] = [];
+    if (tab === "report") {
+      if (reportView === "month") arr.push(reportMonth);
+      else for (let m = 1; m <= 12; m++) arr.push(`${reportYear}-${String(m).padStart(2, "0")}`);
+    }
+    if (tab === "salary") arr.push(salaryPeriod);
+    return Array.from(new Set(arr));
+  }, [tab, reportView, reportMonth, reportYear, salaryPeriod]);
+
+  useEffect(() => {
+    for (const ym of monthsNeeded) {
+      if (fetchedMonthsRef.current.has(ym)) continue;
+      fetchedMonthsRef.current.add(ym);
+      const [y, m] = ym.split("-").map(Number);
+      customFetch(`/api/attendance/monthly?year=${y}&month=${m}`, { headers: authOpts.headers })
+        .then(r => r.json())
+        .then((data: any) => setApiMonthly(prev => ({ ...prev, [ym]: Array.isArray(data) ? data : [] })))
+        .catch(() => setApiMonthly(prev => ({ ...prev, [ym]: prev[ym] || [] })));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monthsNeeded]);
 
   const dailyAttendance = useMemo(() => {
     if (isDayOff(selectedDate)) return [];
@@ -349,15 +418,23 @@ export default function Attendance() {
     const [year, month] = yearMonth.split("-").map(Number);
     const days = eachDayOfInterval({ start: new Date(year, month - 1, 1), end: new Date(year, month, 0) });
     const records: Record<number, { date: string; status: string }[]> = {};
-    // Load from localAttendance
+    // API yozuvlari asosiy (mobil belgilagan ham kiradi), lokal kesh faqat to'ldiradi
+    const merged = new Map<string, { date: string; status: string }>();
+    for (const r of apiMonthly[yearMonth] || []) {
+      merged.set(`${r.employeeId}|${r.date}`, { date: r.date, status: r.status });
+    }
     for (const [dateStr, entries] of Object.entries(localAttendance)) {
       if (!dateStr.startsWith(yearMonth)) continue;
       for (const e of entries) {
-        if (!records[e.employeeId]) records[e.employeeId] = [];
-        records[e.employeeId].push({ date: dateStr, status: e.status });
+        const key = `${e.employeeId}|${dateStr}`;
+        if (!merged.has(key)) merged.set(key, { date: dateStr, status: e.status });
       }
     }
-    // Try API monthly report
+    for (const [key, val] of merged) {
+      const empId = Number(key.split("|")[0]);
+      if (!records[empId]) records[empId] = [];
+      records[empId].push(val);
+    }
     return { days, records };
   };
 

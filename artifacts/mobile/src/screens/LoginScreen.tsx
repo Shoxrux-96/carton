@@ -4,7 +4,7 @@ import {
   StyleSheet, KeyboardAvoidingView, Platform,
   ActivityIndicator, Alert, Animated, Dimensions,
 } from "react-native";
-import { apiFetch, setToken, setUser } from "../api";
+import { apiFetch, setToken, setUser, getUserRole } from "../api";
 import { useI18n } from "../i18n";
 import { colors, radius, shadows, spacing } from "../theme";
 import AppLogo from "../components/AppLogo";
@@ -30,16 +30,16 @@ export default function LoginScreen({ onLogin }: Props) {
 
   React.useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: Platform.OS !== "web" }),
     ]).start();
   }, []);
 
   const handlePressIn = () => {
-    Animated.spring(scaleAnim, { toValue: 0.96, useNativeDriver: true }).start();
+    Animated.spring(scaleAnim, { toValue: 0.96, useNativeDriver: Platform.OS !== "web" }).start();
   };
   const handlePressOut = () => {
-    Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }).start();
+    Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: Platform.OS !== "web" }).start();
   };
 
   const handleLogin = async () => {
@@ -56,8 +56,10 @@ export default function LoginScreen({ onLogin }: Props) {
       });
       await setToken(data.token);
       await setUser(data.user);
-      onLogin(data.user?.role);
-      syncUserProfile().catch(() => {});
+      // Profil (position) sinxronizatsiyasini kutamiz — shu orqali
+      // haydovchi/ishchi turi aniqlanib, mos tablar ochiladi.
+      await syncUserProfile().catch(() => null);
+      onLogin((await getUserRole()) ?? undefined);
     } catch (e: any) {
       Alert.alert("Xatolik", e.message || "Server bilan bog'lanishda muammo");
     } finally {

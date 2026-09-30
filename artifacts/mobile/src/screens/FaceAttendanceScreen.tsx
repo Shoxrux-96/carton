@@ -198,8 +198,8 @@ export default function FaceAttendanceScreen() {
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(ringPulse, { toValue: 1, duration: 1800, useNativeDriver: true }),
-        Animated.timing(ringPulse, { toValue: 0, duration: 1800, useNativeDriver: true }),
+        Animated.timing(ringPulse, { toValue: 1, duration: 1800, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(ringPulse, { toValue: 0, duration: 1800, useNativeDriver: Platform.OS !== "web" }),
       ]),
     ).start();
   }, [ringPulse]);
@@ -211,8 +211,8 @@ export default function FaceAttendanceScreen() {
     }
     Animated.loop(
       Animated.sequence([
-        Animated.timing(scanLine, { toValue: 1, duration: 800, useNativeDriver: true }),
-        Animated.timing(scanLine, { toValue: 0, duration: 800, useNativeDriver: true }),
+        Animated.timing(scanLine, { toValue: 1, duration: 800, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(scanLine, { toValue: 0, duration: 800, useNativeDriver: Platform.OS !== "web" }),
       ]),
     ).start();
   }, [phase, scanLine]);
@@ -435,7 +435,7 @@ export default function FaceAttendanceScreen() {
         onCameraReady={() => setCameraReady(true)}
       />
 
-      <View style={s.overlay} pointerEvents="none">
+      <View style={[s.overlay, { pointerEvents: "none" }]}>
         <View style={s.oval}>
           <Animated.View style={[s.ovalRing, { borderColor: ringColor, transform: [{ scale: ringScale }] }]}>
             {(phase === "scanning" || phase === "verified") && (
@@ -447,7 +447,7 @@ export default function FaceAttendanceScreen() {
 
       {/* Location status (minimal) */}
       {!location && (
-        <View style={s.gpsBar} pointerEvents="box-none">
+        <View style={[s.gpsBar, { pointerEvents: "box-none" }]}>
           {locating ? (
             <Text style={s.gpsText}>{t("gpsChecking")}</Text>
           ) : locationErr ? (
@@ -474,7 +474,7 @@ function InfoRow({ icon, value }: { icon: string; value: string }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#0c0a09" },
+  root: { flex: 1, backgroundColor: "#0c0a09",  },
   overlay: { flex: 1, alignItems: "center", justifyContent: "center", paddingBottom: 56 },
   center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background },
   permBox: { flex: 1, justifyContent: "center", alignItems: "center", padding: 40, backgroundColor: colors.background },

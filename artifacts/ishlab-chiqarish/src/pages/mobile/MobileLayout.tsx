@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useLocation, useRouter } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/i18n";
-import { Home, ClipboardCheck, ShoppingCart, Package, User, Truck } from "lucide-react";
+import { Home, ClipboardCheck, Package, User, Truck } from "lucide-react";
 
 export function MobileLayout({ children, title, driverMode }: { children: React.ReactNode; title?: string; driverMode?: boolean }) {
   const { t } = useLang();
@@ -12,7 +12,6 @@ export function MobileLayout({ children, title, driverMode }: { children: React.
   const bottomTabs = [
     { path: "/mobile", label: t("home"), icon: Home },
     { path: "/mobile/attendance", label: t("attendance"), icon: ClipboardCheck },
-    { path: "/mobile/orders", label: t("orders"), icon: ShoppingCart },
     { path: "/mobile/products", label: t("products"), icon: Package },
     { path: "/mobile/profile", label: t("profile"), icon: User },
   ];

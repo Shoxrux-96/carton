@@ -4,10 +4,10 @@ import {
   TextInput, Alert, ActivityIndicator, Image, RefreshControl,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import * as ImagePicker from "expo-image-picker";
 import { apiFetch, getUser, clearToken, setUser } from "../api";
 import { colors, radius, shadows, spacing } from "../theme";
 import { useI18n } from "../i18n";
-import AppLogo from "../components/AppLogo";
 import { faceImageKey, getCachedFaceImage, syncUserProfile } from "../lib/employee-profile";
 
 function roleLabel(role?: string | null) {
@@ -18,13 +18,25 @@ function roleLabel(role?: string | null) {
   return "👷 Xodim";
 }
 
+// 998901111004 → +998 90 111 10 04
+function fmtPhone(p?: string | null) {
+  const d = String(p || "").replace(/\D/g, "");
+  if (d.length === 12 && d.startsWith("998")) {
+    return `+998 ${d.slice(3, 5)} ${d.slice(5, 8)} ${d.slice(8, 10)} ${d.slice(10, 12)}`;
+  }
+  if (d.length === 9) {
+    return `+998 ${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 7)} ${d.slice(7, 9)}`;
+  }
+  return p || "—";
+}
+
 interface Props {
   navigation: any;
   onLogout: () => void;
 }
 
 export default function ProfileScreen({ navigation, onLogout }: Props) {
-  const { t, lang, setLang } = useI18n();
+  const { t } = useI18n();
   const [user, setUserState] = useState<any>(null);
   const [editing, setEditing] = useState(false);
   const [phone, setPhone] = useState("");
@@ -33,6 +45,8 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [faceImg, setFaceImg] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoOk, setPhotoOk] = useState(false);
 
   const loadProfile = useCallback(async () => {
     const profile = await syncUserProfile();
@@ -83,7 +97,69 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
     onLogout();
   };
 
-  const isAdmin = user?.role === "admin" || user?.role === "owner";
+  // Rasm tanlash → xodim (haydovchi) profiliga saqlash → avatar yangilanadi
+  const pickPhoto = async () => {
+    const employeeId = user?.employeeId;
+    if (!employeeId) {
+      Alert.alert("Xatolik", "Sizga bog'langan xodim topilmadi");
+      return;
+    }
+    try {
+      setPhotoOk(false);
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("Ruxsat etilmagan", "Rasm tanlash uchun galeriya ruxsati kerak");
+        return;
+      }
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+        base64: true,
+      });
+      if (res.canceled) return;
+      const asset = res.assets?.[0];
+      if (!asset) return;
+
+      setUploadingPhoto(true);
+      let dataUrl = asset.base64
+        ? `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`
+        : null;
+      if (!dataUrl && asset.uri) {
+        // fallback: URI → base64
+        try {
+          const blob = await (await fetch(asset.uri)).blob();
+          dataUrl = await new Promise<string | null>(resolve => {
+            const fr = new FileReader();
+            fr.onload = () => resolve(String(fr.result));
+            fr.onerror = () => resolve(null);
+            fr.readAsDataURL(blob);
+          });
+        } catch {}
+      }
+      if (!dataUrl) {
+        Alert.alert("Xatolik", "Rasmni o'qib bo'lmadi");
+        return;
+      }
+
+      await apiFetch(`/employees/${employeeId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ photo: dataUrl }),
+      });
+      const p = await syncUserProfile();
+      if (p) {
+        setUserState(p);
+        setFaceImg(p.faceImage ?? null);
+      }
+      setPhotoOk(true);
+      Alert.alert("Tayyor", "Profil rasmi yangilandi");
+    } catch (e: any) {
+      Alert.alert("Xatolik", e.message || "Rasmni yuklab bo'lmadi");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   return (
     <ScrollView
@@ -91,13 +167,10 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
+      
       <View style={[styles.avatarSection, { marginTop: spacing.xl }]}>
         <View style={styles.avatarRing}>
-          {isAdmin ? (
-            <View style={styles.avatarLogoWrap}>
-              <AppLogo size={108} />
-            </View>
-          ) : faceImg ? (
+          {faceImg ? (
             <Image key={faceImageKey(faceImg)} source={{ uri: faceImg }} style={styles.avatarPhoto} />
           ) : (
             <View style={styles.avatarLarge}>
@@ -106,13 +179,23 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
               </Text>
             </View>
           )}
+          {/* Rasmni o'zgartirish tugmasi */}
+          <TouchableOpacity style={styles.photoBtn} onPress={pickPhoto} disabled={uploadingPhoto} activeOpacity={0.8}>
+            {uploadingPhoto ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.photoBtnTxt}>📷</Text>
+            )}
+          </TouchableOpacity>
         </View>
-        <Text style={styles.name}>{user?.name || user?.phone || "Foydalanuvchi"}</Text>
-        <View style={styles.rolePill}>
-          <Text style={styles.roleText}>{roleLabel(user?.role)}</Text>
-        </View>
+        {photoOk && (
+          <Text style={styles.photoOkTxt}>✓ Profil rasmi yangilandi</Text>
+        )}
+        {user?.name ? (
+          <Text style={styles.nameText}>{user.name}</Text>
+        ) : null}
         {user?.position ? (
-          <Text style={styles.positionText}>{user.position}</Text>
+          <Text style={styles.positionText}>💼 {user.position}</Text>
         ) : null}
       </View>
 
@@ -120,23 +203,56 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Shaxsiy ma'lumotlar</Text>
 
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>📱 Telefon</Text>
-          {editing ? (
-            <TextInput style={styles.fieldInput} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-          ) : (
-            <Text style={styles.fieldValue}>{user?.phone || "—"}</Text>
-          )}
+        {/* 👤 Ism familiya */}
+        <View style={styles.infoRow}>
+          <View style={[styles.infoIcon, { backgroundColor: "#dbeafe" }]}>
+            <Text style={styles.infoIconTxt}>👤</Text>
+          </View>
+          <View style={styles.infoTexts}>
+            <Text style={styles.infoLabel}>Ism familiya</Text>
+            <Text style={styles.infoValue} numberOfLines={1}>{user?.name || "—"}</Text>
+          </View>
         </View>
 
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Rol</Text>
-          <Text style={styles.fieldValue}>{roleLabel(user?.role)}</Text>
+        {/* 📱 Telefon */}
+        <View style={styles.infoRow}>
+          <View style={[styles.infoIcon, { backgroundColor: "#f0fdf4" }]}>
+            <Text style={styles.infoIconTxt}>📱</Text>
+          </View>
+          <View style={styles.infoTexts}>
+            <Text style={styles.infoLabel}>Telefon raqami</Text>
+            {editing ? (
+              <TextInput style={styles.fieldInput} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+            ) : (
+              <Text style={styles.infoValue}>{fmtPhone(user?.phone)}</Text>
+            )}
+          </View>
         </View>
 
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Lavozim</Text>
-          <Text style={styles.fieldValue}>{user?.position || "—"}</Text>
+        {/* 💼 Lavozim */}
+        <View style={styles.infoRow}>
+          <View style={[styles.infoIcon, { backgroundColor: "#fff7ed" }]}>
+            <Text style={styles.infoIconTxt}>💼</Text>
+          </View>
+          <View style={styles.infoTexts}>
+            <Text style={styles.infoLabel}>Lavozim</Text>
+            <Text style={styles.infoValue} numberOfLines={1}>{user?.position || "—"}</Text>
+          </View>
+        </View>
+
+        {/* 🚗 Rol */}
+        <View style={[styles.infoRow, styles.infoRowLast]}>
+          <View style={[styles.infoIcon, { backgroundColor: "#f5f3ff" }]}>
+            <Text style={styles.infoIconTxt}>🚗</Text>
+          </View>
+          <View style={styles.infoTexts}>
+            <Text style={styles.infoLabel}>Rol</Text>
+            <Text style={styles.infoValue}>
+              {user?.role === "driver" || /haydovchi/i.test(String(user?.position || ""))
+                ? "Haydovchi"
+                : roleLabel(user?.role)}
+            </Text>
+          </View>
         </View>
 
         {editing && (
@@ -169,19 +285,6 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
         </TouchableOpacity>
       )}
 
-      {/* Language */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{t("language")}</Text>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <TouchableOpacity style={[styles.langBtn, lang === "uz" && styles.langBtnActive]} onPress={() => setLang("uz")}>
-            <Text style={[styles.langBtnText, lang === "uz" && { color: "#fff" }]}>🇺🇿 {t("uzbek")}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.langBtn, lang === "ru" && styles.langBtnActive]} onPress={() => setLang("ru")}>
-            <Text style={[styles.langBtnText, lang === "ru" && { color: "#fff" }]}>🇷🇺 {t("russian")}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
       <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
         <Text style={styles.logoutText}>🚪 {t("logout")}</Text>
       </TouchableOpacity>
@@ -190,7 +293,7 @@ export default function ProfileScreen({ navigation, onLogout }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: {flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: spacing.xl, paddingBottom: 60 },
   topHeader: {
     alignItems: "center",
@@ -216,29 +319,43 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 44, fontWeight: "800", color: "#fff" },
   avatarPhoto: { width: 120, height: 120, borderRadius: 60 },
-  avatarLogoWrap: {
-    width: 120, height: 120, borderRadius: 60,
-    backgroundColor: "#fff", justifyContent: "center", alignItems: "center",
-    overflow: "hidden",
+  photoBtn: {
+    position: "absolute", right: -2, bottom: -2,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: colors.primary, alignItems: "center", justifyContent: "center",
+    borderWidth: 3, borderColor: colors.surface,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2, shadowRadius: 4, elevation: 4,
   },
-  name: { fontSize: 24, fontWeight: "800", color: colors.text, textAlign: "center" },
-  rolePill: {
-    backgroundColor: colors.surfaceAlt, paddingHorizontal: 12, paddingVertical: 4,
-    borderRadius: radius.full, marginTop: spacing.sm,
-  },
-  roleText: { fontSize: 13, fontWeight: "600", color: colors.textSecondary },
-  positionText: { fontSize: 14, fontWeight: "600", color: colors.text, marginTop: 6 },
+  photoBtnTxt: { fontSize: 15 },
+  photoOkTxt: { color: "#16a34a", fontSize: 13, fontWeight: "600", marginTop: spacing.sm },
+  nameText: { fontSize: 20, fontWeight: "800", color: colors.text, marginTop: spacing.sm, textAlign: "center" },
+  positionText: { fontSize: 14, fontWeight: "700", color: colors.primary, marginTop: 4, textAlign: "center" },
   card: {
     backgroundColor: colors.surface, borderRadius: radius.xl,
     padding: spacing.xl, ...shadows.sm, marginBottom: spacing.lg,
   },
   cardTitle: { fontSize: 16, fontWeight: "700", color: colors.text, marginBottom: spacing.lg },
+  infoRow: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: colors.borderLight,
+  },
+  infoRowLast: { borderBottomWidth: 0, paddingBottom: 2 },
+  infoIcon: {
+    width: 38, height: 38, borderRadius: 11,
+    alignItems: "center", justifyContent: "center",
+  },
+  infoIconTxt: { fontSize: 17, lineHeight: 19 },
+  infoTexts: { flex: 1, gap: 2 },
+  infoLabel: { fontSize: 11, fontWeight: "600", color: colors.textMuted },
+  infoValue: { fontSize: 15, fontWeight: "700", color: colors.text },
   field: { marginBottom: spacing.lg },
   fieldLabel: { fontSize: 12, fontWeight: "600", color: colors.textSecondary, marginBottom: 6 },
   fieldValue: { fontSize: 16, fontWeight: "500", color: colors.text },
   fieldInput: {
-    height: 48, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
-    paddingHorizontal: spacing.lg, fontSize: 16, color: colors.text, backgroundColor: colors.surfaceAlt,
+    height: 40, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
+    paddingHorizontal: spacing.md, fontSize: 14, fontWeight: "600", color: colors.text,
+    backgroundColor: colors.surfaceAlt,
   },
   actions: { flexDirection: "row", gap: 12, marginBottom: spacing.lg },
   saveBtn: {
@@ -262,7 +379,4 @@ const styles = StyleSheet.create({
     justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#fecaca",
   },
   logoutText: { color: colors.danger, fontSize: 15, fontWeight: "600" },
-  langBtn: { flex: 1, height: 46, borderRadius: radius.md, backgroundColor: colors.surfaceAlt, justifyContent: "center", alignItems: "center", borderWidth: 1.5, borderColor: colors.border },
-  langBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  langBtnText: { fontSize: 14, fontWeight: "600", color: colors.text },
 });

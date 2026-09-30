@@ -3,6 +3,7 @@ import { db, employeesTable, usersTable, transactionsTable } from "@workspace/db
 import { eq, desc } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
 import { paramInt } from "../lib/params.js";
+import { hashPassword } from "../lib/password.js";
 import multer from "multer";
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -46,6 +47,12 @@ router.post("/", authMiddleware, upload.single("photo"), async (req, res) => {
 
   const actualLoginPhone = loginPhone || phone;
   const actualLoginPassword = loginPassword || "12345678";
+  const allowedRoles = ["employee", "manager", "driver", "admin", "owner"];
+  const roleValue = readBodyValue(body.role);
+  const positionRole = position === "Haydovchi" ? "driver" : position === "Boshqaruvchi" ? "manager" : undefined;
+  const userRole = (typeof roleValue === "string" && allowedRoles.includes(roleValue))
+    ? roleValue
+    : (positionRole || "employee");
 
   // Don't block on face-descriptor extraction here; the background
   // face-processor computes it and backfills faceDescriptor shortly after.
@@ -66,8 +73,8 @@ router.post("/", authMiddleware, upload.single("photo"), async (req, res) => {
       if (existing.length === 0) {
         await db.insert(usersTable).values({
           phone: cleanPhone,
-          password: actualLoginPassword,
-          role: "employee",
+          password: hashPassword(actualLoginPassword),
+          role: userRole,
         });
       }
     } catch (e) {
@@ -121,9 +128,9 @@ const updateEmployeeRecord = async (req: any, res: any, id: number) => {
     if (newLoginPhone) {
       const existingUsers = await db.select().from(usersTable).where(eq(usersTable.phone, newLoginPhone)).limit(1);
       if (existingUsers.length > 0) {
-        await db.update(usersTable).set({ password: newLoginPassword }).where(eq(usersTable.phone, newLoginPhone));
+        await db.update(usersTable).set({ password: hashPassword(newLoginPassword) }).where(eq(usersTable.phone, newLoginPhone));
       } else {
-        await db.insert(usersTable).values({ phone: newLoginPhone, password: newLoginPassword, role: "employee" });
+        await db.insert(usersTable).values({ phone: newLoginPhone, password: hashPassword(newLoginPassword), role: "employee" });
       }
       if (oldLoginPhone && oldLoginPhone !== newLoginPhone) {
         await db.delete(usersTable).where(eq(usersTable.phone, oldLoginPhone));
@@ -138,6 +145,7 @@ const updateEmployeeRecord = async (req: any, res: any, id: number) => {
   }
 
   const [employee] = await db.update(employeesTable).set(updates).where(eq(employeesTable.id, id)).returning();
+  if (!employee) { res.status(404).json({ error: "Hodim topilmadi" }); return; }
   res.json({ ...employee, salary: parseFloat(employee.salary ?? "0") });
 };
 
@@ -186,9 +194,19 @@ router.delete("/:id", authMiddleware, async (req, res) => {
     res.status(403).json({ error: "Owner o'chirib bo'lmaydi" });
     return;
   }
-  // Also delete associated user account
-  if (emp?.loginPhone) {
-    await db.delete(usersTable).where(eq(usersTable.phone, emp.loginPhone));
+  // Bog'liq user hisobini o'chirish (loginPhone, aks holda phone).
+  // Agar boshqa hodim shu raqamdan foydalayotgan bo'lsa — user'ni saqlaymiz.
+  const phoneCandidates = [emp?.loginPhone, emp?.phone].filter(Boolean) as string[];
+  if (phoneCandidates.length > 0) {
+    const others = await db.select().from(employeesTable);
+    const stillUsed = new Set(
+      others.filter(e => e.id !== id).flatMap(e => [e.loginPhone, e.phone].filter(Boolean) as string[])
+    );
+    for (const ph of phoneCandidates) {
+      if (!stillUsed.has(ph)) {
+        await db.delete(usersTable).where(eq(usersTable.phone, ph));
+      }
+    }
   }
   await db.delete(employeesTable).where(eq(employeesTable.id, id));
   res.json({ success: true });

@@ -8,20 +8,17 @@ import { apiFetch } from "../api";
 import { colors, radius, shadows, spacing } from "../theme";
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; icon: string }> = {
-  pending: { label: "Kutilmoqda", bg: "#fef3c7", text: "#d97706", icon: "⏳" },
-  in_progress: { label: "Jarayonda", bg: "#dbeafe", text: "#2563eb", icon: "🔄" },
-  completed: { label: "Bajarildi", bg: "#dcfce7", text: "#16a34a", icon: "✅" },
+  started: { label: "Boshlandi", bg: "#dbeafe", text: "#2563eb", icon: "🔄" },
+  finished: { label: "Yakunlandi", bg: "#dcfce7", text: "#16a34a", icon: "✅" },
 };
 
-const NEXT_STATUS: Record<string, string> = {
-  pending: "in_progress",
-  in_progress: "completed",
-};
+// Faqat bitta o'tish: Boshlandi → Yakunlandi (yakunlangani o'zgartirilmaydi)
+const nextOf = (status: string) => (status === "started" ? "finished" : null);
 
 export default function EmployeeTasksScreen() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "in_progress" | "completed">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "started" | "finished">("all");
   const [timeFilter, setTimeFilter] = useState<"all" | "daily" | "weekly" | "monthly">("all");
   const [showDetail, setShowDetail] = useState<any>(null);
 
@@ -37,9 +34,8 @@ export default function EmployeeTasksScreen() {
 
   const stats = useMemo(() => ({
     total: tasks.length,
-    pending: tasks.filter(t => t.status === "pending").length,
-    inProgress: tasks.filter(t => t.status === "in_progress").length,
-    completed: tasks.filter(t => t.status === "completed").length,
+    started: tasks.filter(t => t.status === "started").length,
+    finished: tasks.filter(t => t.status === "finished").length,
   }), [tasks]);
 
   const filtered = useMemo(() => {
@@ -65,17 +61,11 @@ export default function EmployeeTasksScreen() {
   }, [tasks, statusFilter, timeFilter]);
 
   const updateStatus = async (id: number, newStatus: string) => {
-    const label = newStatus === "completed" ? "Bajarildi" : "Jarayonda";
-    Alert.alert("Holat o'zgartirish", `"${label}" deb belgilamoqchimisiz?`, [
-      { text: "Yo'q" },
-      { text: "Ha", onPress: async () => {
-        try {
-          await apiFetch(`/tasks/${id}`, { method: "PUT", body: JSON.stringify({ status: newStatus }) });
-          setShowDetail(null);
-          await load();
-        } catch (e: any) { Alert.alert("Xatolik", e.message); }
-      }},
-    ]);
+    try {
+      await apiFetch(`/tasks/${id}`, { method: "PUT", body: JSON.stringify({ status: newStatus }) });
+      setShowDetail(null);
+      await load();
+    } catch (e: any) { Alert.alert("Xatolik", e.message); }
   };
 
   return (
@@ -86,14 +76,14 @@ export default function EmployeeTasksScreen() {
 
         <View style={styles.headerGradient}>
           <Text style={styles.headerTitle}>📋 Topshiriqlarim</Text>
-          <Text style={styles.headerSub}>{stats.total} ta topshiriq · {stats.pending + stats.inProgress} ta faol</Text>
+          <Text style={styles.headerSub}>{stats.total} ta topshiriq · {stats.started} ta boshlandi · {stats.finished} ta yakunlandi</Text>
         </View>
 
         <View style={styles.statsRow}>
           {[
-            { value: stats.pending, label: "Kutilmoqda", bg: "#fef3c7", color: "#d97706" },
-            { value: stats.inProgress, label: "Jarayonda", bg: "#dbeafe", color: "#2563eb" },
-            { value: stats.completed, label: "Bajarildi", bg: "#dcfce7", color: "#16a34a" },
+            { value: stats.total, label: "Jami", bg: "#f5f5f4", color: colors.text },
+            { value: stats.started, label: "Boshlandi", bg: "#dbeafe", color: "#2563eb" },
+            { value: stats.finished, label: "Yakunlandi", bg: "#dcfce7", color: "#16a34a" },
           ].map((s, i) => (
             <View key={i} style={[styles.statCard, { backgroundColor: s.bg }]}>
               <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
@@ -104,7 +94,7 @@ export default function EmployeeTasksScreen() {
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 6 }}>
           <View style={styles.filterRow}>
-            {(["all", "pending", "in_progress", "completed"] as const).map(s => (
+            {(["all", "started", "finished"] as const).map(s => (
               <TouchableOpacity key={s} style={[styles.filterBtn, statusFilter === s && styles.filterActive]} onPress={() => setStatusFilter(s)}>
                 <Text style={[styles.filterText, statusFilter === s && { color: "#fff" }]}>
                   {s === "all" ? "Barchasi" : STATUS_CONFIG[s]?.label}
@@ -127,13 +117,13 @@ export default function EmployeeTasksScreen() {
         </ScrollView>
 
         {filtered.length > 0 ? filtered.map(task => {
-          const st = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
-          const isCompleted = task.status === "completed";
-          const next = NEXT_STATUS[task.status];
+          const st = STATUS_CONFIG[task.status] || STATUS_CONFIG.started;
+          const isFinished = task.status === "finished";
+          const next = nextOf(task.status);
           return (
             <TouchableOpacity
               key={task.id}
-              style={[styles.taskRow, isCompleted && { opacity: 0.6 }]}
+              style={[styles.taskRow, isFinished && { opacity: 0.65 }]}
               onPress={() => setShowDetail(task)}
               activeOpacity={0.7}
             >
@@ -141,23 +131,26 @@ export default function EmployeeTasksScreen() {
                 <Text style={{ fontSize: 12 }}>{st.icon}</Text>
               </View>
               <View style={styles.taskRowContent}>
-                <Text style={[styles.taskRowTitle, isCompleted && { textDecorationLine: "line-through" }]} numberOfLines={1}>
+                <Text style={[styles.taskRowTitle, isFinished && { textDecorationLine: "line-through" }]} numberOfLines={1}>
                   {task.title}
                 </Text>
                 <View style={styles.taskRowMeta}>
-                  {task.materialName && <Text style={styles.taskRowMetaText}>{task.materialName}</Text>}
-                  {task.date && <Text style={styles.taskRowMetaText}>{new Date(task.date).toLocaleDateString("uz")}</Text>}
+                  <Text style={[styles.taskRowStatus, { color: st.text }]}>{st.icon} {st.label}</Text>
+                  {task.materialName ? <Text style={styles.taskRowMetaText}>{task.materialName}</Text> : null}
+                  {task.date ? <Text style={styles.taskRowMetaText}>{new Date(task.date).toLocaleDateString("uz")}</Text> : null}
                 </View>
               </View>
-              {next && (
+              {next ? (
                 <TouchableOpacity
-                  style={[styles.nextBtn, { backgroundColor: next === "completed" ? "#dcfce7" : "#dbeafe" }]}
+                  style={[styles.nextBtn, { backgroundColor: "#dcfce7" }]}
                   onPress={() => updateStatus(task.id, next)}
                 >
-                  <Text style={[styles.nextBtnText, { color: next === "completed" ? "#16a34a" : "#2563eb" }]}>
-                    {next === "in_progress" ? "Boshlash" : "Yakunlash"}
-                  </Text>
+                  <Text style={[styles.nextBtnText, { color: "#16a34a" }]}>Yakunlash</Text>
                 </TouchableOpacity>
+              ) : (
+                <View style={[styles.nextBtn, { backgroundColor: "#f1f5f9" }]}>
+                  <Text style={[styles.nextBtnText, { color: "#94a3b8" }]}>🔒</Text>
+                </View>
               )}
             </TouchableOpacity>
           );
@@ -182,43 +175,45 @@ export default function EmployeeTasksScreen() {
             {showDetail && (
               <ScrollView showsVerticalScrollIndicator={false}>
                 <Text style={styles.detailTitle}>{showDetail.title}</Text>
-                <View style={[styles.detailBadge, { backgroundColor: (STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.pending).bg }]}>
-                  <Text style={[styles.detailBadgeText, { color: (STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.pending).text }]}>
-                    {(STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.pending).icon} {(STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.pending).label}
+                <View style={[styles.detailBadge, { backgroundColor: (STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.started).bg }]}>
+                  <Text style={[styles.detailBadgeText, { color: (STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.started).text }]}>
+                    {(STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.started).icon} {(STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.started).label}
                   </Text>
                 </View>
                 {showDetail.description ? (
                   <Text style={styles.detailDesc}>{showDetail.description}</Text>
                 ) : null}
                 <View style={styles.detailInfo}>
-                  {showDetail.productName && (
+                  {showDetail.productName ? (
                     <View style={styles.detailInfoRow}>
                       <Text style={styles.detailInfoLabel}>Mahsulot:</Text>
                       <Text style={styles.detailInfoValue}>{showDetail.productName}</Text>
                     </View>
-                  )}
-                  {showDetail.materialName && (
+                  ) : null}
+                  {showDetail.materialName ? (
                     <View style={styles.detailInfoRow}>
                       <Text style={styles.detailInfoLabel}>Materiallar:</Text>
                       <Text style={styles.detailInfoValue}>{showDetail.materialName}</Text>
                     </View>
-                  )}
-                  {showDetail.date && (
+                  ) : null}
+                  {showDetail.date ? (
                     <View style={styles.detailInfoRow}>
                       <Text style={styles.detailInfoLabel}>Sana:</Text>
                       <Text style={styles.detailInfoValue}>{new Date(showDetail.date).toLocaleDateString("uz")}</Text>
                     </View>
-                  )}
+                  ) : null}
                 </View>
-                {NEXT_STATUS[showDetail.status] && (
+                {nextOf(showDetail.status) ? (
                   <TouchableOpacity
-                    style={[styles.detailActionBtn, { backgroundColor: NEXT_STATUS[showDetail.status] === "completed" ? "#dcfce7" : "#dbeafe" }]}
-                    onPress={() => updateStatus(showDetail.id, NEXT_STATUS[showDetail.status])}
+                    style={[styles.detailActionBtn, { backgroundColor: "#dcfce7" }]}
+                    onPress={() => updateStatus(showDetail.id, "finished")}
                   >
-                    <Text style={[styles.detailActionText, { color: NEXT_STATUS[showDetail.status] === "completed" ? "#16a34a" : "#2563eb" }]}>
-                      {NEXT_STATUS[showDetail.status] === "in_progress" ? "Boshlash" : "Yakunlash"}
-                    </Text>
+                    <Text style={[styles.detailActionText, { color: "#16a34a" }]}>✅ Yakunlash</Text>
                   </TouchableOpacity>
+                ) : (
+                  <View style={[styles.detailActionBtn, { backgroundColor: "#f1f5f9" }]}>
+                    <Text style={[styles.detailActionText, { color: "#94a3b8" }]}>🔒 Yakunlangan — holat o'zgartirilmaydi</Text>
+                  </View>
                 )}
               </ScrollView>
             )}
@@ -230,7 +225,7 @@ export default function EmployeeTasksScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: {flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   content: { paddingBottom: 40 },
   headerGradient: {
@@ -258,7 +253,8 @@ const styles = StyleSheet.create({
   taskStatusDot: { width: 32, height: 32, borderRadius: 16, justifyContent: "center", alignItems: "center", marginRight: 10 },
   taskRowContent: { flex: 1 },
   taskRowTitle: { fontSize: 14, fontWeight: "700", color: colors.text },
-  taskRowMeta: { flexDirection: "row", gap: 8, marginTop: 2 },
+  taskRowMeta: { flexDirection: "row", gap: 8, marginTop: 2, alignItems: "center", flexWrap: "wrap" },
+  taskRowStatus: { fontSize: 11, fontWeight: "800" },
   taskRowMetaText: { fontSize: 11, color: colors.textMuted },
   nextBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.md },
   nextBtnText: { fontSize: 11, fontWeight: "700" },

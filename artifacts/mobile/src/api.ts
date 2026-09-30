@@ -8,7 +8,7 @@ const envBase = process.env.EXPO_PUBLIC_API_URL;
 
 const VPS_API = "https://shovotcarton.uz/api";
 
-let host = "10.0.2.2";
+let host = "localhost";
 try {
   if (!envBase) {
     const manifest: any = (Constants as any).manifest || (Constants as any).expoConfig || {};
@@ -21,7 +21,7 @@ try {
   // ignore and use default
 }
 
-const API_BASE = envBase || VPS_API;
+const API_BASE = envBase || `http://${host}:3003/api`;
 
 export { API_BASE };
 
@@ -60,7 +60,16 @@ export async function isAdmin(): Promise<boolean> {
 
 export async function getUserRole(): Promise<string | null> {
   const user = await getUser();
-  return user?.role || null;
+  if (!user) return null;
+  // Hodim turi (position) bo'yicha: haydovchi → driver roli
+  const pos = String(user.position || "").toLowerCase();
+  if (
+    (!user.role || user.role === "employee") &&
+    (pos.includes("haydovchi") || pos.includes("dastavkachi") || pos.includes("driver"))
+  ) {
+    return "driver";
+  }
+  return user.role || null;
 }
 
 export async function isOwner(): Promise<boolean> {
@@ -93,8 +102,22 @@ export async function apiFetch<T = any>(
   const text = await res.text();
   let data: any;
   try { data = JSON.parse(text); } catch { data = { error: text || `HTTP ${res.status}` }; }
+  await handleAuthStatus(res.status, !!token);
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
+}
+
+// 401 — token yaroqsiz yoki eski bazadan qolgan sessiya.
+// Tokenni tozalaymiz va App'ga xabar beramiz (login ekraniga qaytadi).
+let onSessionExpired: (() => void) | null = null;
+export function setSessionExpiredHandler(fn: (() => void) | null): void {
+  onSessionExpired = fn;
+}
+
+async function handleAuthStatus(status: number, hadToken: boolean): Promise<void> {
+  if (status !== 401 || !hadToken) return;
+  try { await clearToken(); } catch {}
+  try { onSessionExpired?.(); } catch {}
 }
 
 export async function apiFetchFormData<T = any>(
@@ -119,6 +142,7 @@ export async function apiFetchFormData<T = any>(
     const text = await res.text();
     let data: any;
     try { data = JSON.parse(text); } catch { data = { error: text || `HTTP ${res.status}` }; }
+    await handleAuthStatus(res.status, !!token);
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     return data;
   } catch (e: any) {

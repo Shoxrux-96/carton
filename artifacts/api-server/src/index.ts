@@ -2,7 +2,7 @@ import "./polyfills.js";
 import app from "./app.js";
 import { processPendingFaces } from "./lib/face-processor.js";
 
-const port = Number(process.env["PORT"]) || 3003;
+const port = Number(process.env["API_PORT"]) || Number(process.env["PORT"]) || 3003;
 
 // Global error handlers to prevent crash on uncaught errors
 process.on("uncaughtException", (err) => {

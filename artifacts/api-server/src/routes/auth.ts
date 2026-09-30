@@ -94,7 +94,9 @@ router.get("/profile", authMiddleware, async (req, res) => {
   const users = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   if (users.length === 0) {
-    res.status(404).json({ error: "Foydalanuvchi topilmadi" });
+    // Token yaroqli, lekin users jadvalida yo'q — eski/boshqa bazadan
+    // qolgan sessiya. Mijoz qaytadan kirishi uchun 401 qaytaramiz.
+    res.status(401).json({ error: "Sessiya yaroqsiz, qaytadan kiring" });
     return;
   }
 
@@ -120,7 +122,7 @@ router.put("/profile", authMiddleware, async (req, res) => {
   const users = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   if (users.length === 0) {
-    res.status(404).json({ error: "Foydalanuvchi topilmadi" });
+    res.status(401).json({ error: "Sessiya yaroqsiz, qaytadan kiring" });
     return;
   }
 

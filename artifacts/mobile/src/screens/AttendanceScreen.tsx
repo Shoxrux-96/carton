@@ -67,6 +67,7 @@ export default function AttendanceScreen() {
 
   return (
     <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
+      
       {/* Summary */}
       <View style={styles.summaryRow}>
         <View style={[styles.summaryCard, { borderLeftColor: colors.primary }]}>
@@ -158,7 +159,7 @@ export default function AttendanceScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, padding: spacing.lg },
+  container: {flex: 1, backgroundColor: colors.background, padding: spacing.lg },
   summaryRow: { flexDirection: "row", gap: 8, marginBottom: spacing.lg },
   summaryCard: {
     flex: 1, backgroundColor: colors.surface, borderRadius: radius.md,

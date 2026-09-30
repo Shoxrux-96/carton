@@ -23,6 +23,7 @@ export default function StockViewScreen() {
 
   return (
     <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
+      
       {/* Summary */}
       <View style={styles.summaryRow}>
         <View style={[styles.summaryCard, { borderLeftColor: colors.primary }]}>
@@ -69,7 +70,7 @@ export default function StockViewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, padding: spacing.lg },
+  container: {flex: 1, backgroundColor: colors.background, padding: spacing.lg },
   summaryRow: { flexDirection: "row", gap: 8, marginBottom: spacing.xl },
   summaryCard: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, borderLeftWidth: 3, ...shadows.sm },
   summaryValue: { fontSize: 20, fontWeight: "800", color: colors.text },

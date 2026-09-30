@@ -25,7 +25,12 @@ router.get("/", authMiddleware, async (req, res) => {
 
   const rows = await db.select().from(transactionsTable)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(transactionsTable.date));
+    // Tartib: sana kamayish → bir kunda createdAt kamayish → id (barqaror, aralashmaydi)
+    .orderBy(
+      desc(transactionsTable.date),
+      desc(transactionsTable.createdAt),
+      desc(transactionsTable.id),
+    );
   res.json(rows.map(r => ({ ...r, amount: parseFloat(r.amount) })));
 });
 

@@ -25,6 +25,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useLang } from "@/lib/i18n";
+import { pinIcon } from "@/lib/mapPin";
 import { MATERIALS } from "./Products";
 
 L.Icon.Default.mergeOptions({
@@ -195,7 +196,7 @@ function LocationPicker({ value, onChange }: { value: string; onChange: (v: stri
                 }
               />
               <MapClickHandler />
-              {position && <Marker position={position} />}
+              {position && <Marker position={position} icon={pinIcon} />}
             </MapContainer>
           </div>
           <div className="p-2 text-xs text-muted-foreground bg-muted/50">
@@ -424,13 +425,12 @@ export default function Orders() {
 
   const deliveryProgressConfig: Record<string, { label: string; color: string }> = {
     pending: { label: t('status_pending'), color: "bg-gray-100 text-gray-700" },
-    shipped: { label: t('delivery_step_shipped'), color: "bg-blue-100 text-blue-700" },
+    shipped: { label: "Tayyorlandi", color: "bg-blue-100 text-blue-700" },
     in_transit: { label: t('delivery_step_in_transit'), color: "bg-amber-100 text-amber-700" },
     delivered: { label: t('delivery_step_delivered'), color: "bg-green-100 text-green-700" },
   };
 
   const orderTypes = [
-    { key: "purchase" as OrderType, label: t('purchase_label'), icon: Package },
     { key: "delivery" as OrderType, label: t('delivery_label'), icon: Truck },
   ];
 
@@ -885,11 +885,8 @@ export default function Orders() {
       return items.map((item: any, i: number) => (
         <div key={item.id ?? item.productId ?? `${item.name ?? "item"}-${i}`} className="text-sm">
           <span className="font-medium">{item.name}</span>
-          <span className="text-muted-foreground ml-1.5">
-            {item.quantity} ta × {formatSum(item.price)}
-          </span>
-          <span className="ml-1.5 font-semibold text-primary">= {formatSum(item.quantity * item.price)}</span>
-          {i < items.length - 1 && <span className="block border-t border-border/40 my-1.5" />}
+          <span className="text-muted-foreground ml-1.5">{item.quantity} ta</span>
+          {i < items.length - 1 && <span className="block border-t border-border/40 my-1" />}
         </div>
       ));
     }
@@ -922,7 +919,7 @@ export default function Orders() {
         { header: "Soni", key: "totalItems", accessor: (r: any) => r.totalItems || 0 },
         { header: "Jami summa", key: "totalSum", accessor: (r: any) => r.totalSum || 0 },
         { header: "Vaqt", key: "createdAt", accessor: (r: any) => format(new Date(r.createdAt), "dd.MM.yyyy HH:mm") },
-        { header: "Yetkazish", key: "deliveryStatus" },
+        { header: "Holat", key: "deliveryStatus" },
       ];
       exportToExcel(filteredOrders, cols, "yetkazib-berish");
     }
@@ -939,36 +936,12 @@ export default function Orders() {
             <Button variant="outline" onClick={exportOrders} className="rounded-xl px-4 h-12">
               <FileDown className="mr-2 h-5 w-5" /> Excel
             </Button>
-            <Button variant="outline" onClick={() => {
-              if (confirm("Barcha mahalliy buyurtma ma'lumotlarini o'chirmoqchimisiz? Bu amal ortga qaytarib bo'lmaydi.")) {
-                clearAllLocalOrders();
-              }
-            }} className="rounded-xl px-4 h-12 text-destructive border-destructive/30 hover:bg-destructive/10">
-              <Trash2 className="mr-2 h-5 w-5" /> Tozalash
-            </Button>
             <Button onClick={openAdd} className="rounded-xl px-6 h-12 shadow-lg shadow-primary/20">
               <Plus className="mr-2 h-5 w-5" /> {t('new_order_btn')}
             </Button>
           </div>
         }
       />
-
-      <div className="flex gap-2 mb-6">
-        {orderTypes.map(ot => (
-          <button
-            key={ot.key}
-            onClick={() => { setOrderType(ot.key); setEditing(null); }}
-            className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-all ${
-              orderType === ot.key
-                ? "bg-primary text-white shadow-lg shadow-primary/30"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
-          >
-            <ot.icon className="w-4 h-4" />
-            {ot.label}
-          </button>
-        ))}
-      </div>
 
       <div className="flex flex-wrap items-center gap-3 mb-4 pb-4 border-b border-border/50">
         <div className="flex rounded-xl border border-border overflow-hidden">
@@ -1144,6 +1117,8 @@ export default function Orders() {
             ) : (
               paginatedOrders.map((order: any) => {
                 const clientFromMap = clientsMap[order.clientId];
+                const clientName = order.clientName || clientFromMap?.name || "";
+                const clientPhone = order.clientPhone || clientFromMap?.phone || "";
                 const clientAddr = order.deliveryAddress || clientFromMap?.address || (order.clientAddress || "");
                 const coords = formatCoords(clientAddr);
                 const totalItems = Array.isArray(order.items)
@@ -1153,8 +1128,8 @@ export default function Orders() {
                   <tr key={order.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                     <td className="px-3 py-3 font-mono text-xs whitespace-nowrap">#{order.orderCode}</td>
                     <td className="px-3 py-3">
-                      <div className="font-medium whitespace-nowrap">{order.clientName}</div>
-                      <div className="text-xs text-muted-foreground whitespace-nowrap">{order.clientPhone}</div>
+                      <div className="font-medium whitespace-nowrap">{clientName}</div>
+                      <div className="text-xs text-muted-foreground whitespace-nowrap">{clientPhone}</div>
                     </td>
                     <td className="px-3 py-3">{renderItems(order)}</td>
                     <td className="px-3 py-3 text-right font-mono whitespace-nowrap">{totalItems} ta</td>

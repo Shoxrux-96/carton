@@ -31,6 +31,7 @@ export const productsTable = pgTable("products", {
   category: text("category"),
   materials: text("materials"),
   isPublished: boolean("is_published").notNull().default(false),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -75,6 +76,7 @@ export const clientsTable = pgTable("clients", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   phone: text("phone"),
+  companyName: text("company_name"),
   address: text("address"),
   type: text("type").notNull().default("lead"),
   source: text("source"),
@@ -143,6 +145,7 @@ export const transactionsTable = pgTable("transactions", {
   amount: numeric("amount", { precision: 14, scale: 2 }).notNull().default("0"),
   description: text("description"),
   date: date("date").notNull(),
+  waybillId: integer("waybill_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -205,3 +208,35 @@ export const calculationsTable = pgTable("calculations", {
 });
 
 export type Calculation = typeof calculationsTable.$inferSelect;
+
+export const waybillsTable = pgTable("waybills", {
+  id: serial("id").primaryKey(),
+  docNumber: integer("doc_number").notNull(),
+  date: date("date").notNull(),
+  senderCompany: text("sender_company"),
+  senderPhone: text("sender_phone"),
+  receiverCompany: text("receiver_company"),
+  receiverPhone: text("receiver_phone"),
+  vehicle: text("vehicle"),
+  totalSum: numeric("total_sum", { precision: 14, scale: 2 }).notNull().default("0"),
+  deliveryStatus: text("delivery_status").notNull().default("pending"),
+  driverId: integer("driver_id"),
+  deliveryAddress: text("delivery_address"),
+  deliveredAt: timestamp("delivered_at"),
+  deliveryFee: numeric("delivery_fee", { precision: 14, scale: 2 }).default("0"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Waybill = typeof waybillsTable.$inferSelect;
+
+export const waybillItemsTable = pgTable("waybill_items", {
+  id: serial("id").primaryKey(),
+  waybillId: integer("waybill_id").notNull().references(() => waybillsTable.id, { onDelete: "cascade" }),
+  name: text("name"),
+  format: text("format"),
+  unit: text("unit"),
+  quantity: numeric("quantity", { precision: 10, scale: 2 }).notNull().default("0"),
+  price: numeric("price", { precision: 12, scale: 2 }).notNull().default("0"),
+});
+
+export type WaybillItem = typeof waybillItemsTable.$inferSelect;

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from "react";
 import {
   View, Text, ScrollView, StyleSheet, RefreshControl,
-  TouchableOpacity, TextInput, Modal, Alert,
+  TouchableOpacity, TextInput, Modal, Alert, Platform,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { apiFetch } from "../api";
@@ -13,9 +13,8 @@ const PRODUCTS_MATERIALS = [
 ];
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; icon: string }> = {
-  pending: { label: "Kutilmoqda", bg: "#fef3c7", text: "#d97706", icon: "⏳" },
-  in_progress: { label: "Jarayonda", bg: "#dbeafe", text: "#2563eb", icon: "🔄" },
-  completed: { label: "Bajarildi", bg: "#dcfce7", text: "#16a34a", icon: "✅" },
+  started: { label: "Boshlandi", bg: "#dbeafe", text: "#2563eb", icon: "🔄" },
+  finished: { label: "Yakunlandi", bg: "#dcfce7", text: "#16a34a", icon: "✅" },
 };
 
 export default function AdminTasksScreen() {
@@ -23,7 +22,7 @@ export default function AdminTasksScreen() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "in_progress" | "completed">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "started" | "finished">("all");
   const [timeFilter, setTimeFilter] = useState<"all" | "daily" | "weekly" | "monthly">("all");
   const [showModal, setShowModal] = useState(false);
   const [showDetail, setShowDetail] = useState<any>(null);
@@ -55,9 +54,8 @@ export default function AdminTasksScreen() {
 
   const stats = useMemo(() => ({
     total: tasks.length,
-    pending: tasks.filter(t => t.status === "pending").length,
-    inProgress: tasks.filter(t => t.status === "in_progress").length,
-    completed: tasks.filter(t => t.status === "completed").length,
+    started: tasks.filter(t => t.status === "started").length,
+    finished: tasks.filter(t => t.status === "finished").length,
   }), [tasks]);
 
   const filtered = useMemo(() => {
@@ -142,11 +140,17 @@ export default function AdminTasksScreen() {
   };
 
   const handleDelete = (id: number) => {
+    const doDelete = async () => {
+      try { await apiFetch(`/tasks/${id}`, { method: "DELETE" }); await load(); } catch (e: any) { Alert.alert("Xatolik", e.message); }
+    };
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined" && !window.confirm("Topshiriqni o'chirmoqchimisiz?")) return;
+      doDelete();
+      return;
+    }
     Alert.alert("O'chirish", "Topshiriqni o'chirmoqchimisiz?", [
       { text: "Yo'q" },
-      { text: "Ha", style: "destructive", onPress: async () => {
-        try { await apiFetch(`/tasks/${id}`, { method: "DELETE" }); await load(); } catch {}
-      }},
+      { text: "Ha", style: "destructive", onPress: doDelete },
     ]);
   };
 
@@ -158,8 +162,7 @@ export default function AdminTasksScreen() {
   };
 
   const nextStatus = (current: string) => {
-    if (current === "pending") return "in_progress";
-    if (current === "in_progress") return "completed";
+    if (current === "started") return "finished";
     return null;
   };
 
@@ -173,15 +176,14 @@ export default function AdminTasksScreen() {
 
         <View style={styles.headerGradient}>
           <Text style={styles.headerTitle}>📋 Topshiriqlar</Text>
-          <Text style={styles.headerSub}>{stats.total} ta topshiriq · {stats.pending} ta kutilmoqda</Text>
+          <Text style={styles.headerSub}>{stats.total} ta topshiriq · {stats.started} ta boshlandi · {stats.finished} ta yakunlandi</Text>
         </View>
 
         <View style={styles.statsRow}>
           {[
             { value: stats.total, label: "Jami", bg: "#f5f5f4", color: colors.text },
-            { value: stats.pending, label: "Kutilmoqda", bg: "#fef3c7", color: "#d97706" },
-            { value: stats.inProgress, label: "Jarayonda", bg: "#dbeafe", color: "#2563eb" },
-            { value: stats.completed, label: "Bajarildi", bg: "#dcfce7", color: "#16a34a" },
+            { value: stats.started, label: "Boshlandi", bg: "#dbeafe", color: "#2563eb" },
+            { value: stats.finished, label: "Yakunlandi", bg: "#dcfce7", color: "#16a34a" },
           ].map((s, i) => (
             <View key={i} style={[styles.statCard, { backgroundColor: s.bg }]}>
               <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
@@ -192,7 +194,7 @@ export default function AdminTasksScreen() {
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 6 }}>
           <View style={styles.filterRow}>
-            {(["all", "pending", "in_progress", "completed"] as const).map(s => (
+            {(["all", "started", "finished"] as const).map(s => (
               <TouchableOpacity key={s} style={[styles.filterBtn, statusFilter === s && styles.filterActive]} onPress={() => setStatusFilter(s)}>
                 <Text style={[styles.filterText, statusFilter === s && { color: "#fff" }]}>
                   {s === "all" ? "Barchasi" : STATUS_CONFIG[s]?.label}
@@ -215,12 +217,12 @@ export default function AdminTasksScreen() {
         </ScrollView>
 
         {filtered.length > 0 ? filtered.map(task => {
-          const st = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
-          const isCompleted = task.status === "completed";
+          const st = STATUS_CONFIG[task.status] || STATUS_CONFIG.started;
+          const isFinished = task.status === "finished";
           return (
             <TouchableOpacity
               key={task.id}
-              style={[styles.taskRow, isCompleted && { opacity: 0.6 }]}
+              style={[styles.taskRow, isFinished && { opacity: 0.7 }]}
               onPress={() => setShowDetail(task)}
               activeOpacity={0.7}
             >
@@ -228,12 +230,13 @@ export default function AdminTasksScreen() {
                 <Text style={{ fontSize: 12 }}>{st.icon}</Text>
               </View>
               <View style={styles.taskRowContent}>
-                <Text style={[styles.taskRowTitle, isCompleted && { textDecorationLine: "line-through" }]} numberOfLines={1}>
+                <Text style={[styles.taskRowTitle, isFinished && { textDecorationLine: "line-through" }]} numberOfLines={1}>
                   {task.title}
                 </Text>
                 <View style={styles.taskRowMeta}>
-                  {task.assigneeName && <Text style={styles.taskRowMetaText}>{task.assigneeName}</Text>}
-                  {task.date && <Text style={styles.taskRowMetaText}>{new Date(task.date).toLocaleDateString("uz")}</Text>}
+                  <Text style={[styles.taskRowStatus, { color: st.text }]}>{st.icon} {st.label}</Text>
+                  {task.assigneeName ? <Text style={styles.taskRowMetaText}>{task.assigneeName}</Text> : null}
+                  {task.date ? <Text style={styles.taskRowMetaText}>{new Date(task.date).toLocaleDateString("uz")}</Text> : null}
                 </View>
               </View>
               <View style={styles.taskRowActions}>
@@ -281,9 +284,9 @@ export default function AdminTasksScreen() {
             {showDetail && (
               <ScrollView showsVerticalScrollIndicator={false}>
                 <Text style={styles.detailTitle}>{showDetail.title}</Text>
-                <View style={[styles.detailBadge, { backgroundColor: (STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.pending).bg }]}>
-                  <Text style={[styles.detailBadgeText, { color: (STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.pending).text }]}>
-                    {(STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.pending).icon} {(STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.pending).label}
+                <View style={[styles.detailBadge, { backgroundColor: (STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.started).bg }]}>
+                  <Text style={[styles.detailBadgeText, { color: (STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.started).text }]}>
+                    {(STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.started).icon} {(STATUS_CONFIG[showDetail.status] || STATUS_CONFIG.started).label}
                   </Text>
                 </View>
                 {showDetail.description ? (
@@ -322,7 +325,11 @@ export default function AdminTasksScreen() {
                       <TouchableOpacity style={[styles.detailEditBtn, { backgroundColor: STATUS_CONFIG[nxt]?.bg || colors.primary }]} onPress={() => { setShowDetail(null); updateStatus(showDetail, nxt); }}>
                         <Text style={[styles.detailEditText, { color: STATUS_CONFIG[nxt]?.text || "#fff" }]}>{STATUS_CONFIG[nxt]?.icon} {STATUS_CONFIG[nxt]?.label}</Text>
                       </TouchableOpacity>
-                    ) : null;
+                    ) : (
+                      <View style={[styles.detailEditBtn, { backgroundColor: "#f1f5f9" }]}>
+                        <Text style={[styles.detailEditText, { color: "#94a3b8" }]}>🔒 Yakunlangan — holat qulf</Text>
+                      </View>
+                    );
                   })()}
                   <TouchableOpacity style={styles.detailEditBtn} onPress={() => { setShowDetail(null); openEdit(showDetail); }}>
                     <Text style={styles.detailEditText}>✏️ Tahrirlash</Text>
@@ -414,7 +421,7 @@ export default function AdminTasksScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: {flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   content: { paddingBottom: 100 },
   headerGradient: {
@@ -442,7 +449,8 @@ const styles = StyleSheet.create({
   taskStatusDot: { width: 32, height: 32, borderRadius: 16, justifyContent: "center", alignItems: "center", marginRight: 10 },
   taskRowContent: { flex: 1 },
   taskRowTitle: { fontSize: 14, fontWeight: "700", color: colors.text },
-  taskRowMeta: { flexDirection: "row", gap: 8, marginTop: 2 },
+  taskRowMeta: { flexDirection: "row", gap: 8, marginTop: 2, alignItems: "center", flexWrap: "wrap" },
+  taskRowStatus: { fontSize: 11, fontWeight: "800" },
   taskRowMetaText: { fontSize: 11, color: colors.textMuted },
   taskRowActions: { flexDirection: "row", gap: 4 },
   taskRowBtn: { padding: 6 },

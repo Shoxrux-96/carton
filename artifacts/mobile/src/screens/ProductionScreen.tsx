@@ -209,8 +209,6 @@ export default function ProductionScreen({ navigation }: any) {
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
             </View>
-
-            {/* Product select */}
             <Text style={styles.modalLabel}>Mahsulot</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
               {products.map(p => (
@@ -223,8 +221,6 @@ export default function ProductionScreen({ navigation }: any) {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-
-            {/* Date & Quantity */}
             <View style={styles.modalRow}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.modalLabel}>Sana</Text>
@@ -248,8 +244,6 @@ export default function ProductionScreen({ navigation }: any) {
                 />
               </View>
             </View>
-
-            {/* Selected product info */}
             {selectedProduct > 0 && (
               <View style={styles.selectedInfo}>
                 <Text style={styles.selectedName}>
@@ -265,8 +259,6 @@ export default function ProductionScreen({ navigation }: any) {
                 )}
               </View>
             )}
-
-            {/* Actions */}
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowModal(false)}>
                 <Text style={styles.cancelText}>Bekor qilish</Text>
@@ -283,7 +275,7 @@ export default function ProductionScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: {flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: 100 },
 

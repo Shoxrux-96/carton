@@ -15,15 +15,24 @@ export default function MobileDelivery() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const deliverySteps = [
-    { key: "pending", label: t("delivery_pending"), color: "bg-gray-100 text-gray-700" },
-    { key: "shipped", label: t("delivery_shipped"), color: "bg-blue-100 text-blue-700" },
-    { key: "in_transit", label: t("delivery_in_transit"), color: "bg-amber-100 text-amber-700" },
-    { key: "delivered", label: t("delivery_delivered"), color: "bg-green-100 text-green-700" },
+    { key: "pending", label: t("delivery_step_pending"), color: "bg-gray-100 text-gray-700" },
+    { key: "in_transit", label: t("delivery_step_in_transit"), color: "bg-amber-100 text-amber-700" },
+    { key: "delivered", label: t("delivery_step_delivered"), color: "bg-green-100 text-green-700" },
   ];
 
   const { data: orders } = useQuery({
-    queryKey: ["/api/orders"],
-    queryFn: () => customFetch("/api/orders", { headers: authOpts.headers }).then(r => r.json()),
+    queryKey: ["/api/waybills"],
+    queryFn: () => customFetch("/api/waybills", { headers: authOpts.headers }).then(r => r.json()).then(data => {
+      if (!Array.isArray(data)) return [];
+      const today = new Date().toISOString().split("T")[0];
+      return data.filter((w: any) => w.date === today).map((w: any) => ({
+        id: w.id, orderCode: `YX-${w.docNumber}`, clientName: w.receiverCompany || "",
+        clientPhone: w.receiverPhone || "", deliveryAddress: w.deliveryAddress || "",
+        driverId: w.driverId, deliveryStatus: w.deliveryStatus || "pending", date: w.date, totalSum: w.totalSum,
+        productName: (w.items && w.items[0] && w.items[0].name) || "",
+        quantity: Number(w.items && w.items[0] ? w.items[0].quantity : 0),
+      }));
+    }).catch(() => []),
     refetchInterval: 10000,
   });
 
@@ -34,20 +43,11 @@ export default function MobileDelivery() {
 
   const deliveries = useMemo(() => {
     if (!Array.isArray(orders)) return [];
-    return orders.filter((o: any) =>
-      o.deliveryStatus && o.deliveryStatus !== "pending" && o.deliveryStatus !== "cancelled"
-    );
+    return orders;
   }, [orders]);
 
-  const updateStatus = async (orderId: number, status: string) => {
-    try {
-      await customFetch(`/api/orders/${orderId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", ...authOpts.headers },
-        body: JSON.stringify({ deliveryStatus: status }),
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-    } catch {}
+  const updateStatus = async (_orderId: number, _status: string) => {
+    // Delivery status update — disabled (orders removed)
   };
 
   const selected = selectedId ? deliveries.find((o: any) => o.id === selectedId) : null;
@@ -82,7 +82,7 @@ export default function MobileDelivery() {
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
             <MapPin className="w-3 h-3" />
-            <span>{selected.deliveryAddress || selected.clientAddress || t("no_address")}</span>
+            <span>{selected.deliveryAddress || t("no_address")}</span>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Truck className="w-3 h-3" />
@@ -140,7 +140,7 @@ export default function MobileDelivery() {
           variant="outline"
           className="w-full h-12 rounded-2xl"
           onClick={() => {
-            const addr = selected.deliveryAddress || selected.clientAddress || "";
+            const addr = selected.deliveryAddress || "";
             const parts = addr.split(",").map(Number);
             if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
               window.open(`https://www.google.com/maps/dir/?api=1&destination=${parts[0]},${parts[1]}`, "_blank");
@@ -192,7 +192,7 @@ export default function MobileDelivery() {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm">{order.clientName}</p>
                     <p className="text-[11px] text-muted-foreground truncate">
-                      {order.deliveryAddress || order.clientAddress || ""}
+                      {order.deliveryAddress || ""}
                     </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground" />
