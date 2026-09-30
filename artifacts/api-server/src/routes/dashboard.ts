@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, productsTable, warehousesTable, inventoryTable, productionTable, salesTable, clientsTable, transactionsTable, employeesTable } from "@workspace/db";
-import { count, sql, eq } from "drizzle-orm";
+import { count, sql, eq, isNull } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
 
 const router = Router();
@@ -9,7 +9,10 @@ router.get("/", authMiddleware, async (_req, res) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const [productsCount] = await db.select({ count: count() }).from(productsTable);
+  const [productsCount] = await db
+    .select({ count: count() })
+    .from(productsTable)
+    .where(isNull(productsTable.deletedAt));
   const [warehousesCount] = await db.select({ count: count() }).from(warehousesTable);
   const [inventoryCount] = await db.select({ count: count() }).from(inventoryTable);
 

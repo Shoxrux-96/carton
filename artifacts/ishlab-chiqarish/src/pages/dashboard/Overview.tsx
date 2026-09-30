@@ -37,6 +37,16 @@ export default function Overview() {
     queryFn: () => customFetch("/api/dashboard", { headers: authOpts.headers }).then(r => r.json()),
   });
 
+  // Ombordagi jami mahsulotlar soni — Ombor sahifasidagi "Jami dona" bilan bir xil manbadan
+  const { data: inventory } = useQuery({
+    queryKey: ["/api/inventory"],
+    queryFn: () => customFetch("/api/inventory", { headers: authOpts.headers }).then(r => r.json()),
+    enabled: !isLoading,
+  });
+  const totalStockQuantity = Array.isArray(inventory)
+    ? inventory.reduce((sum: number, item: any) => sum + Number(item?.quantity || 0), 0)
+    : 0;
+
   const { data: financeData } = useQuery({
     queryKey: ["/api/finance"],
     queryFn: () => customFetch("/api/finance", { headers: authOpts.headers }).then(r => r.json()),
@@ -56,7 +66,7 @@ export default function Overview() {
   });
 
   const statCards = [
-    { title: t('total_products'), value: stats?.totalProducts, icon: Package, color: "text-blue-500", bg: "bg-blue-500/10", gradient: "from-blue-500/20 to-blue-500/5" },
+    { title: t('total_products'), value: totalStockQuantity.toLocaleString(), icon: Package, color: "text-blue-500", bg: "bg-blue-500/10", gradient: "from-blue-500/20 to-blue-500/5" },
     { title: t('inventory_types'), value: stats?.totalInventoryItems, icon: Layers, color: "text-indigo-500", bg: "bg-indigo-500/10", gradient: "from-indigo-500/20 to-indigo-500/5" },
     { title: t('today_production'), value: stats?.totalProductionToday, icon: Wrench, color: "text-teal-500", bg: "bg-teal-500/10", gradient: "from-teal-500/20 to-teal-500/5" },
     { title: t('today_sales'), value: stats?.totalSalesToday, icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10", gradient: "from-emerald-500/20 to-emerald-500/5" },
