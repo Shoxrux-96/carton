@@ -23,8 +23,21 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen w-full bg-gradient-to-br from-zinc-50 to-amber-50/30 overflow-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col h-screen overflow-x-hidden overflow-y-auto relative">
-        {/* Top bar with language switcher */}
+        {/* Top bar with language switcher + APK download */}
         <div className="sticky top-0 z-20 h-12 bg-white/80 backdrop-blur-sm border-b border-border/50 shrink-0 flex items-center justify-end px-6 gap-2">
+          <a
+            href="/apk/shovot-carton.apk"
+            download
+            title="Mobil ilovani (APK) yuklab olish"
+            className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors shadow-sm"
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            APK
+          </a>
           <div className="flex items-center gap-1.5 bg-muted/60 rounded-lg p-1">
             <Globe className="w-3.5 h-3.5 text-muted-foreground ml-1.5" />
             <button
