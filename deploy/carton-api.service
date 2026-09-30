@@ -1,0 +1,15 @@
+[Unit]
+Description=Shovot Carton API (Express + tsx)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/carton/artifacts/api-server
+EnvironmentFile=/opt/carton/.env
+ExecStart=/usr/bin/env ./node_modules/.bin/tsx src/index.ts
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
