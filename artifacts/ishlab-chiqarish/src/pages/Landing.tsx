@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
 import customFetch from "@/lib/custom-fetch";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { Mail, MapPin, ChevronRight, Award, Truck, Package, Send, Loader2, PackageOpen, Boxes, Stamp, Palette, ArrowRightLeft, Phone, Ruler, Globe, Layers } from "lucide-react";
 import { useLang } from "@/lib/i18n";
@@ -29,6 +29,7 @@ export default function Landing() {
   const { t, lang } = useLang();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
+  const [phoneOpen, setPhoneOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans scroll-smooth">
@@ -435,17 +436,19 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Floating social buttons (right side) */}
-      <div className="fixed right-3 sm:right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-4">
+      {/* Floating social buttons (right side, hero area) */}
+      <div className="fixed right-3 sm:right-4 top-[calc(50%+40px)] z-50 flex flex-col items-end gap-4">
         <a
           href="https://t.me/+998995054004"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Telegram"
           title="Telegram: yozish"
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-sky-500 text-white shadow-[0_0_18px_rgba(14,165,233,0.65)] ring-1 ring-white/20 hover:scale-110 hover:bg-sky-400 active:scale-95 transition-all"
+          className="relative flex h-12 w-12 items-center justify-center rounded-full bg-sky-500 text-white shadow-[0_0_18px_rgba(14,165,233,0.65)] ring-1 ring-white/20 hover:scale-110 hover:bg-sky-400 active:scale-95 transition-all"
         >
-          <TelegramIcon className="h-6 w-6" />
+          <span className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-sky-300/80 animate-pulse" />
+          <span className="pointer-events-none absolute -inset-1 rounded-full border-2 border-sky-400 animate-ping" />
+          <TelegramIcon className="relative h-6 w-6" />
         </a>
         <a
           href="https://www.instagram.com/shovotcarton/"
@@ -453,10 +456,41 @@ export default function Landing() {
           rel="noopener noreferrer"
           aria-label="Instagram"
           title="Instagram: @shovotcarton"
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 text-white shadow-[0_0_18px_rgba(236,72,153,0.65)] ring-1 ring-white/20 hover:scale-110 active:scale-95 transition-all"
+          className="relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 text-white shadow-[0_0_18px_rgba(236,72,153,0.65)] ring-1 ring-white/20 hover:scale-110 active:scale-95 transition-all"
         >
-          <InstagramIcon className="h-6 w-6" />
+          <span className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-pink-300/80 animate-pulse" />
+          <span className="pointer-events-none absolute -inset-1 rounded-full border-2 border-pink-400 animate-ping" />
+          <InstagramIcon className="relative h-6 w-6" />
         </a>
+        <div className="flex items-center justify-end gap-2">
+          <AnimatePresence initial={false}>
+            {phoneOpen && (
+              <motion.a
+                href="tel:+998995054004"
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 184 }}
+                exit={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.25 }}
+                aria-label="+998 99 505 40 04"
+                className="flex h-12 shrink-0 items-center justify-center overflow-hidden whitespace-nowrap rounded-full bg-emerald-500 text-sm font-bold tracking-wide text-white shadow-[0_0_18px_rgba(16,185,129,0.6)]"
+              >
+                +998 99 505 40 04
+              </motion.a>
+            )}
+          </AnimatePresence>
+          <button
+            type="button"
+            onClick={() => setPhoneOpen(o => !o)}
+            aria-label="Telefon raqam"
+            aria-expanded={phoneOpen}
+            title="Telefon raqam"
+            className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_0_18px_rgba(16,185,129,0.65)] ring-1 ring-white/20 hover:scale-110 hover:bg-emerald-400 active:scale-95 transition-all"
+          >
+            <span className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-emerald-300/80 animate-pulse" />
+            <span className="pointer-events-none absolute -inset-1 rounded-full border-2 border-emerald-400 animate-ping" />
+            <Phone className="relative h-5 w-5" />
+          </button>
+        </div>
       </div>
 
       {/* Footer */}
@@ -496,7 +530,17 @@ export default function Landing() {
                   <span>{t("landing_address_value")}</span>
                 </li>
               </ul>
-              <div className="flex flex-wrap gap-3 mt-6">
+            </div>
+
+            <div>
+              <h3 className="font-bold text-lg mb-5">{t("landing_links")}</h3>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#about" className="hover:text-amber-400 transition-colors">{t("landing_about")}</a></li>
+                <li><a href="#catalog" className="hover:text-amber-400 transition-colors">{t("landing_catalog")}</a></li>
+                <li><a href="#contact" className="hover:text-amber-400 transition-colors">{t("landing_contact")}</a></li>
+                <li><Link href="/login" className="hover:text-amber-400 transition-colors">{t("landing_system_login")}</Link></li>
+              </ul>
+              <div className="flex flex-col items-start gap-3 mt-6">
                 <a
                   href="https://www.instagram.com/shovotcarton/"
                   target="_blank"
@@ -516,16 +560,6 @@ export default function Landing() {
                   +998 99 505 40 04
                 </a>
               </div>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-lg mb-5">{t("landing_links")}</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#about" className="hover:text-amber-400 transition-colors">{t("landing_about")}</a></li>
-                <li><a href="#catalog" className="hover:text-amber-400 transition-colors">{t("landing_catalog")}</a></li>
-                <li><a href="#contact" className="hover:text-amber-400 transition-colors">{t("landing_contact")}</a></li>
-                <li><Link href="/login" className="hover:text-amber-400 transition-colors">{t("landing_system_login")}</Link></li>
-              </ul>
             </div>
           </div>
 
