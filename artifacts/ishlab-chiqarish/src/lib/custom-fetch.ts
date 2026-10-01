@@ -18,7 +18,13 @@ export default async function customFetch(
   const res = await fetch(url, { ...options, headers });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || `HTTP ${res.status}`);
+    let message = text || `HTTP ${res.status}`;
+    // JSON {"error":"..."} bo'lsa — faqat xabar matnini tashlaymiz.
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed.error === "string" && parsed.error) message = parsed.error;
+    } catch {}
+    throw new Error(message);
   }
   return res;
 }

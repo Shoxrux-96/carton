@@ -2,12 +2,14 @@ import { Router } from "express";
 import { db, employeesTable, attendanceTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { authMiddleware } from "../lib/auth.js";
-import { extractDescriptor, findBestMatch, detectFaceOnly } from "../lib/face.js";
+import { extractDescriptor, findBestMatch, analyzeEyeState } from "../lib/face.js";
+import { getLivenessSamples, evaluateLiveness, recordLivenessSample, clearLivenessSession } from "../lib/liveness.js";
 import { paramInt } from "../lib/params.js";
 import multer from "multer";
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
+// Kadr/rasm yuklashlar: 8 MB fayl, matn maydonlari kichik (DoS himoyasi).
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, fieldSize: 2 * 1024 * 1024, fields: 20 } });
 
 // Register face for an employee
 router.post("/register/:id", authMiddleware, upload.single("face"), async (req, res) => {
@@ -49,18 +51,32 @@ router.post("/register/:id", authMiddleware, upload.single("face"), async (req, 
 });
 
 // Real-time liveness frame analysis (Expo Go compatible — server-side eye detection)
-router.post("/liveness-frame", upload.single("frame"), async (req, res) => {
+router.post("/liveness-frame", authMiddleware, upload.single("frame"), async (req, res) => {
   if (!req.file) {
     res.status(400).json({ error: "Kadr talab qilinadi" });
     return;
   }
 
   try {
-    const analysis = await detectFaceOnly(req.file.buffer);
+    // Ko'z ochiqligi + yuz qutisi — blink/harakat sinyallari uchun.
+    const analysis = await analyzeEyeState(req.file.buffer);
     if (!analysis) {
       res.json({ faceDetected: false });
       return;
     }
+
+    const body = (req.body && typeof req.body === "object") ? req.body as Record<string, unknown> : {};
+    const sessionId = body.sessionId !== undefined ? String(body.sessionId) : "";
+    recordLivenessSample(sessionId, {
+      t: Date.now(),
+      leftEyeOpen: analysis.leftEyeOpen,
+      rightEyeOpen: analysis.rightEyeOpen,
+      boundsX: analysis.boundsX,
+      boundsY: analysis.boundsY,
+      boundsW: analysis.boundsW,
+      boundsH: analysis.boundsH,
+    });
+
     res.json(analysis);
   } catch (e: any) {
     console.error("[Face] Liveness frame error:", e);
@@ -82,7 +98,7 @@ router.post("/attendance", upload.single("face"), async (req, res) => {
     const fs = await import("fs");
     const path = await import("path");
     const settingsFile = path.default.join(process.cwd(), "office-settings.json");
-    let settings = { lat: 41.311081, lng: 69.240562, radius: 100, startTime: "09:00", endTime: "18:00", lateMinutes: 30 };
+    let settings = { lat: 41.311081, lng: 69.240562, radius: 100, startTime: "09:00", endTime: "18:00", lateMinutes: 30, livenessMode: "warn" };
     try { if (fs.default.existsSync(settingsFile)) settings = JSON.parse(fs.default.readFileSync(settingsFile, "utf-8")); } catch {}
 
     // Check time — O'zbekiston vaqti (Asia/Tashkent, UTC+5, DST yo'q)
@@ -124,6 +140,24 @@ router.post("/attendance", upload.single("face"), async (req, res) => {
       return;
     }
 
+    // Jonlilik tekshiruvi — skaner kadrlari sessionId bo'yicha yig'iladi.
+    // mode: "warn" (default — yozadi, xabar bermaydi) | "enforce" (rad etadi).
+    const bodyText = (req.body && typeof req.body === "object") ? req.body as Record<string, unknown> : {};
+    const sessionId = bodyText.sessionId !== undefined ? String(bodyText.sessionId) : "";
+    const samples = getLivenessSamples(sessionId);
+    const liveness = evaluateLiveness(samples);
+    const livenessMode = settings.livenessMode === "enforce" ? "enforce" : "warn";
+
+    if (livenessMode === "enforce" && !liveness.ok) {
+      clearLivenessSession(sessionId);
+      res.status(400).json({
+        error: liveness.signal === "insufficient"
+          ? "Hayotilik tekshiruvi o'tmadi. Kameraga qarab 2-3 soniya turing va qayta urinib ko'ring"
+          : "Statik rasm aniqlandi. Telefoningizni joyida ushlab, boshni engil silkiting yoki ko'zingizni bir marta quring",
+      });
+      return;
+    }
+
     // Get all employees with face descriptors
     const employees = await db
       .select({
@@ -151,7 +185,15 @@ router.post("/attendance", upload.single("face"), async (req, res) => {
 
     const matchSimilarity = match ? Math.round((1 - (match.distance * match.distance) / 2) * 100) : 0;
 
+    // Liveness natijasini logga va davomat iziga yozamiz (audit uchun).
+    if (samples.length > 0) {
+      console.log(
+        `[face] attendance liveness signal=${liveness.signal} samples=${liveness.sampleCount} blink=${liveness.blinkCount} move=${liveness.movementPx}px mode=${livenessMode}`,
+      );
+    }
+
     if (!match) {
+      clearLivenessSession(sessionId);
       res.status(404).json({ error: "Yuz tanilmadi. Avval yuz ro'yxatdan o'tkazing" });
       return;
     }
@@ -169,6 +211,7 @@ router.post("/attendance", upload.single("face"), async (req, res) => {
       .limit(1);
 
     if (existing.length > 0) {
+      clearLivenessSession(sessionId);
       res.json({
         success: true,
         employee: match.name,
@@ -181,12 +224,14 @@ router.post("/attendance", upload.single("face"), async (req, res) => {
     }
 
     // Create attendance record
+    const livenessTag = samples.length > 0 ? ` | jonli:${liveness.signal}` : "";
     await db.insert(attendanceTable).values({
       employeeId: match.employeeId,
       date: today,
       status: attendanceStatus,
-      notes: `Face ID (${matchSimilarity}% o'xshashlik) — ${currentTime} | 📍 ${lat1.toFixed(6)}, ${lng1.toFixed(6)}`,
+      notes: `Face ID (${matchSimilarity}% o'xshashlik) — ${currentTime} | 📍 ${lat1.toFixed(6)}, ${lng1.toFixed(6)}${livenessTag}`,
     });
+    clearLivenessSession(sessionId);
 
     res.json({
       success: true,
@@ -196,6 +241,7 @@ router.post("/attendance", upload.single("face"), async (req, res) => {
       time: currentTime,
       distance: match.distance,
       similarity: matchSimilarity,
+      liveness: samples.length > 0 ? liveness : undefined,
       message: attendanceStatus === "present"
         ? `${match.name} — davomat belgilandi ✅ (${matchSimilarity}% o'xshashlik)`
         : `${match.name} — kech qoldi ⏰ (${currentTime})`,

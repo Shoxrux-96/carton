@@ -1,5 +1,16 @@
 import { extractDescriptor } from "./face.js";
 
+// notes ichidagi faceError qo'shimchasini olib tashlaydi (qayta yuklashda tozalash).
+export function stripFaceError(notes?: string | null): string {
+  return (notes || "").replace(/\s*faceError:[^\n]*/g, "").trim();
+}
+
+// Mavjud notes + faceError xatosini xavfsiz birlashtiradi (notes bosib yuborilmaydi).
+export function withFaceError(notes: string | null | undefined, error: string): string {
+  const base = stripFaceError(notes);
+  return base ? `${base} faceError:${error}` : `faceError:${error}`;
+}
+
 export async function processEmployeePhoto(photo?: string | null): Promise<{
   faceImage?: string | null;
   faceDescriptor?: string | null;
@@ -8,7 +19,9 @@ export async function processEmployeePhoto(photo?: string | null): Promise<{
   if (!photo) return {};
 
   if (!photo.startsWith("data:")) {
-    return { faceImage: photo };
+    // Data-URL emas — face-api qayta ishlay olmaydi. Uni yillar davomida
+    // qayta-qayta urinish hisoblashga sarflamaslik uchun xato sifatida yozamiz.
+    return { faceError: "Rasm formati noto'g'ri (data-URL kutilgan)" };
   }
 
   const base64 = photo.split(",")[1];

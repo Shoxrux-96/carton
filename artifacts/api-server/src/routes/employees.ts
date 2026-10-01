@@ -4,10 +4,13 @@ import { eq, desc } from "drizzle-orm";
 import { authMiddleware, requireAdmin } from "../lib/auth.js";
 import { paramInt } from "../lib/params.js";
 import { hashPassword } from "../lib/password.js";
+import { stripFaceError } from "../lib/employee-face.js";
 import multer from "multer";
 
 // Fayl hajmi chegarasi — xotirani to'ldirish hujumining oldini oladi.
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
+// fieldSize: base64 rasm maydoni (1 MB default katta fotosuratlar uchun kam edi —
+// sababli rasm jim-jit saqlanmasdi).
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, fieldSize: 15 * 1024 * 1024, fields: 50 } });
 
 const router = Router();
 
@@ -88,6 +91,9 @@ router.post("/", authMiddleware, requireAdmin, upload.single("photo"), async (re
 
 const updateEmployeeRecord = async (req: any, res: any, id: number) => {
   console.log("[employees.update] hasBody=", !!req.body, "bodyType=", typeof req.body, "hasFile=", !!req.file);
+  const [current] = await db.select().from(employeesTable).where(eq(employeesTable.id, id)).limit(1);
+  if (!current) { res.status(404).json({ error: "Hodim topilmadi" }); return; }
+
   const body = (req.body && typeof req.body === "object") ? req.body as Record<string, unknown> : {};
   let name = body.name !== undefined ? readBodyValue(body.name) : undefined;
   let phone = body.phone !== undefined ? readBodyValue(body.phone) : undefined;
@@ -111,17 +117,23 @@ const updateEmployeeRecord = async (req: any, res: any, id: number) => {
     // Save the image immediately; face descriptor is backfilled by the
     // background face-processor so uploads never hang on face-api.
     updates.faceImage = photo;
+    // Yangi rasm → eski yuz descriptori BEKOR qilinadi va faceError tozalanadi,
+    // aks holda eski (yaroqsiz) descriptor yoki abadiy faceError qolardi.
+    updates.faceDescriptor = null;
+    const stripped = stripFaceError(notes !== undefined ? notes : current.notes);
+    updates.notes = stripped || null;
+  } else if (notes !== undefined && notes !== "") {
+    updates.notes = stripFaceError(notes);
   }
   if (position !== undefined && position !== "") updates.position = position;
   if (salary !== undefined && salary !== "") updates.salary = salary.toString();
   if (hireDate !== undefined && hireDate !== "") updates.hireDate = hireDate;
   if (status !== undefined && status !== "") updates.status = status;
-  if (notes !== undefined && notes !== "") updates.notes = notes;
   if (loginPhone !== undefined && loginPhone !== "") updates.loginPhone = loginPhone.replace(/[\s\+\-\(\)]/g, "");
   if (loginPassword !== undefined && loginPassword !== "") updates.loginPassword = loginPassword;
 
   if (loginPhone !== undefined || loginPassword !== undefined) {
-    const [emp] = await db.select().from(employeesTable).where(eq(employeesTable.id, id));
+    const emp = current;
     const oldLoginPhone = emp?.loginPhone;
     const newLoginPhone = (loginPhone !== undefined ? loginPhone : emp?.loginPhone || "").replace(/[\s\+\-\(\)]/g, "");
     const newLoginPassword = loginPassword !== undefined ? loginPassword : emp?.loginPassword || "12345678";
@@ -140,8 +152,7 @@ const updateEmployeeRecord = async (req: any, res: any, id: number) => {
   }
 
   if (Object.keys(updates).length === 0) {
-    const [employee] = await db.select().from(employeesTable).where(eq(employeesTable.id, id));
-    res.json({ ...employee, salary: parseFloat(employee.salary ?? "0") });
+    res.json({ ...current, salary: parseFloat(current.salary ?? "0") });
     return;
   }
 

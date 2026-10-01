@@ -71,9 +71,20 @@ export default function Employees() {
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const base64 = await toBase64(file);
-      setPhotoPreview(base64);
-      setValue("photo", base64);
+      // Katta base64 serverda 413/qiynalishga olib keladi — oldindan cheklaymiz.
+      if (file.size > 6 * 1024 * 1024) {
+        alert("Rasm hajmi 6 MB dan oshmasligi kerak. Boshqa rasm tanlang.");
+        e.target.value = "";
+        return;
+      }
+      try {
+        const base64 = await toBase64(file);
+        setPhotoPreview(base64);
+        setValue("photo", base64);
+      } catch {
+        alert("Rasmini o'qib bo'lmadi. Boshqa rasm tanlang.");
+        e.target.value = "";
+      }
     }
   };
 
@@ -212,6 +223,9 @@ export default function Employees() {
 
       queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
       setIsAddOpen(false);
+    } catch (e: any) {
+      // Aks holda dialog jim-jit ochiq qolardi va rasm saqlanmasdi.
+      alert(e?.message || "Saqlashda xatolik yuz berdi");
     } finally {
       setIsLoading(false);
     }

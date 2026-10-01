@@ -1,6 +1,6 @@
 import { db, employeesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { processEmployeePhoto } from "./employee-face.js";
+import { processEmployeePhoto, stripFaceError, withFaceError } from "./employee-face.js";
 
 export async function processPendingFaces(limit = 5) {
   try {
@@ -21,9 +21,16 @@ export async function processPendingFaces(limit = 5) {
         if (!row.faceImage) continue;
         const faceData = await processEmployeePhoto(row.faceImage as string);
         const updates: Record<string, any> = {};
-        if (faceData.faceDescriptor) updates.faceDescriptor = faceData.faceDescriptor;
-        if (faceData.faceImage) updates.faceImage = faceData.faceImage;
-        if (faceData.faceError) updates.notes = (updates.notes ?? "") + ` faceError:${faceData.faceError}`;
+        if (faceData.faceDescriptor) {
+          updates.faceDescriptor = faceData.faceDescriptor;
+          // Muvaffaqiyat → eski faceError izlari tozalanadi.
+          const cleaned = stripFaceError(row.notes);
+          if (cleaned !== (row.notes || "").trim()) updates.notes = cleaned || null;
+        }
+        if (faceData.faceError) {
+          // Eski notes saqlanib, faqat oxiriga faceError qo'shiladi.
+          updates.notes = withFaceError(row.notes, faceData.faceError);
+        }
         if (Object.keys(updates).length > 0) {
           await db.update(employeesTable).set(updates).where(eq(employeesTable.id, row.id));
         }

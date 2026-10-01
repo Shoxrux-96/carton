@@ -14,7 +14,9 @@ const OVAL_W = width * 0.62;
 const OVAL_H = OVAL_W * 1.28;
 
 const SCAN_INTERVAL_MS = 600;
-const MIN_FACE_PRESENCE_MS = 900;
+// Jonlilik uchun: kamida 2 ta kadr serverga yetib borishi kerak (bir xil
+// statik rasmni farqlash — blink/harakat sinyali yig'ish).
+const MIN_FACE_PRESENCE_MS = 2000;
 
 type FaceSetupStatus = "loading" | "ready" | "no_photo" | "no_system_faces";
 type ScanPhase = "waiting_face" | "scanning" | "verified";
@@ -23,10 +25,16 @@ interface FrameAnalysis {
   faceDetected: boolean;
   boundsX?: number;
   boundsY?: number;
+  leftEyeOpen?: number;
+  rightEyeOpen?: number;
 }
 
 function normalizePhone(phone?: string | null) {
   return (phone || "").replace(/[\s+\-()]/g, "");
+}
+
+function newSessionId(): string {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export default function FaceAttendanceScreen() {
@@ -52,6 +60,9 @@ export default function FaceAttendanceScreen() {
   const capturingRef = useRef(false);
   const scanningRef = useRef(false);
   const firstFaceAtRef = useRef<number | null>(null);
+  // Har bir skanerlash sessiyasi uchun id — server kadrlarni shu id ostida
+  // yig'ib, davomatda jonlilikni (blink/harakat) tekshiradi.
+  const sessionIdRef = useRef<string>(newSessionId());
   const scanTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const detectFrameRef = useRef<() => Promise<void>>(async () => {});
   const readyRef = useRef(false);
@@ -233,7 +244,8 @@ export default function FaceAttendanceScreen() {
 
     setPhase("scanning");
 
-    // Face stays inside the oval — capture and submit (no liveness needed).
+    // Yuzoval ichida qoldi — server kadrlarni sessionId ostida yig'ib
+    // jonlilikni (blink/harakat) keyin tekshiradi.
     if (now - firstFaceAtRef.current >= MIN_FACE_PRESENCE_MS) {
       finishVerification();
     }
@@ -256,6 +268,7 @@ export default function FaceAttendanceScreen() {
 
       const formData = new FormData();
       formData.append("frame", { uri: pic.uri, name: "frame.jpg", type: "image/jpeg" } as any);
+      formData.append("sessionId", sessionIdRef.current);
       const frame = await apiFetchFormData<FrameAnalysis>("/face/liveness-frame", formData, 12000);
       if (mountedRef.current && !capturingRef.current) {
         processFrame(frame);
@@ -298,6 +311,7 @@ export default function FaceAttendanceScreen() {
       formData.append("face", { uri, name: "face.jpg", type: "image/jpeg" } as any);
       formData.append("latitude", String(coords.lat));
       formData.append("longitude", String(coords.lng));
+      formData.append("sessionId", sessionIdRef.current);
 
       const data = await apiFetchFormData("/face/attendance", formData);
       setResult(data);
@@ -314,6 +328,8 @@ export default function FaceAttendanceScreen() {
     setResult(null);
     capturingRef.current = false;
     firstFaceAtRef.current = null;
+    // Yangi urinish — yangi jonlilik sessiyasi (eski kadrlar aralashmasin).
+    sessionIdRef.current = newSessionId();
   };
 
   const retryLocation = () => {
