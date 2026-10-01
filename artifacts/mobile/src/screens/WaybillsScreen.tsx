@@ -399,7 +399,7 @@ export default function WaybillsScreen({ route, navigation }: any) {
                 <Text style={s.sheetClose}>✕</Text>
               </TouchableOpacity>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
               {viewingId ? (
                 <View style={s.viewContent}>
                   {(() => {

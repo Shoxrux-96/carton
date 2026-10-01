@@ -621,7 +621,7 @@ export default function FinanceScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
               {/* Doc info */}
               <View style={styles.wbRow2}>
                 <View style={{ flex: 1 }}>

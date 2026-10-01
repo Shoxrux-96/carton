@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet,
+  View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Keyboard,
 } from "react-native";
 import { colors, radius } from "../theme";
 
@@ -38,6 +38,7 @@ export default function CompanyAutocomplete({
     setQuery(name);
     setOpen(false);
     onChange(name, c?.phone || "");
+    Keyboard.dismiss();
   };
 
   return (
@@ -83,7 +84,9 @@ const s = StyleSheet.create({
     paddingHorizontal: 12, fontSize: 14, color: colors.text, backgroundColor: colors.surfaceAlt,
   },
   dropdown: {
-    position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4,
+    // Joyida (in-flow) chiqadi: absolut overlay ustidan telefon inputi bosilib
+    // tavsiya tanlanmas edi (web va Android'da bir xil muammo).
+    marginTop: 4,
     backgroundColor: "#fff", borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border,
     zIndex: 1000, elevation: 12, overflow: "hidden",
     shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
