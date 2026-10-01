@@ -7,7 +7,8 @@ import { paramInt } from "../lib/params.js";
 const router = Router();
 
 router.get("/", authMiddleware, async (req, res) => {
-  const date = (req.query.date as string) || new Date().toISOString().split("T")[0];
+  // Sana default — O'zbekiston vaqti (UTC+5), aks holda 00:00-04:59 orasida noto'g'ri kun chiqadi
+  const date = (req.query.date as string) || new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const records = await db
     .select({

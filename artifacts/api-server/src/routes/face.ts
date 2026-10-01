@@ -85,10 +85,10 @@ router.post("/attendance", upload.single("face"), async (req, res) => {
     let settings = { lat: 41.311081, lng: 69.240562, radius: 100, startTime: "09:00", endTime: "18:00", lateMinutes: 30 };
     try { if (fs.default.existsSync(settingsFile)) settings = JSON.parse(fs.default.readFileSync(settingsFile, "utf-8")); } catch {}
 
-    // Check time — strict: only between startTime and endTime
-    const now = new Date();
-    const hh = String(now.getHours()).padStart(2, "0");
-    const mm = String(now.getMinutes()).padStart(2, "0");
+    // Check time — O'zbekiston vaqti (Asia/Tashkent, UTC+5, DST yo'q)
+    const now = new Date(Date.now() + 5 * 60 * 60 * 1000);
+    const hh = String(now.getUTCHours()).padStart(2, "0");
+    const mm = String(now.getUTCMinutes()).padStart(2, "0");
     const currentTime = `${hh}:${mm}`;
 
     if (currentTime < settings.startTime || currentTime > settings.endTime) {
@@ -156,8 +156,8 @@ router.post("/attendance", upload.single("face"), async (req, res) => {
       return;
     }
 
-    // Mark attendance
-    const today = new Date().toISOString().split("T")[0];
+    // Mark attendance — sana ham O'zbekiston bo'yicha (UTC+5)
+    const today = now.toISOString().split("T")[0];
 
     const existing = await db
       .select()
