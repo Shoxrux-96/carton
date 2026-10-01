@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/i18n";
@@ -89,7 +89,6 @@ function NavGroupItem({ group, location, isOpen, onToggle }: {
 
 export function Sidebar() {
   const [location] = useLocation();
-  const [openGroups, setOpenGroups] = useState<string[]>(["manufacturing"]);
   const { logout, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t } = useLang();
@@ -125,6 +124,14 @@ export function Sidebar() {
     { href: "/dashboard/clients", label: t("clients"), icon: Building2 },
     { href: "/dashboard/delivery", label: t("delivery"), icon: Truck },
   ];
+
+  // Joriy sahifa qaysi guruhda bo'lsa, faqat shu guruh ochiq turadi
+  const activeGroupKey = groups.find(g => g.children.some(c => location === c.href))?.key ?? null;
+  const [openGroups, setOpenGroups] = useState<string[]>(activeGroupKey ? [activeGroupKey] : []);
+
+  useEffect(() => {
+    setOpenGroups(activeGroupKey ? [activeGroupKey] : []);
+  }, [location, activeGroupKey]);
 
   const toggleGroup = (key: string) => {
     setOpenGroups(prev =>
