@@ -496,7 +496,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-[1.05fr_1.1fr_0.65fr_1.45fr] gap-10">
             <div>
               <div className="flex items-center gap-3 mb-5">
                 <img
@@ -542,12 +542,12 @@ export default function Landing() {
               </ul>
             </div>
 
-            <div className="flex flex-col items-start gap-3">
+            <div className="flex flex-row flex-wrap items-start gap-2.5 md:mt-[42px]">
               <a
                 href="https://www.instagram.com/shovotcarton/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white text-sm font-semibold shadow-lg shadow-pink-500/25 hover:scale-105 hover:shadow-pink-500/40 transition-all"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white text-xs font-semibold shadow-lg shadow-pink-500/25 hover:scale-105 hover:shadow-pink-500/40 transition-all"
               >
                 <InstagramIcon className="w-4 h-4" />
                 @shovotcarton
@@ -556,7 +556,7 @@ export default function Landing() {
                 href="https://t.me/+998995054004"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-500 text-white text-sm font-semibold shadow-lg shadow-sky-500/30 hover:scale-105 hover:bg-sky-400 transition-all"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-sky-500 text-white text-xs font-semibold shadow-lg shadow-sky-500/30 hover:scale-105 hover:bg-sky-400 transition-all"
               >
                 <TelegramIcon className="w-4 h-4" />
                 +998 99 505 40 04
