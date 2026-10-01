@@ -94,6 +94,9 @@ export async function apiFetch<T = any>(
   const token = await getToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    // Mobil ilova — serverda bu header'siz so'rov "web" deb hisoblanadi
+    // va faqat admin uchun ruxsat etiladi.
+    "X-Client": "mobile",
     ...(options.headers as Record<string, string>),
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -126,7 +129,7 @@ export async function apiFetchFormData<T = any>(
   timeoutMs = 30000,
 ): Promise<T> {
   const token = await getToken();
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { "X-Client": "mobile" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const controller = new AbortController();
@@ -162,7 +165,7 @@ export async function logClientError(
 ): Promise<void> {
   try {
     const token = await getToken();
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const headers: Record<string, string> = { "Content-Type": "application/json", "X-Client": "mobile" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
     await fetch(`${API_BASE}/client-log`, {
       method: "POST",

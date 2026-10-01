@@ -1,10 +1,62 @@
 import { Router } from "express";
+import { rateLimit } from "express-rate-limit";
 import { db, usersTable, employeesTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
-import { signToken, authMiddleware } from "../lib/auth.js";
+import { signToken, authMiddleware, requireAdmin } from "../lib/auth.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 
 const router = Router();
+
+// Login uchun qat'iy limit: IP boshiga 15 daqiqada 10 ta urinish
+// (muvaffaqiyatli kirishlar hisoblanmaydi).
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  skipSuccessfulRequests: true,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "Juda ko'p urinish. 15 daqiqadan so'ng qayta urinib ko'ring" },
+});
+
+// Hisob qulflovchi: bitta telefon uchun 15 daqiqada 15 ta noto'g'ri parol → 429.
+// (scrypt hisoblashini oldini olish uchun tekshiruv verifyPassword'dan oldin)
+const failedLogins = new Map<string, { count: number; resetAt: number }>();
+const FAIL_WINDOW_MS = 15 * 60 * 1000;
+const FAIL_MAX = 15;
+
+function isPhoneLocked(phone: string): boolean {
+  const entry = failedLogins.get(phone);
+  if (!entry) return false;
+  if (Date.now() > entry.resetAt) {
+    failedLogins.delete(phone);
+    return false;
+  }
+  return entry.count >= FAIL_MAX;
+}
+
+function registerFailure(phone: string): void {
+  const entry = failedLogins.get(phone);
+  if (!entry || Date.now() > entry.resetAt) {
+    failedLogins.set(phone, { count: 1, resetAt: Date.now() + FAIL_WINDOW_MS });
+    return;
+  }
+  entry.count += 1;
+  if (entry.count >= FAIL_MAX) {
+    console.warn(`[auth] Telefon hisobi vaqtincha qulflandi: ${phone}`);
+  }
+}
+
+function clearFailures(phone: string): void {
+  failedLogins.delete(phone);
+}
+
+// Eski (X-Client'siz) ilovalar uchun xavfsiz default: "web" — ya'ni faqat
+// admin kira oladi. Mobil ilova X-Client: mobile yuboradi.
+function clientType(req: { headers: Record<string, unknown> }): string {
+  const raw = req.headers["x-client"];
+  const value = (Array.isArray(raw) ? raw[0] : raw) ?? "";
+  return String(value).trim().toLowerCase() === "mobile" ? "mobile" : "web";
+}
 
 function normalizePhone(phone?: string | null) {
   let digits = (phone || "").replace(/\D/g, "");
@@ -27,7 +79,7 @@ async function findEmployeeForUser(userPhone: string) {
   return employee ?? null;
 }
 
-router.post("/login", async (req, res) => {
+router.post("/login", loginLimiter, async (req, res) => {
   let { phone, password } = req.body;
 
   if (!phone || !password) {
@@ -38,14 +90,32 @@ router.post("/login", async (req, res) => {
   // Telefon raqamni tozalash
   phone = normalizePhone(phone);
 
+  if (isPhoneLocked(phone)) {
+    res.status(429).json({ error: "Juda ko'p noto'g'ri urinish. 15 daqiqadan so'ng qayta urinib ko'ring" });
+    return;
+  }
+
   const users = await db.select().from(usersTable).where(eq(usersTable.phone, phone)).limit(1);
 
   if (users.length === 0 || !verifyPassword(password, users[0].password)) {
+    registerFailure(phone);
     res.status(401).json({ error: "Noto'g'ri telefon yoki parol" });
     return;
   }
 
   const user = users[0];
+
+  // Web saytga faqat admin kira oladi — boshqa rollar (employee, manager...)
+  // faqat mobil ilovadan (X-Client: mobile) kiradi.
+  if (clientType(req) !== "mobile" && user.role !== "admin") {
+    console.warn(`[auth] Web kirish rad etildi (rol: ${user.role}, ${phone})`);
+    res.status(403).json({
+      error: "Web saytga faqat admin kira oladi. Hodimlar mobil ilovadan kirsin",
+    });
+    return;
+  }
+
+  clearFailures(phone);
   const token = signToken({ userId: user.id, phone: user.phone });
 
   res.json({
@@ -54,7 +124,7 @@ router.post("/login", async (req, res) => {
   });
 });
 
-router.post("/register", authMiddleware, async (req, res) => {
+router.post("/register", authMiddleware, requireAdmin, async (req, res) => {
   let { phone, password, role } = req.body;
 
   if (!phone || !password) {

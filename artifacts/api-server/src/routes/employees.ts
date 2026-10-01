@@ -1,12 +1,13 @@
 import { Router } from "express";
 import { db, employeesTable, usersTable, transactionsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
-import { authMiddleware } from "../lib/auth.js";
+import { authMiddleware, requireAdmin } from "../lib/auth.js";
 import { paramInt } from "../lib/params.js";
 import { hashPassword } from "../lib/password.js";
 import multer from "multer";
 
-const upload = multer({ storage: multer.memoryStorage() });
+// Fayl hajmi chegarasi — xotirani to'ldirish hujumining oldini oladi.
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
 
 const router = Router();
 
@@ -28,7 +29,7 @@ const readBodyValue = (value: unknown): string => {
   return String(value);
 };
 
-router.post("/", authMiddleware, upload.single("photo"), async (req, res) => {
+router.post("/", authMiddleware, requireAdmin, upload.single("photo"), async (req, res) => {
   const body = (req.body && typeof req.body === "object") ? req.body as Record<string, unknown> : {};
   let name = readBodyValue(body.name);
   let phone = readBodyValue(body.phone);
@@ -149,18 +150,18 @@ const updateEmployeeRecord = async (req: any, res: any, id: number) => {
   res.json({ ...employee, salary: parseFloat(employee.salary ?? "0") });
 };
 
-router.put("/:id", authMiddleware, upload.single("photo"), async (req, res) => {
+router.put("/:id", authMiddleware, requireAdmin, upload.single("photo"), async (req, res) => {
   const id = paramInt(req.params.id);
   await updateEmployeeRecord(req, res, id);
 });
 
-router.patch("/:id", authMiddleware, upload.single("photo"), async (req, res) => {
+router.patch("/:id", authMiddleware, requireAdmin, upload.single("photo"), async (req, res) => {
   const id = paramInt(req.params.id);
   await updateEmployeeRecord(req, res, id);
 });
 
 // Maosh to'lov — avtomatik moliyaga chiqim yozish
-router.post("/:id/pay-salary", authMiddleware, async (req, res) => {
+router.post("/:id/pay-salary", authMiddleware, requireAdmin, async (req, res) => {
   const id = paramInt(req.params.id);
   const { amount, month, description } = req.body;
 
@@ -187,7 +188,7 @@ router.post("/:id/pay-salary", authMiddleware, async (req, res) => {
   }
 });
 
-router.delete("/:id", authMiddleware, async (req, res) => {
+router.delete("/:id", authMiddleware, requireAdmin, async (req, res) => {
   const id = paramInt(req.params.id);
   const [emp] = await db.select().from(employeesTable).where(eq(employeesTable.id, id));
   if (emp?.position === "Owner") {

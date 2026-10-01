@@ -8,6 +8,8 @@ export default async function customFetch(
   const hasFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   const headers: Record<string, string> = {
     ...(hasFormData ? {} : { "Content-Type": "application/json" }),
+    // Web klient — serverda faqat admin uchun ruxsat etilgan endpointlar bor.
+    "X-Client": "web",
     ...(options.headers as Record<string, string>),
   };
   if (token) {

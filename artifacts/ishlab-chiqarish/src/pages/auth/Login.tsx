@@ -36,9 +36,18 @@ export default function Login() {
       localStorage.setItem("user", JSON.stringify(response.user));
       window.location.href = "/dashboard";
     } catch (error: any) {
-      setError("root", {
-        message: error?.data?.error || "Kirishda xatolik yuz berdi",
-      });
+      let message = "Kirishda xatolik yuz berdi";
+      // customFetch JSON javobni xabar sifatida tashlaydi — ochib o'qimiz
+      try {
+        const parsed = JSON.parse(String(error?.message || ""));
+        if (parsed?.error) message = parsed.error;
+      } catch {
+        if (typeof error?.message === "string" && error.message && !error.message.startsWith("{")) {
+          message = error.message;
+        }
+      }
+      if (error?.data?.error) message = error.data.error;
+      setError("root", { message });
     }
   };
 
