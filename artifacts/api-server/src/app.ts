@@ -12,12 +12,15 @@ const app: Express = express();
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
-// Xavfsizlik sarlavhalari (CSP bu API uchun kerak emas — HTML nginx'dan keladi)
+// Xavfsizlik sarlavhalari (CSP, Referrer-Policy, HSTS — nginx nazorat qiladi;
+// dublikat bo'lmasligi uchun ularni helmet'da o'chiramiz)
 app.use(
   helmet({
     contentSecurityPolicy: false,
     crossOriginResourcePolicy: false,
     crossOriginEmbedderPolicy: false,
+    referrerPolicy: false,
+    strictTransportSecurity: false,
   })
 );
 
