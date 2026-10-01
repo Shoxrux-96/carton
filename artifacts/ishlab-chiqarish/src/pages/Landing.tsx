@@ -30,6 +30,7 @@ export default function Landing() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const [phoneOpen, setPhoneOpen] = useState(false);
+  const expYears = new Date().getFullYear() - 2015;
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans scroll-smooth">
@@ -71,7 +72,7 @@ export default function Landing() {
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="mt-6 text-lg text-muted-foreground max-w-xl leading-relaxed"
               >
-                {t("landing_hero_desc")}
+                {t("landing_hero_desc").replace("{years}", String(expYears))}
               </motion.p>
 
               <motion.div
@@ -101,7 +102,7 @@ export default function Landing() {
                 className="mt-14 grid grid-cols-4 gap-4 max-w-lg mx-auto lg:mx-0"
               >
                 {[
-                  { value: "10+", key: "landing_stat_experience" },
+                  { value: `${expYears}+`, key: "landing_stat_experience" },
                   { value: "500+", key: "landing_stat_clients" },
                   { value: "50+", key: "landing_stat_products" },
                   { value: "24/7", key: "landing_stat_support" },
@@ -496,7 +497,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <div className="grid grid-cols-1 md:grid-cols-[1.05fr_1.1fr_0.65fr_1.45fr] gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
             <div>
               <div className="flex items-center gap-3 mb-5">
                 <img
@@ -542,12 +543,12 @@ export default function Landing() {
               </ul>
             </div>
 
-            <div className="flex flex-row flex-wrap items-start gap-2.5 md:mt-[42px]">
+            <div className="flex flex-col items-start gap-3 md:mt-[42px]">
               <a
                 href="https://www.instagram.com/shovotcarton/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white text-xs font-semibold shadow-lg shadow-pink-500/25 hover:scale-105 hover:shadow-pink-500/40 transition-all"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white text-[13px] font-semibold shadow-lg shadow-pink-500/25 hover:scale-105 hover:shadow-pink-500/40 transition-all"
               >
                 <InstagramIcon className="w-4 h-4" />
                 @shovotcarton
@@ -556,7 +557,7 @@ export default function Landing() {
                 href="https://t.me/+998995054004"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-sky-500 text-white text-xs font-semibold shadow-lg shadow-sky-500/30 hover:scale-105 hover:bg-sky-400 transition-all"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sky-500 text-white text-[13px] font-semibold shadow-lg shadow-sky-500/30 hover:scale-105 hover:bg-sky-400 transition-all"
               >
                 <TelegramIcon className="w-4 h-4" />
                 +998 99 505 40 04
