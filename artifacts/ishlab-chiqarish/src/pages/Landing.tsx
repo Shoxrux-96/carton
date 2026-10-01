@@ -496,16 +496,16 @@ export default function Landing() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
             <div>
               <div className="flex items-center gap-3 mb-5">
                 <img
                   src={`${import.meta.env.BASE_URL}images/logo-circle.png`}
-                  alt='"SHOVOT CARTON PAPER" MChJ'
+                  alt="Shovot Carton"
                   className="w-14 h-14 rounded-full object-contain bg-white ring-2 ring-amber-400/40 p-1"
                 />
                 <div>
-                  <div className="font-bold text-lg leading-tight">"SHOVOT CARTON PAPER" MChJ</div>
+                  <div className="font-bold text-lg leading-tight">Shovot Carton</div>
                   <div className="text-xs text-gray-400">shovotcarton.uz</div>
                 </div>
               </div>
@@ -540,32 +540,33 @@ export default function Landing() {
                 <li><a href="#contact" className="hover:text-amber-400 transition-colors">{t("landing_contact")}</a></li>
                 <li><Link href="/login" className="hover:text-amber-400 transition-colors">{t("landing_system_login")}</Link></li>
               </ul>
-              <div className="flex flex-col items-start gap-3 mt-6">
-                <a
-                  href="https://www.instagram.com/shovotcarton/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white text-sm font-semibold shadow-lg shadow-pink-500/25 hover:scale-105 hover:shadow-pink-500/40 transition-all"
-                >
-                  <InstagramIcon className="w-4 h-4" />
-                  @shovotcarton
-                </a>
-                <a
-                  href="https://t.me/+998995054004"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-500 text-white text-sm font-semibold shadow-lg shadow-sky-500/30 hover:scale-105 hover:bg-sky-400 transition-all"
-                >
-                  <TelegramIcon className="w-4 h-4" />
-                  +998 99 505 40 04
-                </a>
-              </div>
+            </div>
+
+            <div className="flex flex-col items-start gap-3">
+              <a
+                href="https://www.instagram.com/shovotcarton/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white text-sm font-semibold shadow-lg shadow-pink-500/25 hover:scale-105 hover:shadow-pink-500/40 transition-all"
+              >
+                <InstagramIcon className="w-4 h-4" />
+                @shovotcarton
+              </a>
+              <a
+                href="https://t.me/+998995054004"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-500 text-white text-sm font-semibold shadow-lg shadow-sky-500/30 hover:scale-105 hover:bg-sky-400 transition-all"
+              >
+                <TelegramIcon className="w-4 h-4" />
+                +998 99 505 40 04
+              </a>
             </div>
           </div>
 
           <div className="mt-10 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-gray-500 text-sm">
-              © {new Date().getFullYear()} "SHOVOT CARTON PAPER" MChJ. {t("landing_rights")}
+              © {new Date().getFullYear()} Shovot Carton. {t("landing_rights")}
             </p>
             <p className="text-gray-600 text-sm">shovotcarton.uz</p>
           </div>
