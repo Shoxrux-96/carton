@@ -53,11 +53,11 @@ export default function SiteNavbar() {
         <Link href="/" className="flex items-center gap-3">
           <img
             src={`${import.meta.env.BASE_URL}images/logo-circle.png`}
-            alt="Shovot Carton"
+            alt='"SHOVOT CARTON PAPER" MChJ'
             className="w-14 h-14 rounded-full object-contain ring-2 ring-amber-300 ring-offset-2 ring-offset-background shadow-lg shadow-amber-500/30 bg-white"
           />
           <div>
-            <div className="text-xl font-bold tracking-tight text-foreground leading-tight">Shovot Carton</div>
+            <div className="text-lg font-bold tracking-tight text-foreground leading-tight">"SHOVOT CARTON PAPER" MChJ</div>
             <div className="text-xs text-muted-foreground">shovotcarton.uz</div>
           </div>
         </Link>
