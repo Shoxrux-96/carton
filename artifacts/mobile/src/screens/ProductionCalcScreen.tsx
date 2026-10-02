@@ -559,9 +559,11 @@ function GofraCalcInner() {
     if (W <= 0 || L <= 0 || q <= 0) return null;
 
     const areaM2 = (W * L) / 10000;
-    const layerResults = layers.map(layer => {
+    const layerResults = layers.map((layer, idx) => {
       const w = n(layer.weight), p = n(layer.price);
-      const weightPerUnit = areaM2 * w;
+      // 2-qatlam (Gofra): jami ishlatilgan qog'oz maydoni 0.7 ga bo'linadi (web bilan bir xil)
+      const effArea = idx === 1 ? areaM2 / 0.7 : areaM2;
+      const weightPerUnit = effArea * w;
       const costPerUnit = weightPerUnit * p;
       return {
         name: layer.name, color: layer.color, price: p,
@@ -595,7 +597,7 @@ function GofraCalcInner() {
         price: calc.sellingPrice,
         length: n(paperL), width: n(paperW), height: 0,
         material: `W×L: ${n(paperW)}×${n(paperL)} sm, ${layers.length} qatlam`,
-        materials: layers.map((l, i) => `${i + 1}-qatlam (${l.name}): ${l.weight}kg/m² × ${fmt(n(l.price))}`),
+        materials: layers.map((l, i) => `${i + 1}-qatlam (${l.name}): ${l.weight}kg/m²${i === 1 ? " ÷0.7" : ""} × ${fmt(n(l.price))}`),
         category: "Gofra qog'oz", isPublished: false,
       };
       await apiFetch("/products", { method: "POST", body: JSON.stringify(body) });
@@ -731,7 +733,7 @@ function GofraCalcInner() {
               {calc.layers.map((layer, idx) => (
                 <View key={idx} style={styles.tableRow}>
                   <Text style={[styles.tableCell, { fontWeight: "800", color: layer.color }]}>{idx + 1}</Text>
-                  <Text style={[styles.tableCell, { color: colors.textSecondary }]} numberOfLines={1}>{layer.name}</Text>
+                  <Text style={[styles.tableCell, { color: colors.textSecondary }]} numberOfLines={1}>{layer.name}{idx === 1 ? " ÷0.7" : ""}</Text>
                   <Text style={[styles.tableCell, { textAlign: "right", fontWeight: "700" }]}>{layer.weightPerUnit} kg</Text>
                   <Text style={[styles.tableCell, { textAlign: "right", color: colors.textSecondary }]}>{fmt(layer.price)}</Text>
                   <Text style={[styles.tableCell, { textAlign: "right", fontWeight: "700" }]}>{fmt(layer.costPerUnit)}</Text>

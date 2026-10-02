@@ -65,10 +65,13 @@ export default function GofraPaperCalc() {
     const areaM2 = (W * L) / 10000;
     const areaM2Total = areaM2 * q;
 
-    const layerResults = layers.map(layer => {
+    const layerResults = layers.map((layer, idx) => {
       const w = n(layer.weight);
       const p = n(layer.price);
-      const weightPerUnit = areaM2 * w;
+      // 2-qatlam (Gofra): jami ishlatilgan qog'oz maydoni 0.7 ga bo'linadi —
+      // quti kalkulyatsiyasidagi "Gofra ÷0.7" bilan bir xil formula.
+      const effArea = idx === 1 ? areaM2 / 0.7 : areaM2;
+      const weightPerUnit = effArea * w;
       const costPerUnit = weightPerUnit * p;
       return {
         name: layer.name,
@@ -122,7 +125,7 @@ export default function GofraPaperCalc() {
         width: n(paperW),
         height: 0,
         material: JSON.stringify(calcData),
-        materials: layers.map((l, i) => `${i + 1}-qatlam (${l.name}): ${l.weight}kg/m² × ${fmt(n(l.price))}`),
+        materials: layers.map((l, i) => `${i + 1}-qatlam (${l.name}): ${l.weight}kg/m²${i === 1 ? " ÷0.7" : ""} × ${fmt(n(l.price))}`),
         category: "Gofra qog'oz",
         isPublished: false,
       };
@@ -301,8 +304,8 @@ export default function GofraPaperCalc() {
                             <tbody>
                               {calc.layers.map((layer, idx) => (
                                 <tr key={idx} className="border-b border-border/30">
-                                  <td className="py-2 font-bold text-base" style={{ color: layer.color }}>{idx + 1}</td>
-                                  <td className="py-2 text-muted-foreground">{layer.name}</td>
+                                   <td className="py-2 font-bold text-base" style={{ color: layer.color }}>{idx + 1}</td>
+                                   <td className="py-2 text-muted-foreground">{layer.name}{idx === 1 ? " ÷0.7" : ""}</td>
                                   <td className="py-2 text-right font-mono font-bold">{layer.weightPerUnit} kg</td>
                                   <td className="py-2 text-right font-mono text-muted-foreground">{fmt(layer.price)}</td>
                                   <td className="py-2 text-right font-mono font-bold text-base">{fmt(layer.costPerUnit)}</td>
